@@ -10,13 +10,22 @@ const migrateContactAgents = require("./migrateContactAgents");
 const migrateCheckType = require("./migrateCheckType");
 const migrateUser = require("./migrateUser");
 const migrateCustomer = require("./migrateCustomer");
+const migrateDiscount = require("./migrateDiscount");
 const migrateCustomerGroup = require("./migrateCustomerGroup");
+const migrateCustomerPhoto = require("./migrateCustomerPhoto");
 const migrateExamination = require("./migrateExamination");
 const migratePrescription = require("./migratePrescription");
 const migrateAppointment = require("./migrateAppointment");
 const migrateClinicalExamination = require("./migrateClinicalExamination");
 const migrateContactLensPrescription = require("./migrateContactLensPrescription");
 const migrateContactLensFittingDetail = require("./migrateContactLensFittingDetail");
+const migrateGlassPrescriptionDetail = require("./migrateGlassPrescriptionDetail");
+const migrateLensCharacteristic = require("./migrateLensCharacteristic");
+const migrateLensCatalog = require("./migrateLensCatalog");
+const migrateLensTreatmentCharacteristic = require("./migrateLensTreatmentCharacteristic");
+const migrateExaminationOverview = require("./migrateExaminationOverview");
+const migrateWorkLabel = require("./migrateWorkLabel");
+const migrateFRPLine = require("./migrateFRPLine");
 const migrateFrequentReplacementProgram = require("./migrateFrequentReplacementProgram");
 const migrateOrthokeratology = require("./migrateOrthokeratology");
 const migrateLowVisionCheck = require("./migrateLowVisionCheck");
@@ -139,13 +148,29 @@ async function ensureTenant(tenantId) {
 
     await runStep("Orthokeratology", () => migrateOrthokeratology(tenantId));
 
-    await runStep("FrequentReplacementProgram", () => migrateFrequentReplacementProgram(tenantId)); 
+    await runStep("FRPLine", () => migrateFRPLine(tenantId));
 
     await runStep("LowVisionCheck", () => migrateLowVisionCheck(tenantId));
 
     await runStep("SaleItem", () => migrateSaleItem(tenantId));
 
     await runStep("Invoice", () => migrateInvoice(tenantId));
+
+    await runStep("Discount", () => migrateDiscount(tenantId));
+
+    await runStep("CustomerPhoto", () => migrateCustomerPhoto(tenantId));
+
+    await runStep("ExaminationOverview", () => migrateExaminationOverview(tenantId));
+
+    await runStep("GlassPrescriptionDetail", () => migrateGlassPrescriptionDetail(tenantId));
+
+    await runStep("LensCharacteristic", () => migrateLensCharacteristic(tenantId));
+
+    await runStep("LensCatalog", () => migrateLensCatalog(tenantId));
+
+    await runStep("LensTreatmentCharacteristic", () => migrateLensTreatmentCharacteristic(tenantId));
+
+    await runStep("WorkLabel", () => migrateWorkLabel(tenantId));
 
 
     console.log(`[${now()}] 🎉 All migrations completed successfully!`);

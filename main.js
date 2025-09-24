@@ -19,12 +19,19 @@ const migrateAppointment = require("./migrateAppointment");
 const migrateClinicalExamination = require("./migrateClinicalExamination");
 const migrateContactLensPrescription = require("./migrateContactLensPrescription");
 const migrateContactLensFittingDetail = require("./migrateContactLensFittingDetail");
+const migrateContactLensBrand = require("./migrateContactLensBrand");
+const migrateContactLensType = require("./migrateContactLensType");
+const migrateContactLensMaterial = require("./migrateContactLensMaterial");
+const migrateContactLensCleaningSolution = require("./migrateContactLensCleaningSolution");
+const migrateGlassModel = require("./migrateGlassModel");
+const migrateLensType = require("./migrateLensType");
 const migrateGlassPrescriptionDetail = require("./migrateGlassPrescriptionDetail");
 const migrateLensCharacteristic = require("./migrateLensCharacteristic");
 const migrateLensCatalog = require("./migrateLensCatalog");
 const migrateLensTreatmentCharacteristic = require("./migrateLensTreatmentCharacteristic");
 const migrateExaminationOverview = require("./migrateExaminationOverview");
 const migrateWorkLabel = require("./migrateWorkLabel");
+const migrateWorkSupplier = require("./migrateWorkSupplier");
 const migrateFRPLine = require("./migrateFRPLine");
 const migrateFrequentReplacementProgram = require("./migrateFrequentReplacementProgram");
 const migrateOrthokeratology = require("./migrateOrthokeratology");
@@ -114,6 +121,8 @@ async function ensureTenant(tenantId) {
 
     await runStep("ContactLensFittingDetail", () => migrateContactLensFittingDetail(tenantId));
 
+    await runStep("ContactLensBrand", () => migrateContactLensBrand(tenantId));
+
     await runStep("FrequentReplacementProgram", () => migrateFrequentReplacementProgram(tenantId));
 
     await runStep("Orthokeratology", () => migrateOrthokeratology(tenantId));
@@ -144,6 +153,8 @@ async function ensureTenant(tenantId) {
 
     await runStep("ContactLensFittingDetail", () => migrateContactLensFittingDetail(tenantId));   
 
+    await runStep("ContactLensBrand", () => migrateContactLensBrand(tenantId));
+
     await runStep("FrequentReplacementProgram", () => migrateFrequentReplacementProgram(tenantId));
 
     await runStep("Orthokeratology", () => migrateOrthokeratology(tenantId));
@@ -171,6 +182,18 @@ async function ensureTenant(tenantId) {
     await runStep("LensTreatmentCharacteristic", () => migrateLensTreatmentCharacteristic(tenantId));
 
     await runStep("WorkLabel", () => migrateWorkLabel(tenantId));
+
+    await runStep("WorkSupplier", () => migrateWorkSupplier(tenantId));
+
+    await runStep("ContactLensType", () => migrateContactLensType(tenantId));
+
+    await runStep("ContactLensMaterial", () => migrateContactLensMaterial(tenantId));
+
+    await runStep("GlassModel", () => migrateGlassModel(tenantId));
+
+    await runStep("LensType", () => migrateLensType(tenantId));
+
+    await runStep("ContactLensCleaningSolution", () => migrateContactLensCleaningSolution(tenantId));
 
 
     console.log(`[${now()}] 🎉 All migrations completed successfully!`);

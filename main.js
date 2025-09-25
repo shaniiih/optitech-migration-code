@@ -44,6 +44,11 @@ const migrateStockMovement = require("./migrateStockMovement");
 const migrateSupplier = require("./migrateSupplier");
 const migrateInvoice = require("./migrateInvoice");
 const migrateSMS = require("./migrateSMS");
+const migrateOpticalBase = require("./migrateOpticalBase");
+const migrateContactLensTint = require("./migrateContactLensTint");
+const migrateContactLensManufacturer = require("./migrateContactLensManufacturer");
+const migrateContactLensDisinfectingSolution = require("./migrateContactLensDisinfectingSolution");
+const migrateContactLensRinsingSolution = require("./migrateContactLensRinsingSolution");
 const { getPostgresConnection } = require("./dbConfig");
 
 // ---- utils ---------------------------------------------------------------
@@ -195,6 +200,15 @@ async function ensureTenant(tenantId) {
 
     await runStep("ContactLensCleaningSolution", () => migrateContactLensCleaningSolution(tenantId));
 
+    await runStep("OpticalBase", () => migrateOpticalBase(tenantId));
+
+    await runStep("ContactLensTint", () => migrateContactLensTint(tenantId));
+
+    await runStep("ContactLensManufacturer", () => migrateContactLensManufacturer(tenantId));
+
+    await runStep("ContactLensDisinfectingSolution", () => migrateContactLensDisinfectingSolution(tenantId));
+
+    await runStep("ContactLensRinsingSolution", () => migrateContactLensRinsingSolution(tenantId));
 
     console.log(`[${now()}] 🎉 All migrations completed successfully!`);
     process.exit(0);

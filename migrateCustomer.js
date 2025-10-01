@@ -199,8 +199,9 @@ async function migrateCustomer(tenantId = "tenant_1") {
               "branchId", allergies, "healthFund", "medicalConditions", medications
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("tenantId", "customerId")
+            ON CONFLICT ("customerId")
             DO UPDATE SET
+              "tenantId" = EXCLUDED."tenantId",
               "firstName" = EXCLUDED."firstName",
               "lastName" = EXCLUDED."lastName",
               "idNumber" = EXCLUDED."idNumber",

@@ -81,8 +81,9 @@ async function ensureCustomerRecord({
       id, "tenantId", "customerId", "firstName", "lastName", "createdAt", "updatedAt"
     )
     VALUES ($1, $2, $3, $4, $5, $6, $6)
-    ON CONFLICT ("tenantId", "customerId")
+    ON CONFLICT ("customerId")
     DO UPDATE SET
+              "tenantId" = EXCLUDED."tenantId",
       "firstName" = EXCLUDED."firstName",
       "lastName" = EXCLUDED."lastName",
       "updatedAt" = EXCLUDED."updatedAt"

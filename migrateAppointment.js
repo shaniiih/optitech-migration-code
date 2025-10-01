@@ -181,7 +181,7 @@ async function migrateAppointment(tenantId = "tenant_1") {
                 "cellPhone", "homePhone", email, notes, "createdAt", "updatedAt"
               )
               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-              ON CONFLICT ("tenantId", "customerId")
+              ON CONFLICT ("customerId")
               DO UPDATE SET "updatedAt" = EXCLUDED."updatedAt"
               RETURNING id
               `,
@@ -254,7 +254,7 @@ async function migrateAppointment(tenantId = "tenant_1") {
                 id, "tenantId", "customerId", "firstName", "lastName", notes, "createdAt", "updatedAt"
               )
               VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-              ON CONFLICT ("tenantId", "customerId")
+              ON CONFLICT ("customerId")
               DO UPDATE SET "updatedAt" = EXCLUDED."updatedAt"
               RETURNING id
               `,
@@ -418,6 +418,7 @@ async function migrateAppointment(tenantId = "tenant_1") {
             VALUES ${values.join(",")}
             ON CONFLICT (id)
             DO UPDATE SET
+              "tenantId" = EXCLUDED."tenantId",
               "customerId" = EXCLUDED."customerId",
               "userId" = EXCLUDED."userId",
               date = EXCLUDED.date,

@@ -61,6 +61,7 @@ async function migrateBranch(tenantId = "tenant_1") {
             VALUES ${values.join(",")}
             ON CONFLICT ("tenantId", code)
             DO UPDATE SET
+              "tenantId" = EXCLUDED."tenantId",
               name = EXCLUDED.name,
               "updatedAt" = EXCLUDED."updatedAt"
           `;

@@ -366,8 +366,9 @@ async function migrateOrder(tenantId = "tenant_1") {
               notes, "internalNotes", "createdAt", "updatedAt", "branchId"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT (id)
+            ON CONFLICT ("orderNumber")
             DO UPDATE SET
+              "tenantId" = EXCLUDED."tenantId",
               "customerId" = EXCLUDED."customerId",
               "orderNumber" = EXCLUDED."orderNumber",
               "orderDate" = EXCLUDED."orderDate",

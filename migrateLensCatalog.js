@@ -252,8 +252,9 @@ async function migrateLensCatalog(tenantId = "tenant_1") {
               "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT (id)
+            ON CONFLICT ("catalogNumber")
             DO UPDATE SET
+              "tenantId" = EXCLUDED."tenantId",
               "catalogNumber" = EXCLUDED."catalogNumber",
               "productCode" = EXCLUDED."productCode",
               manufacturer = EXCLUDED.manufacturer,

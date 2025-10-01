@@ -67,8 +67,9 @@ async function migrateCheckType(tenantId = "tenant_1") {
               "isActive", "createdAt", "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("tenantId","checkId")
+            ON CONFLICT ("checkId")
             DO UPDATE SET
+              "tenantId" = EXCLUDED."tenantId",
               name = EXCLUDED.name,
               price = EXCLUDED.price,
               description = EXCLUDED.description,

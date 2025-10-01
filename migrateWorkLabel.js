@@ -31,10 +31,14 @@ async function migrateWorkLabel(tenantId = "tenant_1") {
 
   try {
     const { rows: supplierRows } = await pg.query(
-      `SELECT id, "supplierId" FROM "Supplier" WHERE "tenantId" = $1`,
+      `SELECT "supplierId" FROM "Supplier" WHERE "tenantId" = $1`,
       [tenantId]
     );
-    const supplierMap = new Map(supplierRows.map((row) => [row.supplierId, row.id]));
+    const supplierIds = new Set(
+      supplierRows
+        .map((row) => asInteger(row.supplierId))
+        .filter((val) => val !== null)
+    );
 
     while (true) {
       const [rows] = await mysql.query(
@@ -69,9 +73,7 @@ async function migrateWorkLabel(tenantId = "tenant_1") {
             continue;
           }
 
-          const supplierId = supplierMap.get(String(supplierLegacyId)) || supplierMap.get(supplierLegacyId);
-
-          if (!supplierId) {
+          if (!supplierIds.has(supplierLegacyId)) {
             skippedMissingSupplier += 1;
             continue;
           }
@@ -91,7 +93,7 @@ async function migrateWorkLabel(tenantId = "tenant_1") {
             labelId,
             name,
             itemCode,
-            supplierId,
+            supplierLegacyId,
             true,
             timestamp,
             timestamp

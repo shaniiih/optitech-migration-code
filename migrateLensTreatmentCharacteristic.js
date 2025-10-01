@@ -199,8 +199,9 @@ async function migrateLensTreatmentCharacteristic(tenantId = "tenant_1") {
             "updatedAt"
           )
           VALUES ${values.join(",")}
-          ON CONFLICT (id)
+          ON CONFLICT ("treatmentCharId")
           DO UPDATE SET
+              "tenantId" = EXCLUDED."tenantId",
             "supplierId" = EXCLUDED."supplierId",
             "lensTypeId" = EXCLUDED."lensTypeId",
             "lensMaterialId" = EXCLUDED."lensMaterialId",

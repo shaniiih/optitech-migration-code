@@ -204,8 +204,9 @@ async function migrateDiscount(tenantId = "tenant_1") {
               combinable, priority, active, "requiresApproval", notes, "createdAt", "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT (id)
+            ON CONFLICT (code)
             DO UPDATE SET
+              "tenantId" = EXCLUDED."tenantId",
               name = EXCLUDED.name,
               code = EXCLUDED.code,
               type = EXCLUDED.type,

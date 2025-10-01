@@ -64,8 +64,9 @@ async function migrateWorkLab(tenantId = "tenant_1") {
               id, "tenantId", "labId", name, description, "isActive", "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("tenantId","labId")
+            ON CONFLICT ("labId")
             DO UPDATE SET
+              "tenantId" = EXCLUDED."tenantId",
               name = EXCLUDED.name,
               description = COALESCE(EXCLUDED.description, "WorkLab".description),
               "isActive" = EXCLUDED."isActive",

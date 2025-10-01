@@ -67,8 +67,9 @@ async function migrateSupplier(tenantId = "tenant_1") {
               id, "tenantId", "supplierId", name, "createdAt", "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT (id)
+            ON CONFLICT ("supplierId")
             DO UPDATE SET
+              "tenantId" = EXCLUDED."tenantId",
               "supplierId" = EXCLUDED."supplierId",
               name = EXCLUDED.name,
               "updatedAt" = EXCLUDED."updatedAt"

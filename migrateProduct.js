@@ -76,8 +76,9 @@ async function migrateProduct(tenantId = "tenant_1") {
               "isActive", "createdAt", "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("tenantId","productId")
+            ON CONFLICT ("productId")
             DO UPDATE SET
+              "tenantId" = EXCLUDED."tenantId",
               name = EXCLUDED.name,
               description = EXCLUDED.description,
               sku = EXCLUDED.sku,

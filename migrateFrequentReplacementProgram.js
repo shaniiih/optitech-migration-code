@@ -230,8 +230,9 @@ async function migrateFrequentReplacementProgram(tenantId = "tenant_1") {
               "createdAt", "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT (id)
+            ON CONFLICT ("programId")
             DO UPDATE SET
+              "tenantId" = EXCLUDED."tenantId",
               "customerId" = EXCLUDED."customerId",
               "startDate" = EXCLUDED."startDate",
               "rightEyeBrand" = EXCLUDED."rightEyeBrand",

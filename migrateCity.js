@@ -63,8 +63,9 @@ async function migrateCity(tenantId = "tenant_1") {
               id, "tenantId", "cityId", name, "isActive", "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("tenantId","cityId")
+            ON CONFLICT ("cityId")
             DO UPDATE SET
+              "tenantId" = EXCLUDED."tenantId",
               name = EXCLUDED.name,
               "isActive" = EXCLUDED."isActive",
               "updatedAt" = EXCLUDED."updatedAt"

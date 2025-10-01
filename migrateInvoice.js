@@ -126,8 +126,9 @@ async function migrateInvoice(tenantId = "tenant_1") {
               `
               INSERT INTO "Supplier" (id, "tenantId", "supplierId", name, "createdAt", "updatedAt")
               VALUES ($1, $2, $3, $4, $5, $5)
-              ON CONFLICT (id)
+              ON CONFLICT ("supplierId")
               DO UPDATE SET
+              "tenantId" = EXCLUDED."tenantId",
                 "supplierId" = EXCLUDED."supplierId",
                 name = EXCLUDED.name,
                 "updatedAt" = EXCLUDED."updatedAt"
@@ -224,8 +225,9 @@ async function migrateInvoice(tenantId = "tenant_1") {
               "totalAmount", "paidAmount", "invoiceType", comment, status, "createdAt", "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT (id)
+            ON CONFLICT ("invoiceId")
             DO UPDATE SET
+              "tenantId" = EXCLUDED."tenantId",
               "invoiceNumber" = EXCLUDED."invoiceNumber",
               "supplierId" = EXCLUDED."supplierId",
               "invoiceDate" = EXCLUDED."invoiceDate",

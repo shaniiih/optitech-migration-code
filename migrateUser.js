@@ -113,8 +113,9 @@ async function migrateUser(tenantId = "tenant_1") {
               "firstNameHe", "lastNameHe", role, active, "createdAt", "updatedAt", "branchId"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("tenantId", email)
+            ON CONFLICT (email)
             DO UPDATE SET
+              "tenantId" = EXCLUDED."tenantId",
               password = EXCLUDED.password,
               "firstName" = EXCLUDED."firstName",
               "lastName" = EXCLUDED."lastName",

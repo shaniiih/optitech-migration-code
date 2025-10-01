@@ -341,8 +341,9 @@ async function migrateSale(tenantId = "tenant_1") {
               "deletedAt", "branchId", "cashierShiftId"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT (id)
+            ON CONFLICT ("saleId")
             DO UPDATE SET
+              "tenantId" = EXCLUDED."tenantId",
               "customerId" = EXCLUDED."customerId",
               "sellerId" = EXCLUDED."sellerId",
               "saleDate" = EXCLUDED."saleDate",

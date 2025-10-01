@@ -224,8 +224,9 @@ async function migratePayment(tenantId = "tenant_1") {
               "receiptNumber", "receiptIssued", notes, "createdBy", "createdAt", "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT (id)
+            ON CONFLICT ("paymentNumber")
             DO UPDATE SET
+              "tenantId" = EXCLUDED."tenantId",
               "branchId" = EXCLUDED."branchId",
               "paymentNumber" = EXCLUDED."paymentNumber",
               "paymentDate" = EXCLUDED."paymentDate",

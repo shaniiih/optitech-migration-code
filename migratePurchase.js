@@ -131,7 +131,8 @@ async function ensureCustomer({
       "updatedAt"
     )
     VALUES ($1, $2, $3, $4, $5, $6, $6)
-    ON CONFLICT ("tenantId", "customerId") DO UPDATE SET
+    ON CONFLICT ("customerId") DO UPDATE SET
+              "tenantId" = EXCLUDED."tenantId",
       "firstName" = EXCLUDED."firstName",
       "lastName" = EXCLUDED."lastName",
       "updatedAt" = EXCLUDED."updatedAt"`,
@@ -238,7 +239,8 @@ async function ensureUser({
       "branchId"
     )
     VALUES ($1, $2, $3, $4, $5, $6, NULL, NULL, 'EMPLOYEE', true, $7, $7, NULL)
-    ON CONFLICT ("tenantId", email) DO UPDATE SET
+    ON CONFLICT (email) DO UPDATE SET
+              "tenantId" = EXCLUDED."tenantId",
       password = EXCLUDED.password,
       "firstName" = EXCLUDED."firstName",
       "lastName" = EXCLUDED."lastName",

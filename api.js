@@ -2,6 +2,7 @@
 require("dotenv").config();
 
 const express = require("express");
+const cors = require("cors");
 const multer = require("multer");
 const path = require("path");
 const os = require("os");
@@ -19,6 +20,24 @@ fs.mkdirSync(uploadRoot, { recursive: true });
 const upload = multer({ dest: uploadRoot });
 const app = express();
 const PORT = Number(process.env.API_PORT || 3001);
+
+const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || "http://localhost:3000,http://178.128.45.173:4041")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  })
+);
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
@@ -303,4 +322,7 @@ function cleanupTemp(uploadedFile) {
 
 app.listen(PORT, () => {
   console.log(`Schema import API listening on http://localhost:${PORT}`);
+  if (allowedOrigins.length) {
+    console.log(`CORS enabled for: ${allowedOrigins.join(", ")}`);
+  }
 });

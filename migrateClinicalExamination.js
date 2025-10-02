@@ -81,7 +81,7 @@ function buildClinicalId(tenantId, perIdCandidates, examDate, payloadParts) {
   const datePart = examDate ? examDate.toISOString() : "no-date";
   const fingerprint = [tenantId, baseId, datePart, ...payloadParts.map((p) => p || "")].join("|");
   const hash = createHash("sha1").update(fingerprint).digest("hex");
-  return `${tenantId}-clinical-${hash.slice(0, 24)}`;
+  return hash.slice(0, 24);
 }
 
 async function migrateClinicalExamination(tenantId = "tenant_1") {
@@ -181,7 +181,7 @@ async function migrateClinicalExamination(tenantId = "tenant_1") {
             }
           }
 
-          const examDate = normalizeDate(r.CheckDate) || now;
+          const examDate = normalizeDate(r.CheckDate);
           const complaints = cleanText(r.Complaints);
           const medicalHistory = cleanText(r.illnesses);
           const optDiag = cleanText(r.OptDiag);
@@ -198,6 +198,8 @@ async function migrateClinicalExamination(tenantId = "tenant_1") {
 
           const id = buildClinicalId(tenantId, perIdCandidates, examDate, [complaints, medicalHistory, summary, optDiag, docRef]);
 
+          const timestamp = examDate || now;
+
           const columns = [
             id,
             tenantId,
@@ -205,8 +207,8 @@ async function migrateClinicalExamination(tenantId = "tenant_1") {
             examinerId,
             examDate,
             comments,
-            examDate,
-            examDate,
+            timestamp,
+            timestamp,
             null,
           ];
 

@@ -1,4 +1,3 @@
-const { v4: uuidv4 } = require("uuid");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 
 const WINDOW_SIZE = 5000;
@@ -93,10 +92,8 @@ async function migrateAppointment(tenantId = "tenant_1") {
   let skippedMissingCustomer = 0;
   let skippedMissingUser = 0;
   const missingCustomerSamples = new Set();
-  let placeholderCustomersCreated = 0;
 
   const customerLoaderCache = new Map();
-  const placeholderCustomerCache = new Map();
 
   try {
     await pg.query(`
@@ -153,62 +150,7 @@ async function migrateAppointment(tenantId = "tenant_1") {
               return foundId;
             }
 
-            let legacyRow = null;
-            const numericCandidate = /^\d+$/.test(canonicalId) ? Number(canonicalId) : null;
-            if (numericCandidate !== null) {
-              const [legacyRows] = await mysql.query(
-                `SELECT PerId, FirstName, LastName, CellPhone, HomePhone, Email
-                   FROM tblPerData
-                  WHERE PerId = ?
-                  LIMIT 1`,
-                [numericCandidate]
-              );
-              legacyRow = legacyRows.length ? legacyRows[0] : null;
-            }
-
-            const now = new Date();
-            const firstName = cleanText(legacyRow?.FirstName) || "Legacy";
-            const lastName = cleanText(legacyRow?.LastName) || `Customer ${canonicalId}`;
-            const cellPhone = cleanText(legacyRow?.CellPhone);
-            const homePhone = cleanText(legacyRow?.HomePhone);
-            const email = cleanText(legacyRow?.Email);
-
-            const insertedId = uuidv4();
-            const { rows: insertedRows } = await pg.query(
-              `
-              INSERT INTO "Customer" (
-                id, "tenantId", "customerId", "firstName", "lastName",
-                "cellPhone", "homePhone", email, notes, "createdAt", "updatedAt"
-              )
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-              ON CONFLICT ("customerId")
-              DO UPDATE SET "updatedAt" = EXCLUDED."updatedAt"
-              RETURNING id
-              `,
-              [
-                insertedId,
-                tenantId,
-                canonicalId,
-                firstName,
-                lastName,
-                cellPhone,
-                homePhone,
-                email,
-                "Created automatically during appointment migration",
-                now,
-                now,
-              ]
-            );
-
-            placeholderCustomersCreated += 1;
-            const persistedId = insertedRows.length ? insertedRows[0].id : null;
-            if (persistedId) {
-              for (const candidate of legacyPerIdCandidates) {
-                if (candidate) customerMap.set(candidate, persistedId);
-              }
-              customerMap.set(canonicalId, persistedId);
-            }
-            return persistedId;
+            return null;
           })()
         );
       }
@@ -219,70 +161,6 @@ async function migrateAppointment(tenantId = "tenant_1") {
           if (candidate) customerMap.set(candidate, resolvedId);
         }
         customerMap.set(canonicalId, resolvedId);
-      }
-      return resolvedId;
-    }
-
-    async function ensurePlaceholderCustomer(placeholderKey, fallbackInfo) {
-      if (!placeholderKey) return null;
-
-      if (customerMap.has(placeholderKey)) {
-        return customerMap.get(placeholderKey);
-      }
-
-      if (!placeholderCustomerCache.has(placeholderKey)) {
-        placeholderCustomerCache.set(
-          placeholderKey,
-          (async () => {
-            const { rows: existingRows } = await pg.query(
-              `SELECT id FROM "Customer" WHERE "tenantId" = $1 AND "customerId" = $2 LIMIT 1`,
-              [tenantId, placeholderKey]
-            );
-            if (existingRows.length) {
-              const foundId = existingRows[0].id;
-              customerMap.set(placeholderKey, foundId);
-              return foundId;
-            }
-
-            const now = new Date();
-            const insertedId = uuidv4();
-            const { firstName, lastName, notes } = fallbackInfo;
-
-            const { rows: insertedRows } = await pg.query(
-              `
-              INSERT INTO "Customer" (
-                id, "tenantId", "customerId", "firstName", "lastName", notes, "createdAt", "updatedAt"
-              )
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-              ON CONFLICT ("customerId")
-              DO UPDATE SET "updatedAt" = EXCLUDED."updatedAt"
-              RETURNING id
-              `,
-              [
-                insertedId,
-                tenantId,
-                placeholderKey,
-                firstName,
-                lastName,
-                notes,
-                now,
-                now,
-              ]
-            );
-
-            placeholderCustomersCreated += 1;
-            const newId = insertedRows.length ? insertedRows[0].id : null;
-            if (newId) {
-              customerMap.set(placeholderKey, newId);
-            }
-            return newId;
-          })()
-        );
-      }
-
-      const resolvedId = await placeholderCustomerCache.get(placeholderKey);
-      if (resolvedId) {
-        customerMap.set(placeholderKey, resolvedId);
       }
       return resolvedId;
     }
@@ -330,17 +208,12 @@ async function migrateAppointment(tenantId = "tenant_1") {
 
         for (const r of chunk) {
           const legacyPerIdCandidates = legacyIdCandidates(r.PerID);
-          let customerId;
           if (!legacyPerIdCandidates.length) {
-            const placeholderKey = `legacy-apt-${tenantId}-${r.AptNum}`;
-            customerId = await ensurePlaceholderCustomer(placeholderKey, {
-              firstName: "Unknown",
-              lastName: `Appointment ${r.AptNum}`,
-              notes: "Created automatically during appointment migration (missing legacy customer reference)",
-            });
-          } else {
-            customerId = await ensureCustomer(legacyPerIdCandidates);
+            skippedMissingCustomer += 1;
+            continue;
           }
+
+          const customerId = await ensureCustomer(legacyPerIdCandidates);
           if (!customerId) {
             skippedMissingCustomer += 1;
             if (legacyPerIdCandidates.length && missingCustomerSamples.size < 10) {
@@ -446,11 +319,6 @@ async function migrateAppointment(tenantId = "tenant_1") {
     }
 
     console.log(`✅ Appointment migration completed. Total inserted/updated: ${total}`);
-    if (placeholderCustomersCreated) {
-      console.log(
-        `ℹ️ Created ${placeholderCustomersCreated} legacy customers automatically during appointment migration`
-      );
-    }
     if (skippedMissingCustomer) {
       console.warn(`⚠️ Skipped ${skippedMissingCustomer} appointments due to missing customers`);
       if (missingCustomerSamples.size) {

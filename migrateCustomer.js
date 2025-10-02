@@ -147,8 +147,8 @@ async function migrateCustomer(tenantId = "tenant_1") {
             customerId, // customerId
             r.FirstName || "", // firstName
             r.LastName || "", // lastName
-            null, // firstNameHe
-            null, // lastNameHe
+            r.FirstName, // firstNameHe
+            r.LastName, // lastNameHe
             r.TzId || null, // idNumber
             birthDate, // birthDate
             gender, // gender

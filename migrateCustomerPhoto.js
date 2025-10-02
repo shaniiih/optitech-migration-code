@@ -1,4 +1,3 @@
-const { v4: uuidv4 } = require("uuid");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 
 const WINDOW_SIZE = 5000;
@@ -26,98 +25,63 @@ function resolveFilePath(fileName, legacyId) {
   return `legacy/customer_photos/${fileName}`;
 }
 
+function buildCustomerIdCandidates(rawId) {
+  const normalized = cleanText(rawId);
+  if (!normalized) return [];
+
+  const candidates = new Set([normalized]);
+  const numericValue = Number(normalized);
+  if (Number.isFinite(numericValue)) {
+    candidates.add(String(numericValue));
+  }
+
+  return Array.from(candidates);
+}
+
 async function ensureCustomerRecord({
   tenantId,
   legacyCustomerId,
-  legacyPhotoId,
   pg,
-  mysql,
   customerIdMap,
-  createdPlaceholders
+  customerLookupCache
 }) {
-  const normalizedLegacyId =
-    legacyCustomerId !== null && legacyCustomerId !== undefined
-      ? cleanText(String(legacyCustomerId))
-      : null;
-  const customerKey = normalizedLegacyId ?? `PHOTO_${legacyPhotoId}`;
-
-  if (customerIdMap.has(customerKey)) {
-    return customerIdMap.get(customerKey);
-  }
-
-  const existing = await pg.query(
-    'SELECT id FROM "Customer" WHERE "tenantId" = $1 AND "customerId" = $2',
-    [tenantId, customerKey]
-  );
-  if (existing.rows.length) {
-    const foundId = existing.rows[0].id;
-    customerIdMap.set(customerKey, foundId);
-    return foundId;
-  }
-
-  let firstName = "Legacy";
-  let lastName =
-    normalizedLegacyId !== null
-      ? `Customer ${customerKey}`
-      : `Photo ${legacyPhotoId}`;
-
-  if (normalizedLegacyId !== null) {
-    const [legacyRows] = await mysql.query(
-      `SELECT FirstName, LastName FROM tblPerData WHERE PerId = ? LIMIT 1`,
-      [normalizedLegacyId]
-    );
-    if (legacyRows.length) {
-      firstName = cleanText(legacyRows[0].FirstName) || firstName;
-      lastName = cleanText(legacyRows[0].LastName) || lastName;
-    }
-  }
-
-  const now = new Date();
-  const newId = uuidv4();
-
-  await pg.query(
-    `
-    INSERT INTO "Customer" (
-      id, "tenantId", "customerId", "firstName", "lastName", "createdAt", "updatedAt"
-    )
-    VALUES ($1, $2, $3, $4, $5, $6, $6)
-    ON CONFLICT ("customerId")
-    DO UPDATE SET
-              "tenantId" = EXCLUDED."tenantId",
-      "firstName" = EXCLUDED."firstName",
-      "lastName" = EXCLUDED."lastName",
-      "updatedAt" = EXCLUDED."updatedAt"
-    `,
-    [
-      newId,
-      tenantId,
-      customerKey,
-      firstName || "Legacy",
-      lastName || `Customer ${customerKey}`,
-      now
-    ]
-  );
-
-  const { rows } = await pg.query(
-    'SELECT id FROM "Customer" WHERE "tenantId" = $1 AND "customerId" = $2',
-    [tenantId, customerKey]
-  );
-
-  if (!rows.length) {
+  if (legacyCustomerId === null || legacyCustomerId === undefined) {
     return null;
   }
 
-  const customerId = rows[0].id;
-  customerIdMap.set(customerKey, customerId);
+  const candidates = buildCustomerIdCandidates(String(legacyCustomerId));
+  if (!candidates.length) return null;
 
-  if (createdPlaceholders) {
-    createdPlaceholders.count += 1;
-    if (createdPlaceholders.examples.size < 10) {
-      createdPlaceholders.examples.add(customerKey);
+  for (const candidate of candidates) {
+    if (customerIdMap.has(candidate)) {
+      return customerIdMap.get(candidate);
     }
   }
 
-  return customerId;
+  for (const candidate of candidates) {
+    if (!customerLookupCache.has(candidate)) {
+      customerLookupCache.set(
+        candidate,
+        (async () => {
+          const { rows } = await pg.query(
+            'SELECT id FROM "Customer" WHERE "tenantId" = $1 AND "customerId" = $2 LIMIT 1',
+            [tenantId, candidate]
+          );
+          return rows.length ? rows[0].id : null;
+        })()
+      );
+    }
+
+    const resolved = await customerLookupCache.get(candidate);
+    if (resolved) {
+      for (const alias of candidates) {
+        customerIdMap.set(alias, resolved);
+      }
+      return resolved;
+    }
+  }
+
+  return null;
 }
 
 async function migrateCustomerPhoto(tenantId = "tenant_1") {
@@ -127,7 +91,6 @@ async function migrateCustomerPhoto(tenantId = "tenant_1") {
   let lastId = 0;
   let total = 0;
   const skippedRecords = { count: 0, examples: new Set() };
-  const createdPlaceholders = { count: 0, examples: new Set() };
 
   try {
     const customerRes = await pg.query(
@@ -135,6 +98,7 @@ async function migrateCustomerPhoto(tenantId = "tenant_1") {
       [tenantId]
     );
     const customerIdMap = new Map();
+    const customerLookupCache = new Map();
     for (const row of customerRes.rows) {
       if (row.customerId === null || row.customerId === undefined) continue;
       const key = cleanText(String(row.customerId));
@@ -175,11 +139,9 @@ async function migrateCustomerPhoto(tenantId = "tenant_1") {
           const customerId = await ensureCustomerRecord({
             tenantId,
             legacyCustomerId,
-            legacyPhotoId,
             pg,
-            mysql,
             customerIdMap,
-            createdPlaceholders
+            customerLookupCache
           });
 
           if (!customerId) {
@@ -270,21 +232,12 @@ async function migrateCustomerPhoto(tenantId = "tenant_1") {
       console.log(`Customer photos migrated: ${total} (lastId=${lastId})`);
     }
 
-    if (createdPlaceholders.count) {
-      const examples = createdPlaceholders.examples.size
-        ? Array.from(createdPlaceholders.examples).join(", ")
-        : "n/a";
-      console.warn(
-        `⚠️ Auto-created ${createdPlaceholders.count} customer record(s) while attaching photos. Examples: ${examples}`
-      );
-    }
-
     if (skippedRecords.count) {
       const skippedExamples = skippedRecords.examples.size
         ? Array.from(skippedRecords.examples).join(", ")
         : "n/a";
       console.warn(
-        `⚠️ Skipped ${skippedRecords.count} photo(s) even after attempting to create placeholder customers. Examples: ${skippedExamples}`
+        `⚠️ Skipped ${skippedRecords.count} photo(s) because no matching customer exists. Examples: ${skippedExamples}`
       );
     }
 

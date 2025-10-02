@@ -92,6 +92,7 @@ async function migrateClinicalExamination(tenantId = "tenant_1") {
   let total = 0;
   let skippedMissingCustomer = 0;
   let missingExaminerCount = 0;
+  let skippedMissingExamDate = 0;
 
   try {
     const { rows: customerRows } = await pg.query(
@@ -144,8 +145,6 @@ async function migrateClinicalExamination(tenantId = "tenant_1") {
         const chunk = rows.slice(i, i + BATCH_SIZE);
         const values = [];
         const params = [];
-        const now = new Date();
-
         for (const r of chunk) {
           const perIdCandidates = legacyIdCandidates(r.PerId);
           const customerId = perIdCandidates
@@ -182,6 +181,10 @@ async function migrateClinicalExamination(tenantId = "tenant_1") {
           }
 
           const examDate = normalizeDate(r.CheckDate);
+          if (!examDate) {
+            skippedMissingExamDate += 1;
+            continue;
+          }
           const complaints = cleanText(r.Complaints);
           const medicalHistory = cleanText(r.illnesses);
           const optDiag = cleanText(r.OptDiag);
@@ -198,7 +201,7 @@ async function migrateClinicalExamination(tenantId = "tenant_1") {
 
           const id = buildClinicalId(tenantId, perIdCandidates, examDate, [complaints, medicalHistory, summary, optDiag, docRef]);
 
-          const timestamp = examDate || now;
+          const timestamp = examDate;
 
           const columns = [
             id,
@@ -261,6 +264,11 @@ async function migrateClinicalExamination(tenantId = "tenant_1") {
     }
     if (missingExaminerCount) {
       console.warn(`⚠️ Unable to match ${missingExaminerCount} clinical examinations to an examiner`);
+    }
+    if (skippedMissingExamDate) {
+      console.warn(
+        `⚠️ Skipped ${skippedMissingExamDate} clinical examinations due to invalid or missing exam dates`
+      );
     }
   } finally {
     await mysql.end();

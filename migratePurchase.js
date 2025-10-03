@@ -67,14 +67,7 @@ function legacyIdCandidates(value) {
   return Array.from(candidates);
 }
 
-async function ensureCustomer({
-  tenantId,
-  legacyValue,
-  mysql,
-  pg,
-  customerMap,
-  createdCustomers
-}) {
+async function ensureCustomer({ tenantId, legacyValue, pg, customerMap }) {
   const candidates = legacyIdCandidates(legacyValue);
   if (!candidates.length) {
     return null;
@@ -86,69 +79,9 @@ async function ensureCustomer({
     }
   }
 
-  for (const key of candidates) {
-    const { rows } = await pg.query(
-      'SELECT id FROM "Customer" WHERE "tenantId" = $1 AND "customerId" = $2 LIMIT 1',
-      [tenantId, key]
-    );
-    if (rows.length) {
-      const resolvedId = rows[0].id;
-      for (const candidate of candidates) {
-        customerMap.set(candidate, resolvedId);
-      }
-      return resolvedId;
-    }
-  }
-
-  const primaryKey = candidates[0];
-  let firstName = "Legacy";
-  let lastName = `Customer ${primaryKey}`;
-
-  try {
-    const [legacyRows] = await mysql.query(
-      'SELECT FirstName, LastName FROM tblPerData WHERE PerId = ? LIMIT 1',
-      [primaryKey]
-    );
-    if (legacyRows.length) {
-      firstName = cleanText(legacyRows[0].FirstName) || firstName;
-      lastName = cleanText(legacyRows[0].LastName) || lastName;
-    }
-  } catch (error) {
-    console.warn(`⚠️ Failed to load legacy customer ${primaryKey}: ${error.message}`);
-  }
-
-  const now = new Date();
-  const newId = uuidv4();
-
-  await pg.query(
-    `INSERT INTO "Customer" (
-      id,
-      "tenantId",
-      "customerId",
-      "firstName",
-      "lastName",
-      "createdAt",
-      "updatedAt"
-    )
-    VALUES ($1, $2, $3, $4, $5, $6, $6)
-    ON CONFLICT ("customerId") DO UPDATE SET
-              "tenantId" = EXCLUDED."tenantId",
-      "firstName" = EXCLUDED."firstName",
-      "lastName" = EXCLUDED."lastName",
-      "updatedAt" = EXCLUDED."updatedAt"`,
-    [
-      newId,
-      tenantId,
-      primaryKey,
-      firstName || "Legacy",
-      lastName || `Customer ${primaryKey}`,
-      now
-    ]
-  );
-
   const { rows } = await pg.query(
-    'SELECT id FROM "Customer" WHERE "tenantId" = $1 AND "customerId" = $2 LIMIT 1',
-    [tenantId, primaryKey]
+    'SELECT id, "customerId" FROM "Customer" WHERE "tenantId" = $1 AND "customerId" = ANY($2::text[]) LIMIT 1',
+    [tenantId, candidates]
   );
 
   if (!rows.length) {
@@ -158,13 +91,6 @@ async function ensureCustomer({
   const resolvedId = rows[0].id;
   for (const candidate of candidates) {
     customerMap.set(candidate, resolvedId);
-  }
-
-  if (createdCustomers) {
-    createdCustomers.count += 1;
-    if (createdCustomers.examples.size < 10) {
-      createdCustomers.examples.add(primaryKey);
-    }
   }
 
   return resolvedId;
@@ -296,7 +222,6 @@ async function migratePurchase(tenantId = "tenant_1") {
   let skippedMissingFields = 0;
   let skippedMissingBranch = 0;
   let skippedMissingCustomer = 0;
-  const createdCustomers = { count: 0, examples: new Set() };
   const createdUsers = { count: 0, examples: new Set() };
 
   const branchIds = new Set();
@@ -404,10 +329,8 @@ async function migratePurchase(tenantId = "tenant_1") {
           const customerIdValue = await ensureCustomer({
             tenantId,
             legacyValue: legacyCustomerRaw,
-            mysql,
             pg,
-            customerMap,
-            createdCustomers
+            customerMap
           });
 
           if (!customerIdValue) {
@@ -518,14 +441,6 @@ async function migratePurchase(tenantId = "tenant_1") {
     }
     if (skippedMissingCustomer) {
       console.warn(`⚠️ Skipped ${skippedMissingCustomer} purchases because matching Customer id was not found.`);
-    }
-    if (createdCustomers.count) {
-      const sampleText = createdCustomers.examples.size
-        ? ` (examples: ${Array.from(createdCustomers.examples).join(", ")})`
-        : "";
-      console.warn(
-        `⚠️ Created ${createdCustomers.count} placeholder customers while migrating purchases${sampleText}.`
-      );
     }
     if (createdUsers.count) {
       const sampleText = createdUsers.examples.size

@@ -51,6 +51,7 @@ const migrateContactLensDisinfectingSolution = require("./migrateContactLensDisi
 const migrateContactLensRinsingSolution = require("./migrateContactLensRinsingSolution");
 const migratePurchase = require("./migratePurchase");
 const { getPostgresConnection } = require("./dbConfig");
+const { ensureTenantId, cleanTenantId } = require("./tenantUtils");
 
 // ---- utils ---------------------------------------------------------------
 function now() { return new Date().toISOString(); }
@@ -87,9 +88,13 @@ async function ensureTenant(tenantId) {
 // ---- main runner ---------------------------------------------------------
 (async () => {
   try {
-    const tenantId = process.env.TENANT_ID;
-    if (!tenantId) {
-      throw new Error("TENANT_ID is not set (put it in your env or .env file).");
+    const rawTenantId = process.env.TENANT_ID;
+    const tenantId = ensureTenantId(rawTenantId);
+
+    if (rawTenantId && cleanTenantId(rawTenantId) !== rawTenantId) {
+      console.log(
+        `[${now()}] ℹ️ Normalized TENANT_ID from '${rawTenantId}' to '${tenantId}'`
+      );
     }
 
     console.log(`[${now()}] 🚀 Starting migrations for tenant: ${tenantId}`);
@@ -151,7 +156,7 @@ async function ensureTenant(tenantId) {
 
     await runStep("Prescription", () => migratePrescription(tenantId)); 
 
-    await runStep("Appointment", () => migrateAppointment(tenantId));   
+    await runStep("Appointment", () => migrateAppointment(tenantId));
 
     await runStep("ClinicalExamination", () => migrateClinicalExamination(tenantId));
 

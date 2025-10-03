@@ -1,5 +1,6 @@
 const { v4: uuidv4 } = require("uuid");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
+const { ensureTenantId } = require("./tenantUtils");
 
 const WINDOW_SIZE = 5000;
 const BATCH_SIZE = 1000;
@@ -53,6 +54,8 @@ function normalizeDate(value) {
 }
 
 async function migrateCustomer(tenantId = "tenant_1") {
+  tenantId = ensureTenantId(tenantId, "tenant_1");
+
   const mysql = await getMySQLConnection();
   const pg = await getPostgresConnection();
 

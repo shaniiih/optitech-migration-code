@@ -182,10 +182,12 @@ async function createDatabase(databaseName) {
 
 async function importSchema(schemaPath, databaseName) {
   console.log(`[${new Date().toISOString()}] importSchema: loading ${schemaPath} into ${databaseName}`);
-  const args = buildMysqlArgs({
+  const args = buildMysqlImportArgs({
     database: databaseName,
     charset: process.env.MYSQL_IMPORT_CHARSET || "utf8mb4",
-    initCommand: process.env.MYSQL_IMPORT_INIT_COMMAND || "SET sql_mode='NO_BACKSLASH_ESCAPES';",
+    initCommand:
+      process.env.MYSQL_IMPORT_INIT_COMMAND ||
+      "SET SESSION sql_mode='NO_ENGINE_SUBSTITUTION,NO_BACKSLASH_ESCAPES,ALLOW_INVALID_DATES';",
     force: true,
   });
   return runCommand("mysql", args, { stdinFilePath: schemaPath });
@@ -193,10 +195,12 @@ async function importSchema(schemaPath, databaseName) {
 
 async function importData(dataPath, databaseName) {
   console.log(`[${new Date().toISOString()}] importData: loading ${dataPath} into ${databaseName}`);
-  const args = buildMysqlArgs({
+  const args = buildMysqlImportArgs({
     database: databaseName,
     charset: process.env.MYSQL_IMPORT_CHARSET || "utf8mb4",
-    initCommand: process.env.MYSQL_IMPORT_INIT_COMMAND || "SET sql_mode='NO_BACKSLASH_ESCAPES';",
+    initCommand:
+      process.env.MYSQL_IMPORT_INIT_COMMAND ||
+      "SET SESSION sql_mode='NO_ENGINE_SUBSTITUTION,NO_BACKSLASH_ESCAPES,ALLOW_INVALID_DATES';",
     force: true,
   });
   return runCommand("mysql", args, { stdinFilePath: dataPath });
@@ -245,6 +249,44 @@ function buildMysqlArgs({ database, charset, initCommand, force, extra = [] }) {
   return args;
 }
 
+function buildMysqlImportArgs({ database, charset, initCommand, force, extra = [] }) {
+  const host = requiredEnv("MYSQL_HOST");
+  const port = process.env.MYSQL_PORT || "3306";
+  const user = requiredEnv("MYSQL_USER");
+  const password = requiredEnv("MYSQL_PASSWORD");
+
+  const args = [];
+
+  if (charset) {
+    args.push(`--default-character-set=${charset}`);
+  }
+
+  args.push("-u", user);
+
+  if (password) {
+    args.push(`-p${password}`);
+  }
+
+  args.push(`--host=${host}`);
+  args.push(`--port=${port}`);
+
+  if (force) {
+    args.push("--force");
+  }
+
+  if (initCommand) {
+    args.push(`--init-command=${initCommand}`);
+  }
+
+  args.push(...extra);
+
+  if (database) {
+    args.push(database);
+  }
+
+  return args;
+}
+
 function requiredEnv(name) {
   const value = process.env[name];
   if (!value) {
@@ -255,7 +297,12 @@ function requiredEnv(name) {
 
 function runCommand(command, args, { stdinFilePath, env } = {}) {
   return new Promise((resolve, reject) => {
-    const sanitizedArgs = args.map((arg) => (typeof arg === "string" && arg.startsWith("--password=") ? "--password=***" : arg));
+    const sanitizedArgs = args.map((arg) => {
+      if (typeof arg !== "string") return arg;
+      if (arg.startsWith("--password=")) return "--password=***";
+      if (arg.startsWith("-p") && arg.length > 2) return "-p***";
+      return arg;
+    });
     console.log(`[${new Date().toISOString()}] runCommand: ${command} ${sanitizedArgs.join(" ")}${stdinFilePath ? ` < ${stdinFilePath}` : ""}`);
 
     const childEnv = env ? { ...process.env, ...env } : process.env;

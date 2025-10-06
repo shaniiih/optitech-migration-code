@@ -1,3 +1,4 @@
+const { v4: uuidv4 } = require("uuid");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 
 const WINDOW_SIZE = 5000;
@@ -139,7 +140,6 @@ async function migrateExaminationOverview(tenantId = "tenant_1") {
             continue;
           }
 
-          const overviewId = `${tenantId}-exam-overview-${row.PerId}-${date.getTime()}`;
           const visualAcuityR = asNumber(row.VAR);
           const visualAcuityL = asNumber(row.VAL);
 
@@ -158,7 +158,7 @@ async function migrateExaminationOverview(tenantId = "tenant_1") {
           );
 
           params.push(
-            overviewId,
+            uuidv4(),
             tenantId,
             null,
             customerId,

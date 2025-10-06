@@ -44,7 +44,7 @@ async function migrateInvoiceCredits(tenantId = "tenant_1") {
         const params = [];
 
         for (const r of chunk) {
-          const invoiceId = r.InvoicePayId ? String(r.InvoicePayId) : uuidv4();
+          const invoiceId = r.InvoicePayId ? String(r.InvoicePayId) : null;
           const creditDate = r.CreditDate ? new Date(r.CreditDate) : now;
           const amount = Number(r.CreditSum || 0);
 

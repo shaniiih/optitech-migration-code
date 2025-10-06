@@ -150,17 +150,17 @@ async function migratePrescription(tenantId = "tenant_1") {
             null,                       // doctorId (not available in legacy table)
             prescriptionDate,           // prescriptionDate
             null,                       // validUntil
-            asNumber(r.SphR1),          // rightSphere
-            asNumber(r.CylR1),          // rightCylinder
-            asInteger(r.AxR1),          // rightAxis
+            asNumber(r.RefSphR),          // rightSphere
+            asNumber(r.RefCylR),          // rightCylinder
+            asInteger(r.RefAxR),          // rightAxis
             asNumber(r.AddR1),          // rightAdd
             asNumber(r.PrisR1),         // rightPrism
             cleanText(r.BaseR1),        // rightBase
             asNumber(r.PDDistR1),       // rightPd
             cleanText(r.VAR1),          // rightVa
-            asNumber(r.SphL1),          // leftSphere
-            asNumber(r.CylL1),          // leftCylinder
-            asInteger(r.AxL1),          // leftAxis
+            asNumber(r.RefSphL),          // leftSphere
+            asNumber(r.RefCylL),          // leftCylinder
+            asInteger(r.RefAxL),          // leftAxis
             asNumber(r.AddL1),          // leftAdd
             asNumber(r.PrisL1),         // leftPrism
             cleanText(r.BaseL1),        // leftBase

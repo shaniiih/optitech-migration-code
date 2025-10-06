@@ -1,3 +1,4 @@
+const { v4: uuidv4 } = require("uuid");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 
 const WINDOW_SIZE = 5000;
@@ -171,7 +172,7 @@ async function migrateCustomerPhoto(tenantId = "tenant_1") {
           const description = descriptionParts.length ? descriptionParts.join(" | ") : null;
 
           const rowParams = [
-            `${tenantId}-photo-${legacyPhotoId}`, // id
+            uuidv4(), // id
             tenantId, // tenantId
             customerId, // customerId
             photoType, // photoType

@@ -26,6 +26,62 @@ if ! command -v mdb-tables >/dev/null 2>&1; then
   exit 1
 fi
 
+PYTHON_BIN="python3"
+if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+  if command -v python >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+  else
+    echo "Error: python3 (or python) is required for post-processing." >&2
+    exit 1
+  fi
+fi
+
+if ! "$PYTHON_BIN" -c 'import sys; sys.exit(0 if sys.version_info[0] >= 3 else 1)'; then
+  echo "Error: Python 3.x is required for post-processing (found $($PYTHON_BIN --version 2>/dev/null || echo unknown))." >&2
+  exit 1
+fi
+
+normalize_dates_sql() {
+  local target="$1"
+  [ -f "$target" ] || return 0
+  "$PYTHON_BIN" - "$target" <<'PY'
+import re
+import sys
+
+path = sys.argv[1]
+with open(path, "r", encoding="utf-8") as fh:
+    text = fh.read()
+
+pattern = re.compile(
+    r"(?P<q>['\"#])(\d{1,2})/(\d{1,2})/(\d{2,4})([ T](?:[01]?\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?)?(?P=q)"
+)
+
+def expand(match):
+    quote, month, day, year, time_part = match.groups()
+    if len(year) == 2:
+        two = int(year)
+        full = 1900 + two
+        if two <= 29:
+            full += 100
+    else:
+        full = int(year)
+    time_part = time_part or ""
+    return "{q}{:04d}-{m:02d}-{d:02d}{t}{q}".format(
+        full,
+        m=int(month),
+        d=int(day),
+        t=time_part,
+        q=quote,
+    )
+
+converted = pattern.sub(expand, text)
+if converted != text:
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(converted)
+    sys.stderr.write("    ~ normalized 2-digit year values in {}\n".format(path))
+PY
+}
+
 if [ $# -lt 1 ]; then
   echo "Usage: $0 <database_path> [mysql|postgres] [output_dir]" >&2
   exit 1
@@ -105,6 +161,8 @@ SCHEMA_FILE="$OUT_DIR/schema.sql"
 echo "Exporting schema to $SCHEMA_FILE ..."
 # mdb-schema prints to stdout; pass backend
 mdb-schema "$DB_PATH" "$SCHEMA_DIALECT" > "$SCHEMA_FILE"
+# Force all YEAR columns to YEAR(4)
+sed -i 's/YEAR(2)/YEAR(4)/g' "$SCHEMA_FILE"
 
 # 2.1) Post-process schema: remove UNIQUE indexes that duplicate PRIMARY KEY columns
 # This avoids errors like creating a UNIQUE index on the same column(s) as the PK (e.g., WrkId)
@@ -231,6 +289,17 @@ COMBINED_DATA_FILE="$OUT_DIR/data.sql"
 : > "$COMBINED_DATA_FILE"
 
 echo "Exporting table data as INSERT statements..."
+
+# Force stable date/time formatting to avoid locale/version differences (e.g. 2-digit years)
+MDB_EXPORT_ARGS=("-I" "$EXPORT_DIALECT")
+MDB_EXPORT_USAGE=$(mdb-export 2>&1 || true)
+if grep -Eq '(^|[[:space:]])-D[[:space:]]' <<<"$MDB_EXPORT_USAGE"; then
+  MDB_EXPORT_ARGS+=("-D" "%m/%d/%Y")
+fi
+if grep -Eq '(^|[[:space:]])-T[[:space:]]' <<<"$MDB_EXPORT_USAGE"; then
+  MDB_EXPORT_ARGS+=("-T" "%m/%d/%Y %H:%M:%S")
+fi
+
 idx=0
 while IFS= read -r TABLE; do
   [ -z "$TABLE" ] && continue
@@ -239,15 +308,20 @@ while IFS= read -r TABLE; do
   echo "  [$idx/$TABLE_COUNT] $TABLE"
   # mdb-export with -I backend outputs INSERT statements
   # Some tables/columns may have problematic names; wrap with quotes via --no-quote? Not available; rely on backend quoting.
-  if ! mdb-export -I "$EXPORT_DIALECT" "$DB_PATH" "$TABLE" > "$TABLE_SQL_FILE"; then
+  if ! mdb-export "${MDB_EXPORT_ARGS[@]}" "$DB_PATH" "$TABLE" > "$TABLE_SQL_FILE"; then
     echo "    ! Failed to export $TABLE, skipping" >&2
     continue
   fi
+  # Normalize any two-digit years that older mdbtools may emit (Access defaults to 1930-2029 window)
+  normalize_dates_sql "$TABLE_SQL_FILE"
   # Append to combined
   echo -e "\n-- ===== $TABLE =====" >> "$COMBINED_DATA_FILE"
   cat "$TABLE_SQL_FILE" >> "$COMBINED_DATA_FILE"
 
 done < "$TABLE_LIST_FILE"
+
+# Ensure combined file has normalized dates (defensive in case of future changes)
+normalize_dates_sql "$COMBINED_DATA_FILE"
 
 # Compose full.sql different for postgres to improve importability
 if [ "$SCHEMA_DIALECT" = "postgres" ]; then
@@ -280,6 +354,7 @@ PGFTR
 
   echo "Composing PostgreSQL-friendly full.sql -> $OUT_DIR/full.sql"
   cat "$HEADER_FILE" "$DROPS_FILE" "$SCHEMA_FILE" "$COMBINED_DATA_FILE" "$FOOTER_FILE" > "$OUT_DIR/full.sql"
+  normalize_dates_sql "$OUT_DIR/full.sql"
 else
   # MySQL: move FK constraints to the end and create missing supporting indexes on referenced columns
   SCHEMA_NO_FK="$OUT_DIR/schema.no_fk.sql"
@@ -343,6 +418,7 @@ else
 
   echo "Composing MySQL-friendly full.sql -> $OUT_DIR/full.sql"
   cat "$SCHEMA_NO_FK" "$COMBINED_DATA_FILE" "$FK_SUPPORT_INDEXES_FILE" "$FK_CONSTRAINTS_FILE" > "$OUT_DIR/full.sql"
+  normalize_dates_sql "$OUT_DIR/full.sql"
 fi
 
 # 4) Summary

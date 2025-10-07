@@ -1,3 +1,4 @@
+const { v4: uuidv4 } = require("uuid");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 
 const WINDOW_SIZE = 5000;
@@ -267,10 +268,8 @@ async function migrateExamination(tenantId = "tenant_1") {
           const pdNear = refractionData.pupillaryDistance.near.average;
           const npcDistance = averageNumbers(r.NPAL, r.NPAR);
 
-          const examId = `${tenantId}-glass-${r.GlassCId}`;
-
           const columns = [
-            examId,
+            uuidv4(),
             tenantId,
             customerId,
             doctorId,

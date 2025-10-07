@@ -1,3 +1,4 @@
+const { v4: uuidv4 } = require("uuid");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 
 const WINDOW_SIZE = 5000;
@@ -80,15 +81,14 @@ async function migrateWorkLabel(tenantId = "tenant_1") {
 
           const name = cleanText(row.LabelName) || `Work Label ${labelId}`;
           const itemCode = String(itemCodeRaw);
-          const id = `${tenantId}-work-label-${labelId}`;
-
+          
           const offset = params.length;
           values.push(
             `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9})`
           );
 
           params.push(
-            id,
+            uuidv4(),
             tenantId,
             labelId,
             name,

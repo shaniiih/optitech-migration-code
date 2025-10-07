@@ -1,3 +1,4 @@
+const { v4: uuidv4 } = require("uuid");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 
 const WINDOW_SIZE = 5000;
@@ -65,14 +66,14 @@ async function migrateWorkSupplier(tenantId = "tenant_1") {
 
           const name = cleanText(row.SapakName) || `Work Supplier ${supplierId}`;
           const itemCode = resolveItemCode(supplierId, row.IdCount);
-          const id = `${tenantId}-work-supplier-${supplierId}`;
+          
 
           const offset = params.length;
           values.push(
             `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8})`
           );
           params.push(
-            id,
+            uuidv4(),
             tenantId,
             supplierId,
             name,

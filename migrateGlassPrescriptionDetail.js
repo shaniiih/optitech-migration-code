@@ -1,3 +1,4 @@
+const { v4: uuidv4 } = require("uuid");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 
 const WINDOW_SIZE = 5000;
@@ -145,15 +146,14 @@ async function migrateGlassPrescriptionDetail(tenantId = "tenant_1") {
             continue;
           }
 
-          const id = `${tenantId}-glass-prescription-detail-${row.GlassPId}`;
-
+          
           const paramsOffset = params.length;
           values.push(
             `($${paramsOffset + 1}, $${paramsOffset + 2}, $${paramsOffset + 3}, $${paramsOffset + 4}, $${paramsOffset + 5}, $${paramsOffset + 6}, $${paramsOffset + 7}, $${paramsOffset + 8}, $${paramsOffset + 9}, $${paramsOffset + 10}, $${paramsOffset + 11}, $${paramsOffset + 12}, $${paramsOffset + 13}, $${paramsOffset + 14}, $${paramsOffset + 15}, $${paramsOffset + 16}, $${paramsOffset + 17}, $${paramsOffset + 18}, $${paramsOffset + 19}, $${paramsOffset + 20}, $${paramsOffset + 21})`
           );
 
           params.push(
-            id,
+            uuidv4(),
             tenantId,
             null, // branchId is unavailable in the legacy source
             customerId,

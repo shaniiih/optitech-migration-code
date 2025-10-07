@@ -1,3 +1,4 @@
+const { v4: uuidv4 } = require("uuid");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 
 const WINDOW_SIZE = 5000;
@@ -138,7 +139,7 @@ async function migrateLensTreatmentCharacteristic(tenantId = "tenant_1") {
       const timestamp = new Date();
 
       records.push({
-        id: `${tenantId}-lens-treatment-char-${treatCharId}`,
+        id: uuidv4(),
         tenantId,
         supplierId,
         lensTypeId,

@@ -224,16 +224,23 @@ async function migratePurchase(tenantId = "tenant_1") {
   let skippedMissingCustomer = 0;
   const createdUsers = { count: 0, examples: new Set() };
 
-  const branchIds = new Set();
+  const branchMap = new Map();
   try {
-    const { rows } = await pg.query('SELECT id FROM "Branch"');
+    const { rows } = await pg.query(
+      'SELECT id, code FROM "Branch" WHERE "tenantId" = $1',
+      [tenantId]
+    );
     for (const row of rows) {
-      if (row.id !== null && row.id !== undefined) {
-        branchIds.add(String(row.id));
+      const code = row.code !== null && row.code !== undefined ? String(row.code).trim() : null;
+      if (code) {
+        branchMap.set(code, String(row.id));
       }
     }
   } catch (error) {
-    console.warn('⚠️ Could not load Branch ids, all purchases will be stored without branch reference.', error.message);
+    console.warn(
+      '⚠️ Could not load Branch mappings, all purchases will be stored without branch reference.',
+      error.message
+    );
   }
   const customerMap = new Map();
   try {
@@ -356,7 +363,7 @@ async function migratePurchase(tenantId = "tenant_1") {
           const totalAmount = asNumber(row.PayedFor) ?? 0;
           const status = resolveStatus(row.Canceled);
           const branchLegacyId = branchId !== null ? String(branchId) : null;
-          const branchIdValue = branchLegacyId && branchIds.has(branchLegacyId) ? branchLegacyId : null;
+          const branchIdValue = branchLegacyId ? branchMap.get(branchLegacyId) || null : null;
           if (branchLegacyId && branchIdValue === null) {
             skippedMissingBranch += 1;
           }
@@ -437,7 +444,9 @@ async function migratePurchase(tenantId = "tenant_1") {
       console.warn(`⚠️ Skipped ${skippedMissingFields} rows due to missing BuyId or PerId.`);
     }
     if (skippedMissingBranch) {
-      console.warn(`⚠️ Cleared branch reference for ${skippedMissingBranch} purchases because matching Branch id was not found.`);
+      console.warn(
+        `⚠️ Cleared branch reference for ${skippedMissingBranch} purchases because matching Branch code was not found.`
+      );
     }
     if (skippedMissingCustomer) {
       console.warn(`⚠️ Skipped ${skippedMissingCustomer} purchases because matching Customer id was not found.`);

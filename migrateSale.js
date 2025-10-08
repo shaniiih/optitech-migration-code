@@ -1,3 +1,4 @@
+const { v4: uuidv4 } = require("uuid");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 
 const WINDOW_SIZE = 5000;
@@ -292,7 +293,6 @@ async function migrateSale(tenantId = "tenant_1") {
           }
           const notes = notesParts.length ? notesParts.join("\n") : null;
 
-          const id = `${tenantId}-sale-${r.BuyId}`;
           const createdAt = saleDate;
           const updatedAt = saleDate;
           const deletedAt = asBool(r.Canceled) ? saleDate : null;
@@ -305,7 +305,7 @@ async function migrateSale(tenantId = "tenant_1") {
           );
 
           params.push(
-            id,
+            uuidv4(),
             tenantId,
             String(r.BuyId),
             customerId,

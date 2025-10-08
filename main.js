@@ -2,7 +2,7 @@
 require("dotenv").config();
 
 const migrateBranch = require("./migrateBranch");
-const migrateCity = require("./migrateCity");
+const migrateCity = require("./migrateCity"); 
 const migrateWorkLab = require("./migrateWorkLab");
 const migrateZipCode = require("./migrateZipCode");
 const migrateInvoiceCredits = require("./migrateInvoiceCredits");
@@ -19,7 +19,7 @@ const migrateAppointment = require("./migrateAppointment");
 const migrateClinicalExamination = require("./migrateClinicalExamination");
 const migrateContactLensPrescription = require("./migrateContactLensPrescription");
 const migrateContactLensFittingDetail = require("./migrateContactLensFittingDetail");
-const migrateContactLensBrand = require("./migrateContactLensBrand");
+const migrateBrand = require("./migrateBrand");
 const migrateContactLensType = require("./migrateContactLensType");
 const migrateContactLensMaterial = require("./migrateContactLensMaterial");
 const migrateContactLensCleaningSolution = require("./migrateContactLensCleaningSolution");
@@ -49,6 +49,7 @@ const migrateContactLensTint = require("./migrateContactLensTint");
 const migrateContactLensManufacturer = require("./migrateContactLensManufacturer");
 const migrateContactLensDisinfectingSolution = require("./migrateContactLensDisinfectingSolution");
 const migrateContactLensRinsingSolution = require("./migrateContactLensRinsingSolution");
+const migrateProduct = require("./migrateProduct");
 const migratePurchase = require("./migratePurchase");
 const { getPostgresConnection } = require("./dbConfig");
 const { ensureTenantId, cleanTenantId } = require("./tenantUtils");
@@ -102,122 +103,62 @@ async function ensureTenant(tenantId) {
     await runStep("Ensure tenant", () => ensureTenant(tenantId));
 
     // Order matters if there are FKs/assumptions; this keeps your current sequence.
-    await runStep("Branch", () => migrateBranch(tenantId));           
-    
-    await runStep("City", () => migrateCity(tenantId));               
-    
-    await runStep("WorkLab", () => migrateWorkLab(tenantId));         
-
-    await runStep("ZipCode", () => migrateZipCode(tenantId)); 
-
-    await runStep("InvoiceCredits", () => migrateInvoiceCredits(tenantId)); 
-
-    await runStep("CheckType", () => migrateCheckType(tenantId));     
-
-    await runStep("Supplier", () => migrateSupplier(tenantId));
-
-    await runStep("Users", () => migrateUser(tenantId));
-
-    await runStep("CustomerGroup", () => migrateCustomerGroup(tenantId));
-
-    await runStep("Customer", () => migrateCustomer(tenantId));
-
-    await runStep("ContactAgents", () => migrateContactAgents(tenantId));    
-
-    await runStep("Examination", () => migrateExamination(tenantId)); 
-
+    await runStep("Branch", () => migrateBranch(tenantId)); // Verified
+    await runStep("City", () => migrateCity(tenantId)); // Verified
+    await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
+    await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified
+    await runStep("InvoiceCredits", () => migrateInvoiceCredits(tenantId)); // Verified
+    await runStep("CheckType", () => migrateCheckType(tenantId)); // Verified
+    await runStep("Supplier", () => migrateSupplier(tenantId)); // Verified
+    await runStep("Users", () => migrateUser(tenantId)); // Verified
+    await runStep("CustomerGroup", () => migrateCustomerGroup(tenantId)); // Verified
+    await runStep("Customer", () => migrateCustomer(tenantId)); // Verified
+    // await runStep("ContactAgents", () => migrateContactAgents(tenantId)); // (Not found reference to tblContacts table in postgresql )
+    await runStep("Examination", () => migrateExamination(tenantId));
     await runStep("ClinicalExamination", () => migrateClinicalExamination(tenantId));
-
-    await runStep("ContactLensPrescription", () => migrateContactLensPrescription(tenantId));
-
+    await runStep("ContactLensPrescription", () => migrateContactLensPrescription(tenantId)); // Verified
     await runStep("ContactLensFittingDetail", () => migrateContactLensFittingDetail(tenantId));
-
-    await runStep("ContactLensBrand", () => migrateContactLensBrand(tenantId));
-
+    await runStep("Brand", () => migrateBrand(tenantId)); // Verified
     await runStep("FrequentReplacementProgram", () => migrateFrequentReplacementProgram(tenantId));
-
     await runStep("Orthokeratology", () => migrateOrthokeratology(tenantId));
-
     await runStep("LowVisionCheck", () => migrateLowVisionCheck(tenantId));
-
-    await runStep("Sale", () => migrateSale(tenantId));
-
-    await runStep("SaleItem", () => migrateSaleItem(tenantId));
-
+    await runStep("Sale", () => migrateSale(tenantId)); // Verified
+    await runStep("SaleItem", () => migrateSaleItem(tenantId)); // Verified
     await runStep("Order", () => migrateOrder(tenantId));
-
     await runStep("Payment", () => migratePayment(tenantId));
-
-    await runStep("StockMovement", () => migrateStockMovement(tenantId));
-
+    await runStep("StockMovement", () => migrateStockMovement(tenantId)); // Done
     await runStep("Invoice", () => migrateInvoice(tenantId));
-
     await runStep("SMS", () => migrateSMS(tenantId));
-
-    await runStep("Prescription", () => migratePrescription(tenantId)); 
-
-    await runStep("Appointment", () => migrateAppointment(tenantId));
-
+    await runStep("Prescription", () => migratePrescription(tenantId)); // Verified
+    await runStep("Appointment", () => migrateAppointment(tenantId)); // Verified
     await runStep("ClinicalExamination", () => migrateClinicalExamination(tenantId));
-
-    await runStep("ContactLensPrescription", () => migrateContactLensPrescription(tenantId));   
-
-    await runStep("ContactLensFittingDetail", () => migrateContactLensFittingDetail(tenantId));   
-
-    await runStep("ContactLensBrand", () => migrateContactLensBrand(tenantId));
-
+    await runStep("ContactLensFittingDetail", () => migrateContactLensFittingDetail(tenantId));
     await runStep("FrequentReplacementProgram", () => migrateFrequentReplacementProgram(tenantId));
-
     await runStep("Orthokeratology", () => migrateOrthokeratology(tenantId));
-
     await runStep("FRPLine", () => migrateFRPLine(tenantId));
-
     await runStep("LowVisionCheck", () => migrateLowVisionCheck(tenantId));
-
-    await runStep("SaleItem", () => migrateSaleItem(tenantId));
-
     await runStep("Invoice", () => migrateInvoice(tenantId));
-
     await runStep("Discount", () => migrateDiscount(tenantId));
-
-    await runStep("CustomerPhoto", () => migrateCustomerPhoto(tenantId));
-
-    await runStep("ExaminationOverview", () => migrateExaminationOverview(tenantId));
-
-    await runStep("GlassPrescriptionDetail", () => migrateGlassPrescriptionDetail(tenantId));
-
+    await runStep("CustomerPhoto", () => migrateCustomerPhoto(tenantId)); // Verified
+    await runStep("ExaminationOverview", () => migrateExaminationOverview(tenantId)); // Verified
+    await runStep("GlassPrescriptionDetail", () => migrateGlassPrescriptionDetail(tenantId)); // Verified
     await runStep("LensCharacteristic", () => migrateLensCharacteristic(tenantId));
-
     await runStep("LensCatalog", () => migrateLensCatalog(tenantId));
-
     await runStep("LensTreatmentCharacteristic", () => migrateLensTreatmentCharacteristic(tenantId));
-
-    await runStep("WorkLabel", () => migrateWorkLabel(tenantId));
-
-    await runStep("WorkSupplier", () => migrateWorkSupplier(tenantId));
-
-    await runStep("ContactLensType", () => migrateContactLensType(tenantId));
-
-    await runStep("ContactLensMaterial", () => migrateContactLensMaterial(tenantId));
-
-    await runStep("GlassModel", () => migrateGlassModel(tenantId));
-
-    await runStep("LensType", () => migrateLensType(tenantId));
-
-    await runStep("ContactLensCleaningSolution", () => migrateContactLensCleaningSolution(tenantId));
-
-    await runStep("OpticalBase", () => migrateOpticalBase(tenantId));
-
-    await runStep("ContactLensTint", () => migrateContactLensTint(tenantId));
-
-    await runStep("ContactLensManufacturer", () => migrateContactLensManufacturer(tenantId));
-
-    await runStep("ContactLensDisinfectingSolution", () => migrateContactLensDisinfectingSolution(tenantId));
-
-    await runStep("ContactLensRinsingSolution", () => migrateContactLensRinsingSolution(tenantId));
-
-    await runStep("Purchase", () => migratePurchase(tenantId));
-
+    await runStep("WorkLabel", () => migrateWorkLabel(tenantId)); // Verified
+    await runStep("WorkSupplier", () => migrateWorkSupplier(tenantId)); // Verified
+    await runStep("ContactLensType", () => migrateContactLensType(tenantId)); // Verified
+    await runStep("ContactLensMaterial", () => migrateContactLensMaterial(tenantId)); // Verified
+    await runStep("GlassModel", () => migrateGlassModel(tenantId)); // Verified
+    await runStep("LensType", () => migrateLensType(tenantId)); // Verified
+    await runStep("ContactLensCleaningSolution", () => migrateContactLensCleaningSolution(tenantId)); // Verified
+    await runStep("OpticalBase", () => migrateOpticalBase(tenantId)); // Verified
+    await runStep("ContactLensTint", () => migrateContactLensTint(tenantId)); //  Verified
+    await runStep("ContactLensManufacturer", () => migrateContactLensManufacturer(tenantId)); // Verified
+    await runStep("ContactLensDisinfectingSolution", () => migrateContactLensDisinfectingSolution(tenantId)); // Verified
+    await runStep("ContactLensRinsingSolution", () => migrateContactLensRinsingSolution(tenantId));  // Verified
+    await runStep("Purchase", () => migratePurchase(tenantId)); // Verified
+    await runStep("Product", () => migrateProduct(tenantId)); // Verified
     console.log(`[${now()}] 🎉 All migrations completed successfully!`);
     process.exit(0);
   } catch (err) {

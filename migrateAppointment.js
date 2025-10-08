@@ -1,3 +1,4 @@
+const { v4: uuidv4 } = require("uuid");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 
 const WINDOW_SIZE = 5000;
@@ -223,7 +224,7 @@ async function migrateAppointment(tenantId = "tenant_1") {
           }
 
           let userId = null;
-          if (r.UserID != null) {
+          if (r.UserID != null && r.UserID != 0) {
             const legacyUser = legacyIdCandidates(r.UserID)
               .map((candidate) => legacyUserMap.get(candidate))
               .find((value) => value) || null;
@@ -247,17 +248,16 @@ async function migrateAppointment(tenantId = "tenant_1") {
 
           const startTime = normalizeDate(r.StarTime) || normalizeDate(r.AptDate);
           const endTime = normalizeDate(r.EndTime);
-          const appointmentDate = startTime || now;
+          const appointmentDate = normalizeDate(r.AptDate);
           const duration = durationInMinutes(startTime, endTime) || 30;
           const status = r.TookPlace ? "COMPLETED" : "SCHEDULED";
           const reminderSent = Boolean(r.SMSSent);
-          const appointmentId = `${tenantId}-apt-${r.AptNum}`;
-
+          
           const createdAt = appointmentDate;
           const updatedAt = appointmentDate;
 
           const columns = [
-            appointmentId,
+            uuidv4(),
             tenantId,
             customerId,
             userId,

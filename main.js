@@ -51,6 +51,8 @@ const migrateContactLensDisinfectingSolution = require("./migrateContactLensDisi
 const migrateContactLensRinsingSolution = require("./migrateContactLensRinsingSolution");
 const migrateProduct = require("./migrateProduct");
 const migratePurchase = require("./migratePurchase");
+const migrateDiagnosis = require("./migrateDiagnosis");
+const migrateOrthokeratologyTreatment = require("./migrateOrthokeratologyTreatment");
 const { getPostgresConnection } = require("./dbConfig");
 const { ensureTenantId, cleanTenantId } = require("./tenantUtils");
 
@@ -113,14 +115,14 @@ async function ensureTenant(tenantId) {
     await runStep("Users", () => migrateUser(tenantId)); // Verified
     await runStep("CustomerGroup", () => migrateCustomerGroup(tenantId)); // Verified
     await runStep("Customer", () => migrateCustomer(tenantId)); // Verified
-    // await runStep("ContactAgents", () => migrateContactAgents(tenantId)); // (Not found reference to tblContacts table in postgresql )
+    await runStep("ContactAgents", () => migrateContactAgents(tenantId)); // (Not found reference to tblContacts table in postgresql )
     await runStep("Examination", () => migrateExamination(tenantId));
     await runStep("ClinicalExamination", () => migrateClinicalExamination(tenantId));
     await runStep("ContactLensPrescription", () => migrateContactLensPrescription(tenantId)); // Verified
     await runStep("ContactLensFittingDetail", () => migrateContactLensFittingDetail(tenantId));
     await runStep("Brand", () => migrateBrand(tenantId)); // Verified
     await runStep("FrequentReplacementProgram", () => migrateFrequentReplacementProgram(tenantId));
-    await runStep("Orthokeratology", () => migrateOrthokeratology(tenantId));
+    // await runStep("Orthokeratology", () => migrateOrthokeratology(tenantId));
     await runStep("LowVisionCheck", () => migrateLowVisionCheck(tenantId));
     await runStep("Sale", () => migrateSale(tenantId)); // Verified
     await runStep("SaleItem", () => migrateSaleItem(tenantId)); // Verified
@@ -159,6 +161,8 @@ async function ensureTenant(tenantId) {
     await runStep("ContactLensRinsingSolution", () => migrateContactLensRinsingSolution(tenantId));  // Verified
     await runStep("Purchase", () => migratePurchase(tenantId)); // Verified
     await runStep("Product", () => migrateProduct(tenantId)); // Verified
+    await runStep("Diagnosis", () => migrateDiagnosis(tenantId)); // Verified
+    // await runStep("OrthokeratologyTreatment", () => migrateOrthokeratologyTreatment(tenantId)); // Verified
     console.log(`[${now()}] 🎉 All migrations completed successfully!`);
     process.exit(0);
   } catch (err) {

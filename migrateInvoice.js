@@ -1,3 +1,4 @@
+const { v4: uuidv4 } = require("uuid");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 
 const WINDOW_SIZE = 5000;
@@ -181,7 +182,6 @@ async function migrateInvoice(tenantId = "tenant_1") {
             continue;
           }
 
-          const invoiceId = `${tenantId}-invoice-${r.InvoiceId}`;
           const invoiceNumber = cleanText(r.InvId) || String(r.InvoiceId);
           const invoiceDate = normalizeDate(r.InvDate) || new Date();
           const amount = asNumber(r.InvSum) ?? 0;
@@ -197,7 +197,7 @@ async function migrateInvoice(tenantId = "tenant_1") {
           );
 
           params.push(
-            invoiceId,
+            uuidv4(),
             tenantId,
             String(r.InvoiceId),
             invoiceNumber,

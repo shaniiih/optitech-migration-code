@@ -1,5 +1,4 @@
 const { v4: uuidv4 } = require("uuid");
-const { createHash } = require("crypto");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 
 const WINDOW_SIZE = 5000;

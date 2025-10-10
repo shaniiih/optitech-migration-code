@@ -45,6 +45,7 @@ const migrateSupplier = require("./migrateSupplier");
 const migrateInvoice = require("./migrateInvoice");
 const migrateSMS = require("./migrateSMS");
 const migrateOpticalBase = require("./migrateOpticalBase");
+const migrateBarcodeManagement = require("./migrateBarcodeManagement");
 const migrateContactLensTint = require("./migrateContactLensTint");
 const migrateContactLensManufacturer = require("./migrateContactLensManufacturer");
 const migrateContactLensDisinfectingSolution = require("./migrateContactLensDisinfectingSolution");
@@ -131,6 +132,7 @@ async function ensureTenant(tenantId) {
     await runStep("StockMovement", () => migrateStockMovement(tenantId)); // Done
     await runStep("Invoice", () => migrateInvoice(tenantId));
     await runStep("SMS", () => migrateSMS(tenantId));
+    await runStep("BarcodeManagement", () => migrateBarcodeManagement(tenantId));
     await runStep("Prescription", () => migratePrescription(tenantId)); // Verified
     await runStep("Appointment", () => migrateAppointment(tenantId)); // Verified
     await runStep("ClinicalExamination", () => migrateClinicalExamination(tenantId));
@@ -162,7 +164,7 @@ async function ensureTenant(tenantId) {
     await runStep("Purchase", () => migratePurchase(tenantId)); // Verified
     await runStep("Product", () => migrateProduct(tenantId)); // Verified
     await runStep("Diagnosis", () => migrateDiagnosis(tenantId)); // Verified
-    // await runStep("OrthokeratologyTreatment", () => migrateOrthokeratologyTreatment(tenantId)); // Verified
+    await runStep("OrthokeratologyTreatment", () => migrateOrthokeratologyTreatment(tenantId)); // Verified
     console.log(`[${now()}] 🎉 All migrations completed successfully!`);
     process.exit(0);
   } catch (err) {

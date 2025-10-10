@@ -215,13 +215,9 @@ async function migrateOrthokeratologyTreatment(tenantId = "tenant_1") {
 
           const createdAt = checkDate;
           const updatedAt = checkDate;
+          const id = `${tenantId}-orthok-treatment-${orthokId}`;
 
-          const offset = params.length;
-          values.push(
-            `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9}, $${offset + 10}, $${offset + 11}, $${offset + 12}, $${offset + 13}, $${offset + 14}, $${offset + 15}, $${offset + 16}, $${offset + 17}, $${offset + 18}, $${offset + 19}, $${offset + 20}, $${offset + 21}, $${offset + 22}, $${offset + 23}, $${offset + 24}, $${offset + 25}, $${offset + 26}, $${offset + 27}, $${offset + 28}, $${offset + 29}, $${offset + 30}, $${offset + 31}, $${offset + 32}, $${offset + 33}, $${offset + 34}, $${offset + 35}, $${offset + 36}, $${offset + 37}, $${offset + 38}, $${offset + 39}, $${offset + 40}, $${offset + 41}, $${offset + 42}, $${offset + 43}, $${offset + 44}, $${offset + 45}, $${offset + 46}, $${offset + 47}, $${offset + 48}, $${offset + 49}, $${offset + 50}, $${offset + 51}, $${offset + 52}, $${offset + 53}, $${offset + 54}, $${offset + 55}, $${offset + 56}, $${offset + 57}, $${offset + 58}, $${offset + 59}, $${offset + 60}, $${offset + 61}, $${offset + 62}, $${offset + 63}, $${offset + 64}, $${offset + 65}, $${offset + 66}, $${offset + 67}, $${offset + 68}, $${offset + 69}, $${offset + 70}, $${offset + 71}, $${offset + 72}, $${offset + 73}, $${offset + 74}, $${offset + 75}, $${offset + 76}, $${offset + 77}, $${offset + 78}, $${offset + 79}, $${offset + 80}, $${offset + 81}, $${offset + 82}, $${offset + 83}, $${offset + 84})`
-          );
-
-          params.push(
+          const rowValues = [
             uuidv4(),
             tenantId,
             null,
@@ -302,14 +298,27 @@ async function migrateOrthokeratologyTreatment(tenantId = "tenant_1") {
             asNumber(row.EAR),
             asNumber(row.EAL),
             createdAt,
-            updatedAt
-          );
+            updatedAt,
+          ];
+          if (rowValues.length !== 81) {
+            throw new Error(`OrthokeratologyTreatment expected 81 values, got ${rowValues.length}`);
+          }
+
+          const offset = params.length;
+          const placeholders = rowValues
+            .map((_, index) => `$${offset + index + 1}`)
+            .join(", ");
+          values.push(`(${placeholders})`);
+          params.push(...rowValues);
         }
 
         if (!values.length) continue;
 
         await pg.query("BEGIN");
         try {
+          if (!params.length) {
+            throw new Error("OrthokeratologyTreatment chunk generated empty params array");
+          }
           await pg.query(
             `INSERT INTO "OrthokeratologyTreatment" (
               id,
@@ -473,7 +482,7 @@ async function migrateOrthokeratologyTreatment(tenantId = "tenant_1") {
               "eccentricityAR" = EXCLUDED."eccentricityAR",
               "eccentricityAL" = EXCLUDED."eccentricityAL",
               "updatedAt" = EXCLUDED."updatedAt"`
-          );
+          , params);
           await pg.query("COMMIT");
           totalProcessed += values.length;
         } catch (error) {
@@ -520,4 +529,3 @@ async function migrateOrthokeratologyTreatment(tenantId = "tenant_1") {
 }
 
 module.exports = migrateOrthokeratologyTreatment;
-

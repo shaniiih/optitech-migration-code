@@ -38,7 +38,7 @@ async function migrateWorkLab(tenantId = "tenant_1") {
     while (true) {
       const [rows] = await mysql.query(
         `SELECT LabID, LabName, IdCount
-           FROM sqlWorkLab
+           FROM tblCrdBuysWorkLabs
           WHERE LabID > ?
           ORDER BY LabID
           LIMIT ${WINDOW_SIZE}`,

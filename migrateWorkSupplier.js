@@ -41,7 +41,7 @@ async function migrateWorkSupplier(tenantId = "tenant_1") {
     while (true) {
       const [rows] = await mysql.query(
         `SELECT SapakID, SapakName, IdCount
-           FROM sqlWorkSapak
+           FROM tblCrdBuysWorkSapaks
           WHERE SapakID > ?
           ORDER BY SapakID
           LIMIT ${WINDOW_SIZE}`,

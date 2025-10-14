@@ -33,7 +33,7 @@ async function migrateOpticalBase(tenantId = "tenant_1") {
     while (true) {
       const [rows] = await mysql.query(
         `SELECT BaseId, BaseName
-           FROM sqlBases
+           FROM tblBases
           WHERE BaseId > ?
           ORDER BY BaseId
           LIMIT ${WINDOW_SIZE}`,

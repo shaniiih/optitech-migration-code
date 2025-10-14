@@ -87,16 +87,18 @@ async function migrateFromSource(mysql, pg, tenantId, source) {
 
         const name =
           cleanText(row.name) || `${source.fallbackLabel} Brand ${brandId}`;
+        const idCount = String(brandId);
 
         const offset = params.length;
         values.push(
-          `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7})`
+          `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8})`
         );
         params.push(
           uuidv4(),
           tenantId,
           name,
           source.type,
+          idCount,
           true,
           timestamp,
           timestamp
@@ -113,12 +115,14 @@ async function migrateFromSource(mysql, pg, tenantId, source) {
               "tenantId",
               name,
               type,
+              "IdCount",
               "isActive",
               "createdAt",
               "updatedAt"
             )
             VALUES ${values.join(",")}
             ON CONFLICT ("tenantId", name, type) DO UPDATE SET
+              "IdCount" = EXCLUDED."IdCount",
               "isActive" = EXCLUDED."isActive",
               "updatedAt" = EXCLUDED."updatedAt"`,
           params

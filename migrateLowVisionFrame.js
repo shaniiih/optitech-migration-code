@@ -1,4 +1,3 @@
-const { v4: uuidv4 } = require("uuid");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 
 const WINDOW_SIZE = 5000;
@@ -9,10 +8,10 @@ function asInteger(value) {
   if (typeof value === "number") {
     return Number.isFinite(value) ? Math.trunc(value) : null;
   }
-  const str = String(value).trim();
-  if (!str) return null;
-  const num = Number(str);
-  return Number.isFinite(num) ? Math.trunc(num) : null;
+  const trimmed = String(value).trim();
+  if (!trimmed) return null;
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? Math.trunc(parsed) : null;
 }
 
 function cleanText(value) {
@@ -21,23 +20,23 @@ function cleanText(value) {
   return trimmed.length ? trimmed : null;
 }
 
-async function migrateContactLensMaterial(tenantId = "tenant_1") {
+async function migrateLowVisionFrame(tenantId = "tenant_1") {
   const mysql = await getMySQLConnection();
   const pg = await getPostgresConnection();
 
-  let lastId = -1;
-  let total = 0;
-  let skippedInvalidId = 0;
+  let lastFrameId = -1;
+  let totalProcessed = 0;
+  let skippedInvalidFrameId = 0;
 
   try {
     while (true) {
       const [rows] = await mysql.query(
-        `SELECT MaterId, MaterName
-           FROM tblCrdClensChecksMater
-          WHERE MaterId > ?
-          ORDER BY MaterId
+        `SELECT LVFrameId, LVFrameName
+           FROM tblCrdLVFrame
+          WHERE LVFrameId > ?
+          ORDER BY LVFrameId
           LIMIT ${WINDOW_SIZE}`,
-        [lastId]
+        [lastFrameId]
       );
 
       if (!rows.length) break;
@@ -47,31 +46,34 @@ async function migrateContactLensMaterial(tenantId = "tenant_1") {
         const values = [];
         const params = [];
         const timestamp = new Date();
+        let insertedInChunk = 0;
 
         for (const row of chunk) {
-          const materialId = asInteger(row.MaterId);
-          if (materialId === null) {
-            skippedInvalidId += 1;
+          const frameId = asInteger(row.LVFrameId);
+          if (frameId === null) {
+            skippedInvalidFrameId += 1;
             continue;
           }
 
-          const name = cleanText(row.MaterName) || `Contact Lens Material ${materialId}`;
+          const name = cleanText(row.LVFrameName) || `Low Vision Frame ${frameId}`;
+          const description = null;
+          const recordId = `${tenantId}-lowvision-frame-${frameId}`;
 
           const offset = params.length;
           values.push(
             `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8})`
           );
-
           params.push(
-            uuidv4(),
+            recordId,
             tenantId,
-            materialId,
+            frameId,
             name,
-            null,
+            description,
             true,
             timestamp,
             timestamp
           );
+          insertedInChunk += 1;
         }
 
         if (!values.length) continue;
@@ -79,11 +81,10 @@ async function migrateContactLensMaterial(tenantId = "tenant_1") {
         await pg.query("BEGIN");
         try {
           await pg.query(
-            `
-            INSERT INTO "ContactLensMaterial" (
+            `INSERT INTO "LowVisionFrame" (
               id,
               "tenantId",
-              "materialId",
+              "frameId",
               name,
               description,
               "isActive",
@@ -91,8 +92,8 @@ async function migrateContactLensMaterial(tenantId = "tenant_1") {
               "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("materialId")
-            DO UPDATE SET
+            ON CONFLICT ("frameId") DO UPDATE SET
+              id = EXCLUDED.id,
               "tenantId" = EXCLUDED."tenantId",
               name = EXCLUDED.name,
               description = EXCLUDED.description,
@@ -102,20 +103,21 @@ async function migrateContactLensMaterial(tenantId = "tenant_1") {
             params
           );
           await pg.query("COMMIT");
-          total += values.length;
-        } catch (err) {
+          totalProcessed += insertedInChunk;
+        } catch (error) {
           await pg.query("ROLLBACK");
-          throw err;
+          throw error;
         }
       }
 
-      lastId = asInteger(rows[rows.length - 1].MaterId) ?? lastId;
-      console.log(`ContactLensMaterial migrated so far: ${total} (lastId=${lastId})`);
+      const lastRow = rows[rows.length - 1];
+      lastFrameId = asInteger(lastRow.LVFrameId) ?? lastFrameId;
+      console.log(`LowVisionFrame migrated so far: ${totalProcessed} (lastFrameId=${lastFrameId})`);
     }
 
-    console.log(`✅ ContactLensMaterial migration completed. Total inserted/updated: ${total}`);
-    if (skippedInvalidId) {
-      console.warn(`⚠️ Skipped ${skippedInvalidId} rows due to invalid MaterId.`);
+    console.log(`✅ LowVisionFrame migration completed. Total rows processed: ${totalProcessed}`);
+    if (skippedInvalidFrameId) {
+      console.warn(`⚠️ Skipped ${skippedInvalidFrameId} records due to invalid frame id`);
     }
   } finally {
     await mysql.end();
@@ -123,5 +125,4 @@ async function migrateContactLensMaterial(tenantId = "tenant_1") {
   }
 }
 
-module.exports = migrateContactLensMaterial;
-
+module.exports = migrateLowVisionFrame;

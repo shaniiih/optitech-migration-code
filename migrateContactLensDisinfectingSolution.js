@@ -33,7 +33,7 @@ async function migrateContactLensDisinfectingSolution(tenantId = "tenant_1") {
     while (true) {
       const [rows] = await mysql.query(
         `SELECT ClensSolDisinfectId, ClensSolDisinfectName
-           FROM sqlCrdClensSolDisinfect
+           FROM tblCrdClensSolDisinfect
           WHERE ClensSolDisinfectId > ?
           ORDER BY ClensSolDisinfectId
           LIMIT ${WINDOW_SIZE}`,

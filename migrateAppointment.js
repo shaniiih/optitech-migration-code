@@ -14,7 +14,7 @@ function normalizeLegacyId(value) {
   if (value === null || value === undefined) return null;
 
   if (typeof value === "number" && Number.isFinite(value)) {
-    return String(value);
+    return String(Math.trunc(value));
   }
 
   if (typeof value === "bigint") {
@@ -28,175 +28,107 @@ function normalizeLegacyId(value) {
   const trimmed = String(value).trim();
   if (!trimmed) return null;
 
-  // Treat numeric-looking identifiers uniformly (handles 000123, 123.0, etc.)
   if (/^[+-]?\d+(?:\.0+)?$/.test(trimmed)) {
     return String(parseInt(trimmed, 10));
   }
 
-  return trimmed.toLowerCase();
+  return trimmed;
 }
 
-function legacyIdCandidates(value) {
-  const normalized = normalizeLegacyId(value);
-  if (!normalized) return [];
-
-  const candidates = new Set([normalized]);
-  if (/\D/.test(normalized)) {
-    const digitsOnly = normalized.replace(/\D+/g, "");
-    if (digitsOnly) {
-      const numericCandidate = normalizeLegacyId(digitsOnly);
-      if (numericCandidate) {
-        candidates.add(numericCandidate);
-      }
-    }
-  }
-
-  return Array.from(candidates);
-}
-
-function normalizeDate(value) {
+function normalizeDateTime(value) {
   if (value === null || value === undefined) return null;
-
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    if (!trimmed) return null;
-    if (/^0{4}-0{2}-0{2}/.test(trimmed)) return null;
-    const parsed = new Date(trimmed);
-    return Number.isNaN(parsed.getTime()) ? null : parsed;
-  }
 
   if (value instanceof Date) {
     return Number.isNaN(value.getTime()) ? null : value;
   }
 
-  if (typeof value === "number") {
-    const parsed = new Date(value);
-    return Number.isNaN(parsed.getTime()) ? null : parsed;
-  }
+  const trimmed = cleanText(value);
+  if (!trimmed) return null;
+  if (/^0{4}-0{2}-0{2}/.test(trimmed)) return null;
 
-  return null;
+  const parsed = new Date(trimmed);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-function durationInMinutes(start, end) {
-  if (!start || !end) return null;
-  const diffMs = end.getTime() - start.getTime();
-  if (!Number.isFinite(diffMs) || diffMs <= 0) return null;
-  return Math.round(diffMs / 60000);
+function asBool(value) {
+  if (value === null || value === undefined) return false;
+  if (Buffer.isBuffer(value)) return value.some((b) => b !== 0);
+  if (typeof value === "string") {
+    const trimmed = value.trim().toLowerCase();
+    if (!trimmed) return false;
+    return ["1", "true", "yes", "y"].includes(trimmed);
+  }
+  return Boolean(value);
 }
 
 async function migrateAppointment(tenantId = "tenant_1") {
   const mysql = await getMySQLConnection();
   const pg = await getPostgresConnection();
 
-  let lastId = 0;
+  let lastAptNum = 0;
   let total = 0;
   let skippedMissingCustomer = 0;
-  let skippedMissingUser = 0;
-  const missingCustomerSamples = new Set();
-
-  const customerLoaderCache = new Map();
+  let skippedInvalidId = 0;
+  let skippedMissingDate = 0;
+  let missingUserCount = 0;
 
   try {
-    await pg.query(`
-      DO $$
-      BEGIN
-        IF NOT EXISTS (
-          SELECT 1 FROM pg_indexes WHERE indexname = 'appointment_tenant_apt_ux'
-        ) THEN
-          CREATE UNIQUE INDEX appointment_tenant_apt_ux
-          ON "Appointment" ("tenantId", id);
-        END IF;
-      END$$;
-    `);
-
     const { rows: customerRows } = await pg.query(
-      `SELECT id, "customerId" FROM "Customer" WHERE "tenantId" = $1`,
+      `SELECT id, "customerId"
+         FROM "Customer"
+        WHERE "tenantId" = $1`,
       [tenantId]
     );
     const customerMap = new Map();
-    for (const c of customerRows) {
-      for (const key of legacyIdCandidates(c.customerId)) {
-        if (!customerMap.has(key)) {
-          customerMap.set(key, c.id);
-        }
+    for (const row of customerRows) {
+      const key = normalizeLegacyId(row.customerId);
+      if (key && !customerMap.has(key)) {
+        customerMap.set(key, row.id);
       }
-    }
-
-    async function ensureCustomer(legacyPerIdCandidates) {
-      const existing = legacyPerIdCandidates
-        .map((candidate) => customerMap.get(candidate))
-        .find((value) => value);
-      if (existing) return existing;
-
-      const canonicalId =
-        legacyPerIdCandidates.find((id) => /^\d+$/.test(id)) ||
-        legacyPerIdCandidates.find((id) => id) ||
-        null;
-      if (!canonicalId) return null;
-
-      if (!customerLoaderCache.has(canonicalId)) {
-        customerLoaderCache.set(
-          canonicalId,
-          (async () => {
-            const { rows: existingRows } = await pg.query(
-              `SELECT id FROM "Customer" WHERE "tenantId" = $1 AND "customerId" = $2 LIMIT 1`,
-              [tenantId, canonicalId]
-            );
-            if (existingRows.length) {
-              const foundId = existingRows[0].id;
-              for (const candidate of legacyPerIdCandidates) {
-                if (candidate) customerMap.set(candidate, foundId);
-              }
-              customerMap.set(canonicalId, foundId);
-              return foundId;
-            }
-
-            return null;
-          })()
-        );
-      }
-
-      const resolvedId = await customerLoaderCache.get(canonicalId);
-      if (resolvedId) {
-        for (const candidate of legacyPerIdCandidates) {
-          if (candidate) customerMap.set(candidate, resolvedId);
-        }
-        customerMap.set(canonicalId, resolvedId);
-      }
-      return resolvedId;
     }
 
     const { rows: userRows } = await pg.query(
-      `SELECT id, email FROM "User" WHERE "tenantId" = $1`,
+      `SELECT id, email
+         FROM "User"
+        WHERE "tenantId" = $1`,
       [tenantId]
     );
     const userEmailMap = new Map(
       userRows
-        .filter((u) => u.email)
+        .filter((u) => cleanText(u.email))
         .map((u) => [u.email.toLowerCase(), u.id])
     );
 
     const [legacyUsers] = await mysql.query(
-      `SELECT UserId, CellPhone, HomePhone, UserTz
+      `SELECT UserId, CellPhone, HomePhone
          FROM tblUsers`
     );
-    const legacyUserMap = new Map();
-    for (const u of legacyUsers) {
-      for (const key of legacyIdCandidates(u.UserId)) {
-        if (!legacyUserMap.has(key)) {
-          legacyUserMap.set(key, u);
-        }
+    const userMap = new Map();
+    for (const user of legacyUsers) {
+      const legacyId = normalizeLegacyId(user.UserId);
+      if (!legacyId || userMap.has(legacyId)) continue;
+
+      const cell = cleanText(user.CellPhone);
+      const home = cleanText(user.HomePhone);
+      const emailCandidate =
+        (cell && `${cell}@legacy.local`) ||
+        (home && `${home}@legacy.local`) ||
+        `user-${legacyId}@legacy.local`;
+      const normalizedEmail = emailCandidate.toLowerCase();
+      const userId = userEmailMap.get(normalizedEmail) || null;
+      if (userId) {
+        userMap.set(legacyId, userId);
       }
     }
 
     while (true) {
       const [rows] = await mysql.query(
-        `SELECT UserID, AptDate, AptNum, StarTime, EndTime, AptDesc, PerID, TookPlace, Reminder, SMSSent
+        `SELECT AptNum, PerID, UserID, AptDate, StarTime, EndTime, AptDesc, TookPlace, Reminder, SMSSent
            FROM tblClndrApt
           WHERE AptNum > ?
           ORDER BY AptNum
           LIMIT ${WINDOW_SIZE}`,
-        [lastId]
+        [lastAptNum]
       );
 
       if (!rows.length) break;
@@ -205,77 +137,77 @@ async function migrateAppointment(tenantId = "tenant_1") {
         const chunk = rows.slice(i, i + BATCH_SIZE);
         const values = [];
         const params = [];
-        const now = new Date();
 
-        for (const r of chunk) {
-          const legacyPerIdCandidates = legacyIdCandidates(r.PerID);
-          if (!legacyPerIdCandidates.length) {
-            skippedMissingCustomer += 1;
+        for (const row of chunk) {
+          const aptNum = normalizeLegacyId(row.AptNum);
+          if (!aptNum) {
+            skippedInvalidId += 1;
             continue;
           }
 
-          const customerId = await ensureCustomer(legacyPerIdCandidates);
+          const customerKey = normalizeLegacyId(row.PerID);
+          if (!customerKey) {
+            skippedMissingCustomer += 1;
+            continue;
+          }
+          const customerId = customerMap.get(customerKey);
           if (!customerId) {
             skippedMissingCustomer += 1;
-            if (legacyPerIdCandidates.length && missingCustomerSamples.size < 10) {
-              missingCustomerSamples.add(legacyPerIdCandidates[0]);
-            }
             continue;
           }
 
-          let userId = null;
-          if (r.UserID != null && r.UserID != 0) {
-            const legacyUser = legacyIdCandidates(r.UserID)
-              .map((candidate) => legacyUserMap.get(candidate))
-              .find((value) => value) || null;
-            if (legacyUser) {
-              const candidates = [
-                cleanText(legacyUser.CellPhone)
-                  ? `${legacyUser.CellPhone}@legacy.local`.toLowerCase()
-                  : null,
-                cleanText(legacyUser.HomePhone)
-                  ? `${legacyUser.HomePhone}@legacy.local`.toLowerCase()
-                  : null,
-                cleanText(legacyUser.UserTz) ? `${legacyUser.UserTz}@legacy.local`.toLowerCase() : null,
-                `user-${legacyUser.UserId}@legacy.local`,
-              ].filter(Boolean);
-              userId = candidates.map((c) => userEmailMap.get(c)).find((v) => v) || null;
-            }
-            if (!userId) {
-              skippedMissingUser += 1;
+          const startTime = normalizeDateTime(row.StarTime) || normalizeDateTime(row.AptDate);
+          if (!startTime) {
+            skippedMissingDate += 1;
+            continue;
+          }
+          const endTime = normalizeDateTime(row.EndTime);
+          let durationMinutes = 30;
+          if (endTime) {
+            const diffMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
+            if (Number.isFinite(diffMinutes) && diffMinutes > 0) {
+              durationMinutes = diffMinutes;
             }
           }
 
-          const startTime = normalizeDate(r.StarTime) || normalizeDate(r.AptDate);
-          const endTime = normalizeDate(r.EndTime);
-          const appointmentDate = normalizeDate(r.AptDate);
-          const duration = durationInMinutes(startTime, endTime) || 30;
-          const status = r.TookPlace ? "COMPLETED" : "SCHEDULED";
-          const reminderSent = Boolean(r.SMSSent);
-          
-          const createdAt = appointmentDate;
-          const updatedAt = appointmentDate;
+          const userKey = normalizeLegacyId(row.UserID);
+          let userId = null;
+          if (userKey) {
+            userId = userMap.get(userKey) || null;
+            if (!userId) {
+              missingUserCount += 1;
+            }
+          }
 
-          const columns = [
+          const notes = cleanText(row.AptDesc);
+          const reminderSent = asBool(row.Reminder);
+          const smsSent = asBool(row.SMSSent);
+          const tookPlace = asBool(row.TookPlace);
+          const status = tookPlace ? "COMPLETED" : "SCHEDULED";
+          const createdAt = startTime;
+          const updatedAt = startTime;
+
+          const offset = params.length;
+          values.push(
+            `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9}, $${offset + 10}, $${offset + 11}, $${offset + 12}, $${offset + 13}, $${offset + 14}, $${offset + 15})`
+          );
+          params.push(
             uuidv4(),
             tenantId,
             customerId,
             userId,
-            appointmentDate,
-            duration,
+            startTime,
+            durationMinutes,
             "EXAM",
             status,
-            cleanText(r.AptDesc),
+            notes,
             reminderSent,
+            smsSent,
+            tookPlace ? 1 : 0,
             createdAt,
             updatedAt,
-            null,
-          ];
-
-          const offset = params.length;
-          const placeholders = columns.map((_, idx) => `$${offset + idx + 1}`).join(", ");
-          values.push(`(${placeholders})`);
-          params.push(...columns);
+            null
+          );
         }
 
         if (!values.length) continue;
@@ -285,8 +217,21 @@ async function migrateAppointment(tenantId = "tenant_1") {
           await pg.query(
             `
             INSERT INTO "Appointment" (
-              id, "tenantId", "customerId", "userId", date, duration, type, status, notes,
-              "reminderSent", "createdAt", "updatedAt", "branchId"
+              id,
+              "tenantId",
+              "customerId",
+              "userId",
+              date,
+              duration,
+              type,
+              status,
+              notes,
+              "reminderSent",
+              "SMSSent",
+              "TookPlace",
+              "createdAt",
+              "updatedAt",
+              "branchId"
             )
             VALUES ${values.join(",")}
             ON CONFLICT (id)
@@ -300,35 +245,37 @@ async function migrateAppointment(tenantId = "tenant_1") {
               status = EXCLUDED.status,
               notes = EXCLUDED.notes,
               "reminderSent" = EXCLUDED."reminderSent",
+              "SMSSent" = EXCLUDED."SMSSent",
+              "TookPlace" = EXCLUDED."TookPlace",
               "updatedAt" = EXCLUDED."updatedAt",
               "branchId" = EXCLUDED."branchId"
             `,
             params
           );
           await pg.query("COMMIT");
+          total += values.length;
         } catch (err) {
           await pg.query("ROLLBACK");
           throw err;
         }
-
-        total += values.length;
       }
 
-      lastId = rows[rows.length - 1].AptNum;
-      console.log(`Appointments migrated: ${total} (lastId=${lastId})`);
+      lastAptNum = Number(rows[rows.length - 1].AptNum) || lastAptNum;
+      console.log(`Appointment migrated so far: ${total} (lastAptNum=${lastAptNum})`);
     }
 
     console.log(`✅ Appointment migration completed. Total inserted/updated: ${total}`);
-    if (skippedMissingCustomer) {
-      console.warn(`⚠️ Skipped ${skippedMissingCustomer} appointments due to missing customers`);
-      if (missingCustomerSamples.size) {
-        console.warn(
-          `⚠️ Example legacy customer IDs with no match: ${Array.from(missingCustomerSamples).join(", ")}`
-        );
-      }
+    if (skippedInvalidId) {
+      console.warn(`⚠️ Skipped ${skippedInvalidId} appointments due to invalid AptNum.`);
     }
-    if (skippedMissingUser) {
-      console.warn(`⚠️ Unable to match ${skippedMissingUser} appointments to a doctor/user`);
+    if (skippedMissingCustomer) {
+      console.warn(`⚠️ Skipped ${skippedMissingCustomer} appointments due to missing customer mapping.`);
+    }
+    if (skippedMissingDate) {
+      console.warn(`⚠️ Skipped ${skippedMissingDate} appointments due to invalid start date.`);
+    }
+    if (missingUserCount) {
+      console.warn(`⚠️ Unable to resolve ${missingUserCount} appointments to a user; inserted with null userId.`);
     }
   } finally {
     await mysql.end();
@@ -337,3 +284,4 @@ async function migrateAppointment(tenantId = "tenant_1") {
 }
 
 module.exports = migrateAppointment;
+

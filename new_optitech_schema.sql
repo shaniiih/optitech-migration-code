@@ -167,6 +167,8 @@ CREATE TABLE public."Appointment" (
     status text DEFAULT 'SCHEDULED'::text NOT NULL,
     notes text,
     "reminderSent" boolean DEFAULT false NOT NULL,
+    "SMSSent"      Boolean
+    "TookPlace"    Integer
     "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     "updatedAt" timestamp(3) without time zone NOT NULL,
     "branchId" text
@@ -184,6 +186,7 @@ CREATE TABLE public."BarcodeManagement" (
     "tenantId" text NOT NULL,
     "productId" text,
     barcode text NOT NULL,
+    "CatNum" text,
     "barcodeType" text DEFAULT 'EAN13'::text NOT NULL,
     "isActive" boolean DEFAULT true NOT NULL,
     "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,

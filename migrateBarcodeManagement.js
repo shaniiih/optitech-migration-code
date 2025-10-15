@@ -1,3 +1,4 @@
+const { v4: uuidv4 } = require("uuid");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 
 const WINDOW_SIZE = 5000;
@@ -9,33 +10,41 @@ function cleanText(value) {
   return trimmed.length ? trimmed : null;
 }
 
-function normalizeBarcode(value) {
+function asInteger(value) {
   if (value === null || value === undefined) return null;
   if (typeof value === "number") {
-    if (!Number.isFinite(value)) return null;
-    return String(value);
+    return Number.isFinite(value) ? Math.trunc(value) : null;
   }
   const trimmed = String(value).trim();
   if (!trimmed) return null;
-  return trimmed;
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? Math.trunc(parsed) : null;
 }
 
-function normalizeLegacyId(value) {
+function normalizeBarcode(value) {
   if (value === null || value === undefined) return null;
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return String(Math.trunc(value));
+
+  if (Buffer.isBuffer(value)) {
+    return normalizeBarcode(value.toString("utf8"));
   }
+
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) return null;
+    const asString = value.toString();
+    return asString.endsWith(".0") ? asString.slice(0, -2) : asString;
+  }
+
   if (typeof value === "bigint") {
     return value.toString();
   }
-  if (Buffer.isBuffer(value)) {
-    return normalizeLegacyId(value.toString("utf8"));
-  }
+
   const trimmed = String(value).trim();
   if (!trimmed) return null;
+
   if (/^[+-]?\d+(?:\.0+)?$/.test(trimmed)) {
-    return String(parseInt(trimmed, 10));
+    return trimmed.replace(/\.0+$/, "");
   }
+
   return trimmed;
 }
 
@@ -44,25 +53,17 @@ async function migrateBarcodeManagement(tenantId = "tenant_1") {
   const pg = await getPostgresConnection();
 
   let lastId = 0;
-  let totalProcessed = 0;
+  let total = 0;
+  let skippedInvalidId = 0;
   let skippedMissingBarcode = 0;
 
   try {
-    const { rows: productRows } = await pg.query(
-      `SELECT id, "productId" FROM "Product" WHERE "tenantId" = $1`,
-      [tenantId]
-    );
-    const productMap = new Map();
-    for (const row of productRows) {
-      const key = normalizeLegacyId(row.productId);
-      if (key && !productMap.has(key)) {
-        productMap.set(key, row.id);
-      }
-    }
-
     while (true) {
       const [rows] = await mysql.query(
-        `SELECT BarCodeId, BarCodeName, CatNum
+        `SELECT BarCodeId,
+                CatNum,
+                BarCodeName,
+                CAST(BarCodeName AS CHAR(64)) AS BarCodeValue
            FROM tblBarCodes
           WHERE BarCodeId > ?
           ORDER BY BarCodeId
@@ -76,36 +77,40 @@ async function migrateBarcodeManagement(tenantId = "tenant_1") {
         const chunk = rows.slice(i, i + BATCH_SIZE);
         const values = [];
         const params = [];
-        const now = new Date();
+        const timestamp = new Date();
 
         for (const row of chunk) {
-          const barcodeId = normalizeLegacyId(row.BarCodeId);
-          const barcodeValue = normalizeBarcode(row.BarCodeName);
-          if (!barcodeValue) {
+          const legacyId = asInteger(row.BarCodeId);
+          if (legacyId === null) {
+            skippedInvalidId += 1;
+            continue;
+          }
+
+          const rawBarcode = row.BarCodeValue ?? row.BarCodeName;
+          const barcode = normalizeBarcode(rawBarcode);
+          if (!barcode) {
             skippedMissingBarcode += 1;
             continue;
           }
 
-          const productIdLegacy = normalizeLegacyId(row.CatNum);
-          const productId = productIdLegacy ? productMap.get(productIdLegacy) || null : null;
-
-          const rowValues = [
-            `${tenantId}-barcode-${barcodeId}`,
-            tenantId,
-            productId,
-            barcodeValue,
-            "EAN13",
-            true,
-            now,
-            now,
-          ];
+          const catNum = cleanText(row.CatNum);
 
           const offset = params.length;
-          const placeholders = rowValues
-            .map((_, idx) => `$${offset + idx + 1}`)
-            .join(", ");
-          values.push(`(${placeholders})`);
-          params.push(...rowValues);
+          values.push(
+            `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9})`
+          );
+
+          params.push(
+            uuidv4(),
+            tenantId,
+            null,
+            barcode,
+            catNum,
+            "EAN13",
+            true,
+            timestamp,
+            timestamp
+          );
         }
 
         if (!values.length) continue;
@@ -113,40 +118,48 @@ async function migrateBarcodeManagement(tenantId = "tenant_1") {
         await pg.query("BEGIN");
         try {
           await pg.query(
-            `INSERT INTO "BarcodeManagement" (
+            `
+            INSERT INTO "BarcodeManagement" (
               id,
               "tenantId",
               "productId",
               barcode,
+              "CatNum",
               "barcodeType",
               "isActive",
               "createdAt",
               "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT (id) DO UPDATE SET
+            ON CONFLICT (barcode)
+            DO UPDATE SET
+              "tenantId" = EXCLUDED."tenantId",
               "productId" = EXCLUDED."productId",
-              barcode = EXCLUDED.barcode,
+              "CatNum" = EXCLUDED."CatNum",
               "barcodeType" = EXCLUDED."barcodeType",
               "isActive" = EXCLUDED."isActive",
-              "updatedAt" = EXCLUDED."updatedAt"`,
+              "updatedAt" = EXCLUDED."updatedAt"
+            `,
             params
           );
           await pg.query("COMMIT");
-          totalProcessed += values.length;
-        } catch (error) {
+          total += values.length;
+        } catch (err) {
           await pg.query("ROLLBACK");
-          throw error;
+          throw err;
         }
       }
 
-      lastId = Number(rows[rows.length - 1].BarCodeId) || lastId;
-      console.log(`BarcodeManagement migrated so far: ${totalProcessed} (lastId=${lastId})`);
+      lastId = asInteger(rows[rows.length - 1].BarCodeId) ?? lastId;
+      console.log(`BarcodeManagement migrated so far: ${total} (lastBarCodeId=${lastId})`);
     }
 
-    console.log(`✅ BarcodeManagement migration completed. Total inserted/updated: ${totalProcessed}`);
+    console.log(`✅ BarcodeManagement migration completed. Total inserted/updated: ${total}`);
+    if (skippedInvalidId) {
+      console.warn(`⚠️ Skipped ${skippedInvalidId} rows due to invalid BarCodeId.`);
+    }
     if (skippedMissingBarcode) {
-      console.warn(`⚠️ Skipped ${skippedMissingBarcode} barcodes due to missing value.`);
+      console.warn(`⚠️ Skipped ${skippedMissingBarcode} rows due to missing or invalid barcode.`);
     }
   } finally {
     await mysql.end();

@@ -14,12 +14,6 @@ function asInteger(value) {
   return Number.isFinite(parsed) ? Math.trunc(parsed) : null;
 }
 
-function toIdCountText(value) {
-  if (value === null || value === undefined) return null;
-  const trimmed = String(value).trim();
-  return trimmed.length ? trimmed : null;
-}
-
 function cleanText(value) {
   if (value === null || value === undefined) return null;
   const trimmed = String(value).trim();
@@ -37,7 +31,7 @@ async function migrateWorkLab(tenantId = "tenant_1") {
   try {
     while (true) {
       const [rows] = await mysql.query(
-        `SELECT LabID, LabName, IdCount
+        `SELECT LabID, LabName
            FROM tblCrdBuysWorkLabs
           WHERE LabID > ?
           ORDER BY LabID
@@ -63,12 +57,11 @@ async function migrateWorkLab(tenantId = "tenant_1") {
 
           const name = cleanText(row.LabName) || `Work Lab ${labId}`;
           const description = null;
-          const idCountText = toIdCountText(row.IdCount);
           const recordId = `${tenantId}-work-lab-${labId}`;
 
           const offset = params.length;
           values.push(
-            `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9})`
+            `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8})`
           );
           params.push(
             recordId,
@@ -76,7 +69,6 @@ async function migrateWorkLab(tenantId = "tenant_1") {
             labId,
             name,
             description,
-            idCountText,
             true,
             timestamp,
             timestamp
@@ -95,7 +87,6 @@ async function migrateWorkLab(tenantId = "tenant_1") {
               "labId",
               name,
               description,
-              "IdCount",
               "isActive",
               "createdAt",
               "updatedAt"
@@ -106,7 +97,6 @@ async function migrateWorkLab(tenantId = "tenant_1") {
               "tenantId" = EXCLUDED."tenantId",
               name = EXCLUDED.name,
               description = COALESCE(EXCLUDED.description, "WorkLab".description),
-              "IdCount" = EXCLUDED."IdCount",
               "isActive" = EXCLUDED."isActive",
               "updatedAt" = EXCLUDED."updatedAt"
             `,

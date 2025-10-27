@@ -26,23 +26,23 @@ function asInteger(value) {
   return Number.isFinite(parsed) ? Math.trunc(parsed) : null;
 }
 
-async function migrateWorkSupplier(tenantId = "tenant_1") {
+async function migrateWorkStatus(tenantId = "tenant_1") {
   const mysql = await getMySQLConnection();
   const pg = await getPostgresConnection();
 
-  let lastSupplierId = -1;
+  let lastStatusId = -1;
   let total = 0;
   let skippedInvalidId = 0;
 
   try {
     while (true) {
       const [rows] = await mysql.query(
-        `SELECT SapakID, SapakName, ItemCode
-           FROM tblCrdBuysWorkSapaks
-          WHERE SapakID > ?
-          ORDER BY SapakID
+        `SELECT WorkStatId, WorkStatName
+           FROM tblCrdBuysWorkStats
+          WHERE WorkStatId > ?
+          ORDER BY WorkStatId
           LIMIT ${WINDOW_SIZE}`,
-        [lastSupplierId]
+        [lastStatusId]
       );
 
       if (!rows.length) break;
@@ -54,16 +54,14 @@ async function migrateWorkSupplier(tenantId = "tenant_1") {
         const timestamp = new Date();
 
         for (const row of chunk) {
-          const supplierId = asInteger(row.SapakID);
-          if (supplierId === null) {
+          const statusId = asInteger(row.WorkStatId);
+          if (statusId === null) {
             skippedInvalidId += 1;
             continue;
           }
 
-          const name = cleanText(row.SapakName) || `Work Supplier ${supplierId}`;
-          const itemCodeRaw = cleanText(row.ItemCode);
-          const itemCode = itemCodeRaw && itemCodeRaw !== "0" ? itemCodeRaw : `SUP-${supplierId}`;
-          const recordId = `${tenantId}-work-supplier-${supplierId}`;
+          const name = cleanText(row.WorkStatName) || `Work Status ${statusId}`;
+          const recordId = `${tenantId}-work-status-${statusId}`;
 
           const offset = params.length;
           values.push(
@@ -72,9 +70,9 @@ async function migrateWorkSupplier(tenantId = "tenant_1") {
           params.push(
             recordId,
             tenantId,
-            supplierId,
+            statusId,
             name,
-            itemCode,
+            null,
             true,
             timestamp,
             timestamp
@@ -87,23 +85,23 @@ async function migrateWorkSupplier(tenantId = "tenant_1") {
         try {
           await pg.query(
             `
-            INSERT INTO "WorkSupplier" (
+            INSERT INTO "WorkStatus" (
               id,
               "tenantId",
-              "supplierId",
+              "statusId",
               name,
-              "itemCode",
+              description,
               "isActive",
               "createdAt",
               "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("supplierId")
+            ON CONFLICT ("statusId")
             DO UPDATE SET
               id = EXCLUDED.id,
               "tenantId" = EXCLUDED."tenantId",
               name = EXCLUDED.name,
-              "itemCode" = EXCLUDED."itemCode",
+              description = EXCLUDED.description,
               "isActive" = EXCLUDED."isActive",
               "updatedAt" = EXCLUDED."updatedAt"
             `,
@@ -118,13 +116,13 @@ async function migrateWorkSupplier(tenantId = "tenant_1") {
       }
 
       const lastRow = rows[rows.length - 1];
-      lastSupplierId = asInteger(lastRow.SapakID) ?? lastSupplierId;
-      console.log(`WorkSupplier migrated so far: ${total} (lastSapakId=${lastSupplierId})`);
+      lastStatusId = asInteger(lastRow.WorkStatId) ?? lastStatusId;
+      console.log(`WorkStatus migrated so far: ${total} (lastStatusId=${lastStatusId})`);
     }
 
-    console.log(`✅ WorkSupplier migration completed. Total inserted/updated: ${total}`);
+    console.log(`✅ WorkStatus migration completed. Total inserted/updated: ${total}`);
     if (skippedInvalidId) {
-      console.warn(`⚠️ Skipped ${skippedInvalidId} suppliers due to invalid SapakID.`);
+      console.warn(`⚠️ Skipped ${skippedInvalidId} work statuses due to invalid WorkStatId.`);
     }
   } finally {
     await mysql.end();
@@ -132,5 +130,5 @@ async function migrateWorkSupplier(tenantId = "tenant_1") {
   }
 }
 
-module.exports = migrateWorkSupplier;
+module.exports = migrateWorkStatus;
 

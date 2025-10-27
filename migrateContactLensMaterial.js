@@ -56,7 +56,7 @@ async function migrateContactLensMaterial(tenantId = "tenant_1") {
           }
 
           const name = cleanText(row.MaterName) || `Contact Lens Material ${materialId}`;
-
+          
           const offset = params.length;
           values.push(
             `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8})`
@@ -93,6 +93,7 @@ async function migrateContactLensMaterial(tenantId = "tenant_1") {
             VALUES ${values.join(",")}
             ON CONFLICT ("materialId")
             DO UPDATE SET
+              id = EXCLUDED.id,
               "tenantId" = EXCLUDED."tenantId",
               name = EXCLUDED.name,
               description = EXCLUDED.description,
@@ -124,4 +125,3 @@ async function migrateContactLensMaterial(tenantId = "tenant_1") {
 }
 
 module.exports = migrateContactLensMaterial;
-

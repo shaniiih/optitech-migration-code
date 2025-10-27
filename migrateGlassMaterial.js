@@ -1,3 +1,4 @@
+const { v4: uuidv4 } = require("uuid");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 
 const WINDOW_SIZE = 5000;
@@ -20,29 +21,29 @@ function asInteger(value) {
   if (Buffer.isBuffer(value)) {
     return asInteger(value.toString("utf8"));
   }
-  const trimmed = String(value).trim();
+  const trimmed = cleanText(value);
   if (!trimmed) return null;
   const parsed = Number(trimmed);
   return Number.isFinite(parsed) ? Math.trunc(parsed) : null;
 }
 
-async function migrateWorkSupplier(tenantId = "tenant_1") {
+async function migrateGlassMaterial(tenantId = "tenant_1") {
   const mysql = await getMySQLConnection();
   const pg = await getPostgresConnection();
 
-  let lastSupplierId = -1;
+  let lastId = -1;
   let total = 0;
   let skippedInvalidId = 0;
 
   try {
     while (true) {
       const [rows] = await mysql.query(
-        `SELECT SapakID, SapakName, ItemCode
-           FROM tblCrdBuysWorkSapaks
-          WHERE SapakID > ?
-          ORDER BY SapakID
+        `SELECT GlassMaterId, GlassMaterName
+           FROM tblCrdGlassMater
+          WHERE GlassMaterId > ?
+          ORDER BY GlassMaterId
           LIMIT ${WINDOW_SIZE}`,
-        [lastSupplierId]
+        [lastId]
       );
 
       if (!rows.length) break;
@@ -54,27 +55,24 @@ async function migrateWorkSupplier(tenantId = "tenant_1") {
         const timestamp = new Date();
 
         for (const row of chunk) {
-          const supplierId = asInteger(row.SapakID);
-          if (supplierId === null) {
+          const materialId = asInteger(row.GlassMaterId);
+          if (materialId === null) {
             skippedInvalidId += 1;
             continue;
           }
 
-          const name = cleanText(row.SapakName) || `Work Supplier ${supplierId}`;
-          const itemCodeRaw = cleanText(row.ItemCode);
-          const itemCode = itemCodeRaw && itemCodeRaw !== "0" ? itemCodeRaw : `SUP-${supplierId}`;
-          const recordId = `${tenantId}-work-supplier-${supplierId}`;
-
+          const name = cleanText(row.GlassMaterName) || `Glass Material ${materialId}`;
+          
           const offset = params.length;
           values.push(
             `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8})`
           );
           params.push(
-            recordId,
+            uuidv4(),
             tenantId,
-            supplierId,
+            materialId,
             name,
-            itemCode,
+            null,
             true,
             timestamp,
             timestamp
@@ -87,23 +85,23 @@ async function migrateWorkSupplier(tenantId = "tenant_1") {
         try {
           await pg.query(
             `
-            INSERT INTO "WorkSupplier" (
+            INSERT INTO "GlassMaterial" (
               id,
               "tenantId",
-              "supplierId",
+              "materialId",
               name,
-              "itemCode",
+              description,
               "isActive",
               "createdAt",
               "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("supplierId")
+            ON CONFLICT ("materialId")
             DO UPDATE SET
               id = EXCLUDED.id,
               "tenantId" = EXCLUDED."tenantId",
               name = EXCLUDED.name,
-              "itemCode" = EXCLUDED."itemCode",
+              description = EXCLUDED.description,
               "isActive" = EXCLUDED."isActive",
               "updatedAt" = EXCLUDED."updatedAt"
             `,
@@ -111,20 +109,20 @@ async function migrateWorkSupplier(tenantId = "tenant_1") {
           );
           await pg.query("COMMIT");
           total += values.length;
-        } catch (err) {
+        } catch (error) {
           await pg.query("ROLLBACK");
-          throw err;
+          throw error;
         }
       }
 
       const lastRow = rows[rows.length - 1];
-      lastSupplierId = asInteger(lastRow.SapakID) ?? lastSupplierId;
-      console.log(`WorkSupplier migrated so far: ${total} (lastSapakId=${lastSupplierId})`);
+      lastId = asInteger(lastRow.GlassMaterId) ?? lastId;
+      console.log(`GlassMaterial migrated so far: ${total} (lastId=${lastId})`);
     }
 
-    console.log(`✅ WorkSupplier migration completed. Total inserted/updated: ${total}`);
+    console.log(`✅ GlassMaterial migration completed. Total inserted/updated: ${total}`);
     if (skippedInvalidId) {
-      console.warn(`⚠️ Skipped ${skippedInvalidId} suppliers due to invalid SapakID.`);
+      console.warn(`⚠️ Skipped ${skippedInvalidId} rows due to invalid GlassMaterId.`);
     }
   } finally {
     await mysql.end();
@@ -132,5 +130,5 @@ async function migrateWorkSupplier(tenantId = "tenant_1") {
   }
 }
 
-module.exports = migrateWorkSupplier;
+module.exports = migrateGlassMaterial;
 

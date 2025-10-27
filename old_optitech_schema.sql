@@ -98,6 +98,15 @@ CREATE TABLE `sqlCrdClensTypes`
 
 -- CREATE INDEXES ...
 
+CREATE TABLE `sqlCrdClinic`
+ (
+	`FVal`			varchar (60), 
+	`ICount`			int, 
+	`FldId`			smallint
+);
+
+-- CREATE INDEXES ...
+
 CREATE TABLE `sqlCrdGlassBrand`
  (
 	`GlassBrandId`			smallint, 
@@ -303,18 +312,6 @@ CREATE TABLE `sqlWorkSapak`
 
 -- CREATE INDEXES ...
 
-CREATE TABLE `tblBarCodes`
- (
-	`BarCodeId`			int not null auto_increment unique, 
-	`BarCodeName`			float NOT NULL, 
-	`CatNum`			varchar (50) NOT NULL
-);
-
--- CREATE INDEXES ...
-ALTER TABLE `tblBarCodes` ADD UNIQUE INDEX `BarCodeName` (`BarCodeName`);
-ALTER TABLE `tblBarCodes` ADD UNIQUE INDEX `CatNum` (`CatNum`);
-ALTER TABLE `tblBarCodes` ADD PRIMARY KEY (`BarCodeId`);
-
 CREATE TABLE `tblBases`
  (
 	`BaseId`			smallint NOT NULL, 
@@ -352,6 +349,17 @@ CREATE TABLE `tblBranchs`
 -- CREATE INDEXES ...
 ALTER TABLE `tblBranchs` ADD PRIMARY KEY (`BranchId`);
 
+CREATE TABLE `tblCheckTypes`
+ (
+	`CheckId`			smallint NOT NULL, 
+	`CheckName`			varchar (35), 
+	`CheckPrice`			float
+);
+
+-- CREATE INDEXES ...
+ALTER TABLE `tblCheckTypes` ADD UNIQUE INDEX `CheckName` (`CheckName`);
+ALTER TABLE `tblCheckTypes` ADD PRIMARY KEY (`CheckId`);
+
 CREATE TABLE `tblCitys`
  (
 	`CityId`			smallint NOT NULL, 
@@ -361,23 +369,6 @@ CREATE TABLE `tblCitys`
 -- CREATE INDEXES ...
 ALTER TABLE `tblCitys` ADD UNIQUE INDEX `CityName` (`CityName`);
 ALTER TABLE `tblCitys` ADD PRIMARY KEY (`CityId`);
-
-CREATE TABLE `tblClndrApt`
- (
-	`UserID`			int NOT NULL, 
-	`AptDate`			datetime NOT NULL, 
-	`AptNum`			int not null auto_increment unique, 
-	`StarTime`			datetime NOT NULL, 
-	`EndTime`			datetime, 
-	`AptDesc`			varchar (255), 
-	`PerID`			int, 
-	`TookPlace`			boolean NOT NULL, 
-	`Reminder`			int, 
-	`SMSSent`			boolean NOT NULL
-);
-
--- CREATE INDEXES ...
-ALTER TABLE `tblClndrApt` ADD PRIMARY KEY (`AptNum`);
 
 CREATE TABLE `tblClndrSal`
  (
@@ -424,6 +415,17 @@ CREATE TABLE `tblClndrWrk`
 -- CREATE INDEXES ...
 ALTER TABLE `tblClndrWrk` ADD PRIMARY KEY (`WrkId`);
 
+CREATE TABLE `tblClndrWrkFD`
+ (
+	`WrkFDId`			int not null auto_increment unique, 
+	`UserID`			int NOT NULL, 
+	`WrkDate`			datetime NOT NULL, 
+	`FDTypeId`			smallint NOT NULL
+);
+
+-- CREATE INDEXES ...
+ALTER TABLE `tblClndrWrkFD` ADD PRIMARY KEY (`WrkFDId`);
+
 CREATE TABLE `tblCLnsChars`
  (
 	`CLensCharId`			int NOT NULL, 
@@ -432,22 +434,6 @@ CREATE TABLE `tblCLnsChars`
 
 -- CREATE INDEXES ...
 ALTER TABLE `tblCLnsChars` ADD PRIMARY KEY (`CLensCharId`);
-
-CREATE TABLE `tblCLnsPrices`
- (
-	`SapakID`			smallint NOT NULL, 
-	`CLensTypeID`			smallint NOT NULL, 
-	`ClensCharID`			int NOT NULL, 
-	`Price`			float, 
-	`PubPrice`			float, 
-	`RecPrice`			float, 
-	`PrivPrice`			float, 
-	`Active`			boolean NOT NULL, 
-	`Quantity`			int
-);
-
--- CREATE INDEXES ...
-ALTER TABLE `tblCLnsPrices` ADD PRIMARY KEY (`SapakID`, `CLensTypeID`, `ClensCharID`);
 
 CREATE TABLE `tblCLnsTypes`
  (
@@ -518,6 +504,23 @@ ALTER TABLE `tblCrdBuys` ADD INDEX `BuySrcId` (`BuySrcId`);
 ALTER TABLE `tblCrdBuys` ADD PRIMARY KEY (`BuyId`);
 ALTER TABLE `tblCrdBuys` ADD INDEX `tblCrdBuysPerId` (`PerId`);
 
+CREATE TABLE `tblCrdBuysCatNums`
+ (
+	`CatId`			int not null auto_increment unique, 
+	`BuyId`			int NOT NULL, 
+	`CatNum`			varchar (60) NOT NULL, 
+	`Quantity`			smallint, 
+	`Price`			float, 
+	`Discount`			float, 
+	`CatLeft`			int, 
+	`ItemId`			int
+);
+
+-- CREATE INDEXES ...
+ALTER TABLE `tblCrdBuysCatNums` ADD INDEX `CatLeft` (`CatLeft`);
+ALTER TABLE `tblCrdBuysCatNums` ADD UNIQUE INDEX `CatNum` (`BuyId`, `CatNum`);
+ALTER TABLE `tblCrdBuysCatNums` ADD PRIMARY KEY (`CatId`);
+
 CREATE TABLE `tblCrdBuysChecks`
  (
 	`BuyCheckId`			int not null auto_increment unique, 
@@ -529,23 +532,6 @@ CREATE TABLE `tblCrdBuysChecks`
 
 -- CREATE INDEXES ...
 ALTER TABLE `tblCrdBuysChecks` ADD PRIMARY KEY (`BuyCheckId`);
-
-CREATE TABLE `tblCrdBuysPays`
- (
-	`BuyPayId`			int not null auto_increment unique, 
-	`BuyId`			int NOT NULL, 
-	`InvId`			varchar (25), 
-	`PayTypeId`			smallint, 
-	`PayDate`			date, 
-	`PaySum`			float, 
-	`CreditId`			varchar (25), 
-	`CreditCardId`			smallint, 
-	`CreditTypeId`			tinyint, 
-	`CreditPayNum`			tinyint
-);
-
--- CREATE INDEXES ...
-ALTER TABLE `tblCrdBuysPays` ADD PRIMARY KEY (`BuyPayId`);
 
 CREATE TABLE `tblCrdBuysWorkLabels`
  (
@@ -582,7 +568,7 @@ CREATE TABLE `tblCrdBuysWorks`
 	`BagNum`			varchar (8), 
 	`PromiseDate`			datetime, 
 	`DeliverDate`			datetime, 
-	`Comment`			text, 
+	`Comment`			varchar (255), 
 	`FSapakId`			smallint, 
 	`FLabelId`			smallint, 
 	`FModel`			varchar (20), 
@@ -623,14 +609,14 @@ CREATE TABLE `tblCrdBuysWorkStats`
 -- CREATE INDEXES ...
 ALTER TABLE `tblCrdBuysWorkStats` ADD PRIMARY KEY (`WorkStatId`);
 
-CREATE TABLE `tblCrdBuysWorkTypes`
+CREATE TABLE `tblCrdBuysWorkSupply`
  (
-	`WorkTypeId`			smallint NOT NULL, 
-	`WorkTypeName`			varchar (35)
+	`WorkSupplyId`			smallint NOT NULL, 
+	`WorkSupplyName`			varchar (35)
 );
 
 -- CREATE INDEXES ...
-ALTER TABLE `tblCrdBuysWorkTypes` ADD PRIMARY KEY (`WorkTypeId`);
+ALTER TABLE `tblCrdBuysWorkSupply` ADD PRIMARY KEY (`WorkSupplyId`);
 
 CREATE TABLE `tblCrdClensBrands`
  (
@@ -746,6 +732,41 @@ CREATE TABLE `tblCrdClensChecksTint`
 ALTER TABLE `tblCrdClensChecksTint` ADD PRIMARY KEY (`TintId`);
 ALTER TABLE `tblCrdClensChecksTint` ADD UNIQUE INDEX `TintName` (`TintName`);
 
+CREATE TABLE `tblCrdClensFits`
+ (
+	`PerId`			int, 
+	`CheckDate`			datetime, 
+	`FitId`			int not null auto_increment unique, 
+	`DiamR`			numeric (3, 1), 
+	`DiamL`			numeric (3, 1), 
+	`BC1R`			varchar (5), 
+	`BC1L`			varchar (5), 
+	`BC2R`			numeric (3, 2), 
+	`BC2L`			numeric (3, 2), 
+	`SphR`			varchar (6), 
+	`SphL`			varchar (6), 
+	`CylR`			numeric (4, 2), 
+	`CylL`			numeric (4, 2), 
+	`AxR`			tinyint, 
+	`AxL`			tinyint, 
+	`VAR`			varchar (5), 
+	`VAL`			varchar (5), 
+	`VA`			varchar (5), 
+	`PHR`			varchar (5), 
+	`PHL`			varchar (5), 
+	`ClensTypeIdR`			smallint, 
+	`ClensTypeIdL`			smallint, 
+	`ClensManufIdR`			smallint, 
+	`ClensManufIdL`			smallint, 
+	`ClensBrandIdR`			smallint, 
+	`ClensBrandIdL`			smallint, 
+	`ComR`			text, 
+	`ComL`			text
+);
+
+-- CREATE INDEXES ...
+ALTER TABLE `tblCrdClensFits` ADD PRIMARY KEY (`PerId`, `CheckDate`, `FitId`);
+
 CREATE TABLE `tblCrdClensManuf`
  (
 	`ClensManufId`			smallint, 
@@ -754,16 +775,6 @@ CREATE TABLE `tblCrdClensManuf`
 
 -- CREATE INDEXES ...
 ALTER TABLE `tblCrdClensManuf` ADD PRIMARY KEY (`ClensManufId`);
-
-CREATE TABLE `tblCrdClensSolClean`
- (
-	`ClensSolCleanId`			smallint, 
-	`ClensSolCleanName`			varchar (35)
-);
-
--- CREATE INDEXES ...
-ALTER TABLE `tblCrdClensSolClean` ADD UNIQUE INDEX `ClensSolCleanName` (`ClensSolCleanName`);
-ALTER TABLE `tblCrdClensSolClean` ADD PRIMARY KEY (`ClensSolCleanId`);
 
 CREATE TABLE `tblCrdClensSolDisinfect`
  (
@@ -794,16 +805,6 @@ CREATE TABLE `tblCrdClensTypes`
 -- CREATE INDEXES ...
 ALTER TABLE `tblCrdClensTypes` ADD UNIQUE INDEX `ClensTypeName` (`ClensTypeName`);
 ALTER TABLE `tblCrdClensTypes` ADD PRIMARY KEY (`ClensTypeId`);
-
-CREATE TABLE `tblCrdClinicChars`
- (
-	`EyeCheckCharId`			smallint, 
-	`EyeCheckCharName`			varchar (20), 
-	`EyeCheckCharType`			tinyint
-);
-
--- CREATE INDEXES ...
-ALTER TABLE `tblCrdClinicChars` ADD PRIMARY KEY (`EyeCheckCharId`);
 
 CREATE TABLE `tblCrdClinicChecks`
  (
@@ -924,6 +925,15 @@ CREATE TABLE `tblCrdClinicChecks`
 -- CREATE INDEXES ...
 ALTER TABLE `tblCrdClinicChecks` ADD PRIMARY KEY (`ClinicCheckId`);
 
+CREATE TABLE `tblCrdClinicFlds`
+ (
+	`FldId`			smallint, 
+	`FldName`			varchar (10)
+);
+
+-- CREATE INDEXES ...
+ALTER TABLE `tblCrdClinicFlds` ADD PRIMARY KEY (`FldId`);
+
 CREATE TABLE `tblCrdDiags`
  (
 	`PerId`			int NOT NULL, 
@@ -1014,127 +1024,15 @@ CREATE TABLE `tblCrdFrpsLines`
 -- CREATE INDEXES ...
 ALTER TABLE `tblCrdFrpsLines` ADD PRIMARY KEY (`FrpLineId`);
 
-CREATE TABLE `tblCrdGlassChecks`
+CREATE TABLE `tblCrdGlassBrand`
  (
-	`PerId`			int NOT NULL, 
-	`CheckDate`			datetime NOT NULL, 
-	`UserId`			int NOT NULL, 
-	`ReCheckDate`			datetime, 
-	`FVR`			varchar (4), 
-	`FVL`			varchar (4), 
-	`SphR`			varchar (6), 
-	`SphL`			varchar (6), 
-	`CylR`			numeric (4, 2), 
-	`CylL`			numeric (4, 2), 
-	`AxR`			tinyint, 
-	`AxL`			tinyint, 
-	`PrisR`			numeric (4, 2), 
-	`PrisL`			numeric (4, 2), 
-	`BaseR`			smallint NOT NULL, 
-	`BaseL`			smallint NOT NULL, 
-	`VAR`			varchar (6), 
-	`VAL`			varchar (6), 
-	`VA`			varchar (6), 
-	`PHR`			varchar (5), 
-	`PHL`			varchar (5), 
-	`ReadR`			numeric (4, 2), 
-	`ReadL`			numeric (4, 2), 
-	`AddBaseR`			smallint NOT NULL, 
-	`AddBaseL`			smallint NOT NULL, 
-	`AddPrisR`			numeric (4, 2), 
-	`AddPrisL`			numeric (4, 2), 
-	`IntR`			numeric (3, 2), 
-	`IntL`			numeric (3, 2), 
-	`BifR`			numeric (3, 2), 
-	`BifL`			numeric (3, 2), 
-	`MulR`			numeric (3, 2), 
-	`MulL`			numeric (3, 2), 
-	`HighR`			numeric (4, 2), 
-	`HighL`			numeric (4, 2), 
-	`PDDistR`			numeric (4, 1), 
-	`PDDistL`			numeric (4, 1), 
-	`PDReadR`			numeric (4, 1), 
-	`PDReadL`			numeric (4, 1), 
-	`DominEye`			varchar (1), 
-	`IOPL`			tinyint, 
-	`IOPR`			tinyint, 
-	`IOPInstId`			smallint NOT NULL, 
-	`IOPTime`			datetime, 
-	`JR`			varchar (4), 
-	`JL`			varchar (4), 
-	`Comments`			text, 
-	`PDDistA`			numeric (4, 1), 
-	`PDReadA`			numeric (4, 1), 
-	`PFVR`			varchar (4), 
-	`PFVL`			varchar (4), 
-	`PSphR`			varchar (6), 
-	`PSphL`			varchar (6), 
-	`PCylR`			numeric (4, 2), 
-	`PCylL`			numeric (4, 2), 
-	`PAxR`			tinyint, 
-	`PAxL`			tinyint, 
-	`PPrisR`			numeric (4, 2), 
-	`PPrisL`			numeric (4, 2), 
-	`PBaseR`			smallint NOT NULL, 
-	`PBaseL`			smallint NOT NULL, 
-	`PVAR`			varchar (6), 
-	`PVAL`			varchar (6), 
-	`PVA`			varchar (6), 
-	`PPHR`			varchar (5), 
-	`PPHL`			varchar (5), 
-	`PReadR`			numeric (4, 2), 
-	`PReadL`			numeric (4, 2), 
-	`PAddBaseR`			smallint NOT NULL, 
-	`PAddBaseL`			smallint NOT NULL, 
-	`PAddPrisR`			numeric (4, 2), 
-	`PAddPrisL`			numeric (4, 2), 
-	`PIntR`			numeric (3, 2), 
-	`PIntL`			numeric (3, 2), 
-	`PBifR`			numeric (3, 2), 
-	`PBifL`			numeric (3, 2), 
-	`PMulR`			numeric (3, 2), 
-	`PMulL`			numeric (3, 2), 
-	`PHighR`			numeric (4, 2), 
-	`PHighL`			numeric (4, 2), 
-	`PPDDistR`			numeric (4, 1), 
-	`PPDDistL`			numeric (4, 1), 
-	`PPDReadR`			numeric (4, 1), 
-	`PPDReadL`			numeric (4, 1), 
-	`PPDDistA`			numeric (4, 1), 
-	`PPDReadA`			numeric (4, 1), 
-	`PJR`			varchar (4), 
-	`PJL`			varchar (4), 
-	`CSR`			varchar (10), 
-	`CSL`			varchar (10), 
-	`ExtPrisR`			numeric (4, 2), 
-	`ExtPrisL`			numeric (4, 2), 
-	`ExtBaseR`			smallint NOT NULL, 
-	`ExtBaseL`			smallint NOT NULL, 
-	`AddExtPrisR`			numeric (4, 2), 
-	`AddExtPrisL`			numeric (4, 2), 
-	`AddExtBaseR`			smallint NOT NULL, 
-	`AddExtBaseL`			smallint NOT NULL, 
-	`ReadDR`			varchar (5), 
-	`ReadDL`			varchar (5), 
-	`IntDR`			varchar (5), 
-	`IntDL`			varchar (5), 
-	`BifDR`			varchar (5), 
-	`BifDL`			varchar (5), 
-	`CTD`			varchar (100), 
-	`CTN`			varchar (100), 
-	`CCD`			varchar (50), 
-	`CCN`			varchar (50), 
-	`HidCom`			text, 
-	`AmslerR`			varchar (100), 
-	`AmslerL`			varchar (100), 
-	`NPCR`			varchar (10), 
-	`NPAL`			numeric (3, 1), 
-	`NPAR`			numeric (3, 1), 
-	`GlassCId`			int not null auto_increment unique
+	`GlassBrandId`			smallint, 
+	`GlassBrandName`			varchar (35)
 );
 
 -- CREATE INDEXES ...
-ALTER TABLE `tblCrdGlassChecks` ADD PRIMARY KEY (`PerId`, `CheckDate`);
+ALTER TABLE `tblCrdGlassBrand` ADD UNIQUE INDEX `GlassBrandName` (`GlassBrandName`);
+ALTER TABLE `tblCrdGlassBrand` ADD PRIMARY KEY (`GlassBrandId`);
 
 CREATE TABLE `tblCrdGlassChecksFrm`
  (
@@ -1258,15 +1156,15 @@ CREATE TABLE `tblCrdGlassCoat`
 ALTER TABLE `tblCrdGlassCoat` ADD UNIQUE INDEX `GlassCoatName` (`GlassCoatName`);
 ALTER TABLE `tblCrdGlassCoat` ADD PRIMARY KEY (`GlassCoatId`);
 
-CREATE TABLE `tblCrdGlassIOPInsts`
+CREATE TABLE `tblCrdGlassColor`
  (
-	`IOPInstId`			smallint NOT NULL, 
-	`IOPInstName`			varchar (35)
+	`GlassColorId`			smallint, 
+	`GlassColorName`			varchar (35)
 );
 
 -- CREATE INDEXES ...
-ALTER TABLE `tblCrdGlassIOPInsts` ADD UNIQUE INDEX `BaseName` (`IOPInstName`);
-ALTER TABLE `tblCrdGlassIOPInsts` ADD PRIMARY KEY (`IOPInstId`);
+ALTER TABLE `tblCrdGlassColor` ADD UNIQUE INDEX `GlassBrandName` (`GlassColorName`);
+ALTER TABLE `tblCrdGlassColor` ADD PRIMARY KEY (`GlassColorId`);
 
 CREATE TABLE `tblCrdGlassMater`
  (
@@ -1318,6 +1216,16 @@ CREATE TABLE `tblCrdGlassRole`
 ALTER TABLE `tblCrdGlassRole` ADD UNIQUE INDEX `GlassRoleName` (`GlassRoleName`);
 ALTER TABLE `tblCrdGlassRole` ADD PRIMARY KEY (`GlassRoleId`);
 
+CREATE TABLE `tblCrdGlassUses`
+ (
+	`GlassUseId`			smallint, 
+	`GlassUseName`			varchar (35)
+);
+
+-- CREATE INDEXES ...
+ALTER TABLE `tblCrdGlassUses` ADD UNIQUE INDEX `GlassRoleName` (`GlassUseName`);
+ALTER TABLE `tblCrdGlassUses` ADD PRIMARY KEY (`GlassUseId`);
+
 CREATE TABLE `tblCrdLVArea`
  (
 	`LVAreaId`			smallint, 
@@ -1327,16 +1235,6 @@ CREATE TABLE `tblCrdLVArea`
 -- CREATE INDEXES ...
 ALTER TABLE `tblCrdLVArea` ADD UNIQUE INDEX `GlassBrandName` (`LVAreaName`);
 ALTER TABLE `tblCrdLVArea` ADD PRIMARY KEY (`LVAreaId`);
-
-CREATE TABLE `tblCrdLVCap`
- (
-	`LVCapId`			smallint, 
-	`LVCapName`			varchar (35)
-);
-
--- CREATE INDEXES ...
-ALTER TABLE `tblCrdLVCap` ADD UNIQUE INDEX `GlassBrandName` (`LVCapName`);
-ALTER TABLE `tblCrdLVCap` ADD PRIMARY KEY (`LVCapId`);
 
 CREATE TABLE `tblCrdLVChecks`
  (
@@ -1479,14 +1377,19 @@ CREATE TABLE `tblCrdOrthoks`
 -- CREATE INDEXES ...
 ALTER TABLE `tblCrdOrthoks` ADD PRIMARY KEY (`OrthokId`);
 
-CREATE TABLE `tblCreditCards`
+CREATE TABLE `tblCrdOverViews`
  (
-	`CreditCardId`			smallint, 
-	`CreditCardName`			varchar (35)
+	`PerId`			int NOT NULL, 
+	`CheckDate`			datetime NOT NULL, 
+	`Comments`			text, 
+	`VAR`			varchar (6), 
+	`VAL`			varchar (6), 
+	`UserId`			int, 
+	`Pic`			varchar (2)
 );
 
 -- CREATE INDEXES ...
-ALTER TABLE `tblCreditCards` ADD PRIMARY KEY (`CreditCardId`);
+ALTER TABLE `tblCrdOverViews` ADD PRIMARY KEY (`PerId`, `CheckDate`);
 
 CREATE TABLE `tblCreditTypes`
  (
@@ -1549,14 +1452,13 @@ CREATE TABLE `tblFaxes`
 -- CREATE INDEXES ...
 ALTER TABLE `tblFaxes` ADD PRIMARY KEY (`FaxId`);
 
-CREATE TABLE `tblFaxStats`
+CREATE TABLE `tblFaxLines`
  (
-	`faxStatId`			smallint, 
-	`faxStatName`			varchar (15)
+	`FaxId`			int, 
+	`FldId`			int
 );
 
 -- CREATE INDEXES ...
-ALTER TABLE `tblFaxStats` ADD PRIMARY KEY (`faxStatId`);
 
 CREATE TABLE `tblFixExpenses`
  (
@@ -1601,6 +1503,17 @@ CREATE TABLE `tblFrmModelColors`
 
 -- CREATE INDEXES ...
 ALTER TABLE `tblFrmModelColors` ADD PRIMARY KEY (`LabelId`, `ModelId`, `FrameColorId`);
+
+CREATE TABLE `tblFrmModelTypes`
+ (
+	`ModelId`			int NOT NULL, 
+	`ModelName`			varchar (35), 
+	`ISG`			boolean NOT NULL, 
+	`Sizes`			varchar (255)
+);
+
+-- CREATE INDEXES ...
+ALTER TABLE `tblFrmModelTypes` ADD PRIMARY KEY (`ModelId`);
 
 CREATE TABLE `tblFrmPrices`
  (
@@ -1695,17 +1608,6 @@ CREATE TABLE `tblInvoiceChecks`
 -- CREATE INDEXES ...
 ALTER TABLE `tblInvoiceChecks` ADD PRIMARY KEY (`InvoiceCheckId`);
 
-CREATE TABLE `tblInvoiceCredits`
- (
-	`InvoiceCreditId`			int not null auto_increment unique, 
-	`InvoicePayId`			int, 
-	`CreditDate`			date, 
-	`CreditSum`			float
-);
-
--- CREATE INDEXES ...
-ALTER TABLE `tblInvoiceCredits` ADD PRIMARY KEY (`InvoiceCreditId`);
-
 CREATE TABLE `tblInvoicePays`
  (
 	`InvoicePayId`			int not null auto_increment unique, 
@@ -1745,6 +1647,15 @@ CREATE TABLE `tblInvoicesInvs`
 -- CREATE INDEXES ...
 ALTER TABLE `tblInvoicesInvs` ADD PRIMARY KEY (`InvoiceId`);
 
+CREATE TABLE `tblInvoiceTypes`
+ (
+	`InvoiceTypeId`			smallint, 
+	`InvoiceTypeName`			varchar (10)
+);
+
+-- CREATE INDEXES ...
+ALTER TABLE `tblInvoiceTypes` ADD PRIMARY KEY (`InvoiceTypeId`);
+
 CREATE TABLE `tblItemColors`
  (
 	`ItemColorId`			smallint, 
@@ -1770,17 +1681,6 @@ CREATE TABLE `tblItemCounts`
 -- CREATE INDEXES ...
 ALTER TABLE `tblItemCounts` ADD UNIQUE INDEX `ItemIdYear` (`CountYear` DESC, `ItemId`);
 ALTER TABLE `tblItemCounts` ADD PRIMARY KEY (`ItemCountId`);
-
-CREATE TABLE `tblItemCountsYears`
- (
-	`CountYear`			int not null auto_increment unique, 
-	`CountDate`			datetime, 
-	`Closed`			boolean NOT NULL
-);
-
--- CREATE INDEXES ...
-ALTER TABLE `tblItemCountsYears` ADD UNIQUE INDEX `CountDate` (`CountDate`);
-ALTER TABLE `tblItemCountsYears` ADD PRIMARY KEY (`CountYear`);
 
 CREATE TABLE `tblItemLineBuys`
  (
@@ -1823,6 +1723,17 @@ ALTER TABLE `tblItems` ADD UNIQUE INDEX `BarCode` (`BarCode`);
 ALTER TABLE `tblItems` ADD UNIQUE INDEX `ExCatNum` (`ExCatNum`);
 ALTER TABLE `tblItems` ADD PRIMARY KEY (`ItemId`);
 
+CREATE TABLE `tblItemsAdd`
+ (
+	`ItemId`			int not null auto_increment unique, 
+	`ExCatNum`			varchar (50) NOT NULL, 
+	`BarCode`			varchar (50)
+);
+
+-- CREATE INDEXES ...
+ALTER TABLE `tblItemsAdd` ADD UNIQUE INDEX `ExCatNum` (`ExCatNum`);
+ALTER TABLE `tblItemsAdd` ADD PRIMARY KEY (`ItemId`);
+
 CREATE TABLE `tblItemStats`
  (
 	`ItemStatId`			smallint, 
@@ -1858,31 +1769,6 @@ CREATE TABLE `tblLangs`
 -- CREATE INDEXES ...
 ALTER TABLE `tblLangs` ADD PRIMARY KEY (`LangId`);
 
-CREATE TABLE `tblLetters`
- (
-	`LetterId`			int not null auto_increment unique, 
-	`LetterName`			varchar (120), 
-	`Text1`			text, 
-	`Text2`			text, 
-	`Text3`			text, 
-	`Text4`			text, 
-	`Text1Style`			tinyint, 
-	`Text2Style`			tinyint, 
-	`Text3Style`			tinyint, 
-	`Text4Style`			tinyint, 
-	`Text1Font`			varchar (50), 
-	`Text2Font`			varchar (50), 
-	`Text3Font`			varchar (50), 
-	`Text4Font`			varchar (50), 
-	`Text1Size`			smallint, 
-	`Text2Size`			smallint, 
-	`Text3Size`			smallint, 
-	`Text4Size`			smallint
-);
-
--- CREATE INDEXES ...
-ALTER TABLE `tblLetters` ADD PRIMARY KEY (`LetterId`);
-
 CREATE TABLE `tblLettersFollowup`
  (
 	`PerId`			int NOT NULL, 
@@ -1904,6 +1790,15 @@ CREATE TABLE `tblLnsChars`
 
 -- CREATE INDEXES ...
 ALTER TABLE `tblLnsChars` ADD PRIMARY KEY (`LensCharId`);
+
+CREATE TABLE `tblLnsMaterials`
+ (
+	`LensMaterId`			smallint NOT NULL, 
+	`LensMaterName`			varchar (20)
+);
+
+-- CREATE INDEXES ...
+ALTER TABLE `tblLnsMaterials` ADD PRIMARY KEY (`LensMaterId`);
 
 CREATE TABLE `tblLnsPrices`
  (
@@ -1933,21 +1828,6 @@ CREATE TABLE `tblLnsTreatChars`
 
 -- CREATE INDEXES ...
 ALTER TABLE `tblLnsTreatChars` ADD PRIMARY KEY (`TreatCharId`);
-
-CREATE TABLE `tblLnsTreatmens`
- (
-	`SapakID`			smallint NOT NULL, 
-	`TreatId`			smallint NOT NULL, 
-	`TreatCharID`			smallint NOT NULL, 
-	`Price`			float, 
-	`PubPrice`			float, 
-	`RecPrice`			float, 
-	`PrivPrice`			float, 
-	`Active`			boolean NOT NULL
-);
-
--- CREATE INDEXES ...
-ALTER TABLE `tblLnsTreatmens` ADD PRIMARY KEY (`SapakID`, `TreatId`, `TreatCharID`);
 
 CREATE TABLE `tblLnsTreatRules`
  (
@@ -1979,6 +1859,15 @@ CREATE TABLE `tblLnsTreatTypesConnect`
 
 -- CREATE INDEXES ...
 
+CREATE TABLE `tblLnsTypes`
+ (
+	`LensTypeId`			smallint NOT NULL, 
+	`LensTypeName`			varchar (35)
+);
+
+-- CREATE INDEXES ...
+ALTER TABLE `tblLnsTypes` ADD PRIMARY KEY (`LensTypeId`);
+
 CREATE TABLE `tblNewProds`
  (
 	`NewProdId`			int not null auto_increment unique, 
@@ -2004,15 +1893,6 @@ CREATE TABLE `tblOReports`
 
 -- CREATE INDEXES ...
 ALTER TABLE `tblOReports` ADD PRIMARY KEY (`ORepId`);
-
-CREATE TABLE `tblPayTypes`
- (
-	`PayTypeId`			smallint, 
-	`PayTypeName`			varchar (10)
-);
-
--- CREATE INDEXES ...
-ALTER TABLE `tblPayTypes` ADD PRIMARY KEY (`PayTypeId`);
 
 CREATE TABLE `tblPerData`
  (
@@ -2077,6 +1957,15 @@ CREATE TABLE `tblPerPicture`
 ALTER TABLE `tblPerPicture` ADD INDEX `PerId` (`PerId`);
 ALTER TABLE `tblPerPicture` ADD PRIMARY KEY (`PerPicId`);
 
+CREATE TABLE `tblPrlTypes`
+ (
+	`prlType`			tinyint, 
+	`prlName`			varchar (30)
+);
+
+-- CREATE INDEXES ...
+ALTER TABLE `tblPrlTypes` ADD PRIMARY KEY (`prlType`);
+
 CREATE TABLE `tblProfiles`
  (
 	`ProfileId`			int not null auto_increment unique, 
@@ -2096,21 +1985,6 @@ CREATE TABLE `tblPropsNames`
 
 -- CREATE INDEXES ...
 ALTER TABLE `tblPropsNames` ADD PRIMARY KEY (`PropId`);
-
-CREATE TABLE `tblPropsPrices`
- (
-	`SapakID`			smallint NOT NULL, 
-	`PropId`			int NOT NULL, 
-	`Price`			float, 
-	`PubPrice`			float, 
-	`RecPrice`			float, 
-	`PrivPrice`			float, 
-	`Active`			boolean NOT NULL, 
-	`Quantity`			int
-);
-
--- CREATE INDEXES ...
-ALTER TABLE `tblPropsPrices` ADD PRIMARY KEY (`SapakID`, `PropId`);
 
 CREATE TABLE `tblRefs`
  (
@@ -2132,6 +2006,93 @@ CREATE TABLE `tblRefsSub1`
 -- CREATE INDEXES ...
 ALTER TABLE `tblRefsSub1` ADD PRIMARY KEY (`RefsSub1Id`);
 ALTER TABLE `tblRefsSub1` ADD UNIQUE INDEX `RefsSub1` (`RefsSub1Name`, `RefId`);
+
+CREATE TABLE `tblRefsSub2`
+ (
+	`RefsSub2Id`			int not null auto_increment unique, 
+	`RefsSub2Name`			varchar (35), 
+	`subRefId`			int
+);
+
+-- CREATE INDEXES ...
+ALTER TABLE `tblRefsSub2` ADD PRIMARY KEY (`RefsSub2Id`);
+ALTER TABLE `tblRefsSub2` ADD UNIQUE INDEX `RefsSub2` (`RefsSub2Name`, `subRefId`);
+
+CREATE TABLE `tblReportDummy`
+ (
+	`Address`			varchar (50), 
+	`CellPhone`			varchar (12), 
+	`HomePhone`			varchar (12), 
+	`BirthDate`			datetime, 
+	`CityName`			varchar (35), 
+	`PLastName`			varchar (15), 
+	`PFirstName`			varchar (15), 
+	`ULastName`			varchar (15), 
+	`UFirstName`			varchar (10), 
+	`CheckDate`			datetime, 
+	`ReCheckDate`			datetime, 
+	`PupDiam`			varchar (4), 
+	`CornDiam`			numeric (3, 1), 
+	`EyeLidKey`			numeric (3, 1), 
+	`BUT`			tinyint, 
+	`ShirR`			varchar (4), 
+	`ShirL`			varchar (4), 
+	`Ecolor`			varchar (15), 
+	`rHR`			numeric (3, 2), 
+	`rHL`			numeric (3, 2), 
+	`rVR`			numeric (3, 2), 
+	`rVL`			numeric (3, 2), 
+	`AxHR`			tinyint, 
+	`AxHL`			tinyint, 
+	`rTR`			numeric (3, 2), 
+	`rTL`			numeric (3, 2), 
+	`rNR`			numeric (3, 2), 
+	`rNL`			numeric (3, 2), 
+	`rIR`			numeric (3, 2), 
+	`rIL`			numeric (3, 2), 
+	`rSR`			numeric (3, 2), 
+	`rSL`			numeric (3, 2), 
+	`DiamR`			numeric (3, 1), 
+	`DiamL`			numeric (3, 1), 
+	`BC1R`			varchar (5), 
+	`BC1L`			varchar (5), 
+	`BC2R`			numeric (3, 2), 
+	`BC2L`			numeric (3, 2), 
+	`OZR`			varchar (3), 
+	`OZL`			varchar (3), 
+	`PrR`			varchar (35), 
+	`PrL`			varchar (35), 
+	`SphR`			varchar (6), 
+	`SphL`			varchar (6), 
+	`CylR`			numeric (4, 2), 
+	`CylL`			numeric (4, 2), 
+	`AxR`			tinyint, 
+	`AxL`			tinyint, 
+	`ClensTypeIdR`			varchar (35), 
+	`ClensTypeIdL`			varchar (35), 
+	`ClensManufIdR`			varchar (35), 
+	`ClensManufIdL`			varchar (35), 
+	`ClensBrandIdR`			varchar (35), 
+	`ClensBrandIdL`			varchar (35), 
+	`ClensSolCleanName`			varchar (35), 
+	`ClensSolDisinfectName`			varchar (35), 
+	`ClensSolRinseName`			varchar (35), 
+	`Comments`			text, 
+	`PerId`			int, 
+	`MaterR`			varchar (35), 
+	`MaterL`			varchar (35), 
+	`TintR`			varchar (35), 
+	`TintL`			varchar (35), 
+	`VAR`			varchar (5), 
+	`VAL`			varchar (5), 
+	`VA`			varchar (5), 
+	`PHR`			varchar (5), 
+	`PHL`			varchar (5), 
+	`BUTL`			tinyint, 
+	`XId`			int not null auto_increment unique
+);
+
+-- CREATE INDEXES ...
 
 CREATE TABLE `tblSapakComments`
  (
@@ -2178,16 +2139,6 @@ CREATE TABLE `tblSapaks`
 -- CREATE INDEXES ...
 ALTER TABLE `tblSapaks` ADD PRIMARY KEY (`SapakID`);
 
-CREATE TABLE `tblReportDummy`
- (
-	`SapakID`			smallint, 
-	`SapakName`			varchar (35), 
-	`InSum`			float, 
-	`InRem`			float
-);
-
--- CREATE INDEXES ...
-
 CREATE TABLE `tblSapakSends`
  (
 	`SapakSendId`			int not null auto_increment unique, 
@@ -2214,6 +2165,33 @@ CREATE TABLE `tblSapakSends`
 
 -- CREATE INDEXES ...
 ALTER TABLE `tblSapakSends` ADD PRIMARY KEY (`SapakSendId`);
+
+CREATE TABLE `tblSapakSendsLensPlan`
+ (
+	`SapakSendId`			int, 
+	`TreatBlock`			boolean NOT NULL, 
+	`TreatWSec`			boolean NOT NULL, 
+	`TreatWScrew`			boolean NOT NULL, 
+	`TreatWNylon`			boolean NOT NULL, 
+	`TreatWKnife`			boolean NOT NULL, 
+	`LensColor`			varchar (15), 
+	`LensLevel`			varchar (15), 
+	`EyeWidth`			numeric (3, 1), 
+	`EyeHeight`			numeric (3, 1), 
+	`BridgeWidth`			numeric (3, 1), 
+	`CenterHeightR`			numeric (3, 1), 
+	`CenterHeightL`			numeric (3, 1), 
+	`SegHeightR`			numeric (3, 1), 
+	`SegHeightL`			numeric (3, 1), 
+	`PicNum`			varchar (2), 
+	`PCom`			varchar (255), 
+	`Basis`			tinyint, 
+	`Pent`			numeric (4, 2), 
+	`VD`			numeric (4, 2)
+);
+
+-- CREATE INDEXES ...
+ALTER TABLE `tblSapakSendsLensPlan` ADD PRIMARY KEY (`SapakSendId`);
 
 CREATE TABLE `tblSapakSendStats`
  (
@@ -2245,15 +2223,6 @@ CREATE TABLE `tblServiceTypes`
 -- CREATE INDEXES ...
 ALTER TABLE `tblServiceTypes` ADD PRIMARY KEY (`ServiceId`);
 ALTER TABLE `tblServiceTypes` ADD UNIQUE INDEX `ServiceName` (`ServiceName`);
-
-CREATE TABLE `tblSettings`
- (
-	`SetId`			smallint, 
-	`SetVal`			varchar (20)
-);
-
--- CREATE INDEXES ...
-ALTER TABLE `tblSettings` ADD PRIMARY KEY (`SetId`);
 
 CREATE TABLE `tblShortCuts`
  (
@@ -2288,6 +2257,15 @@ CREATE TABLE `tblSMSLens`
 -- CREATE INDEXES ...
 ALTER TABLE `tblSMSLens` ADD PRIMARY KEY (`SMSProviderPrefix`, `SMSLang`);
 
+CREATE TABLE `tblSolutionNames`
+ (
+	`SolutionId`			smallint NOT NULL, 
+	`SolutionName`			varchar (35)
+);
+
+-- CREATE INDEXES ...
+ALTER TABLE `tblSolutionNames` ADD PRIMARY KEY (`SolutionId`);
+
 CREATE TABLE `tblSolutionPrices`
  (
 	`SapakID`			smallint NOT NULL, 
@@ -2311,25 +2289,6 @@ CREATE TABLE `tblSpecialNames`
 
 -- CREATE INDEXES ...
 ALTER TABLE `tblSpecialNames` ADD PRIMARY KEY (`SpecialId`);
-
-CREATE TABLE `tblSpecials`
- (
-	`SapakID`			smallint NOT NULL, 
-	`SpecialId`			smallint NOT NULL, 
-	`PrlType`			tinyint, 
-	`Priority`			smallint, 
-	`Price`			float, 
-	`PubPrice`			float, 
-	`RecPrice`			float, 
-	`PrivPrice`			float, 
-	`Formula`			text, 
-	`data`			varchar (2), 
-	`RLOnly`			boolean NOT NULL, 
-	`Active`			boolean NOT NULL
-);
-
--- CREATE INDEXES ...
-ALTER TABLE `tblSpecials` ADD PRIMARY KEY (`SapakID`, `SpecialId`);
 
 CREATE TABLE `tblSysLevels`
  (
@@ -2400,17 +2359,17 @@ CREATE TABLE `tblVAT`
 -- CREATE INDEXES ...
 ALTER TABLE `tblVAT` ADD PRIMARY KEY (`VStart`, `VEnd`, `VAT`);
 
-CREATE TABLE `tblZipcodeStreets`
+CREATE TABLE `tblZipcodeCities`
  (
 	`CityCode`			int, 
-	`StreetCode`			varchar (50), 
-	`StreetName`			varchar (50), 
-	`AlternateStreetName`			varchar (50)
+	`CityName`			varchar (50), 
+	`CityDivided`			boolean NOT NULL, 
+	`CityZipCode`			int
 );
 
 -- CREATE INDEXES ...
-ALTER TABLE `tblZipcodeStreets` ADD INDEX `CityCode` (`CityCode`);
-ALTER TABLE `tblZipcodeStreets` ADD PRIMARY KEY (`StreetCode`, `StreetName`, `AlternateStreetName`);
+ALTER TABLE `tblZipcodeCities` ADD INDEX `CityZipCode` (`CityZipCode`);
+ALTER TABLE `tblZipcodeCities` ADD PRIMARY KEY (`CityCode`);
 
 CREATE TABLE `tblZipcodeStreetsZipcode`
  (
@@ -2427,454 +2386,382 @@ ALTER TABLE `tblZipcodeStreetsZipcode` ADD INDEX `STREETS_ZIP_CODECityCode` (`Ci
 ALTER TABLE `tblZipcodeStreetsZipcode` ADD INDEX `STREETS_ZIP_CODEStreetCode` (`StreetCode`);
 ALTER TABLE `tblZipcodeStreetsZipcode` ADD INDEX `StreetZipcode` (`StreetZipcode`);
 
-CREATE TABLE `tblCheckTypes`
+CREATE TABLE `tblBarCodes`
  (
-	`CheckId`			smallint NOT NULL, 
-	`CheckName`			varchar (35), 
-	`CheckPrice`			float
+	`BarCodeId`			int not null auto_increment unique, 
+	`BarCodeName`			float NOT NULL, 
+	`CatNum`			varchar (50) NOT NULL
 );
 
 -- CREATE INDEXES ...
-ALTER TABLE `tblCheckTypes` ADD UNIQUE INDEX `CheckName` (`CheckName`);
-ALTER TABLE `tblCheckTypes` ADD PRIMARY KEY (`CheckId`);
+ALTER TABLE `tblBarCodes` ADD UNIQUE INDEX `BarCodeName` (`BarCodeName`);
+ALTER TABLE `tblBarCodes` ADD UNIQUE INDEX `CatNum` (`CatNum`);
+ALTER TABLE `tblBarCodes` ADD PRIMARY KEY (`BarCodeId`);
 
-CREATE TABLE `tblClndrWrkFD`
+CREATE TABLE `tblClndrApt`
  (
-	`WrkFDId`			int not null auto_increment unique, 
 	`UserID`			int NOT NULL, 
-	`WrkDate`			datetime NOT NULL, 
-	`FDTypeId`			smallint NOT NULL
+	`AptDate`			datetime NOT NULL, 
+	`AptNum`			int not null auto_increment unique, 
+	`StarTime`			datetime NOT NULL, 
+	`EndTime`			datetime, 
+	`AptDesc`			varchar (255), 
+	`PerID`			int, 
+	`TookPlace`			boolean NOT NULL, 
+	`Reminder`			int, 
+	`SMSSent`			boolean NOT NULL
 );
 
 -- CREATE INDEXES ...
-ALTER TABLE `tblClndrWrkFD` ADD PRIMARY KEY (`WrkFDId`);
+ALTER TABLE `tblClndrApt` ADD PRIMARY KEY (`AptNum`);
 
-CREATE TABLE `tblCrdBuysCatNums`
+CREATE TABLE `tblCLnsPrices`
  (
-	`CatId`			int not null auto_increment unique, 
-	`BuyId`			int NOT NULL, 
-	`CatNum`			varchar (60) NOT NULL, 
-	`Quantity`			smallint, 
+	`SapakID`			smallint NOT NULL, 
+	`CLensTypeID`			smallint NOT NULL, 
+	`ClensCharID`			int NOT NULL, 
 	`Price`			float, 
-	`Discount`			float, 
-	`CatLeft`			int, 
-	`ItemId`			int
+	`PubPrice`			float, 
+	`RecPrice`			float, 
+	`PrivPrice`			float, 
+	`Active`			boolean NOT NULL, 
+	`Quantity`			int
 );
 
 -- CREATE INDEXES ...
-ALTER TABLE `tblCrdBuysCatNums` ADD INDEX `CatLeft` (`CatLeft`);
-ALTER TABLE `tblCrdBuysCatNums` ADD UNIQUE INDEX `CatNum` (`BuyId`, `CatNum`);
-ALTER TABLE `tblCrdBuysCatNums` ADD PRIMARY KEY (`CatId`);
+ALTER TABLE `tblCLnsPrices` ADD PRIMARY KEY (`SapakID`, `CLensTypeID`, `ClensCharID`);
 
-CREATE TABLE `tblCrdBuysWorkSupply`
+CREATE TABLE `tblCrdBuysPays`
  (
-	`WorkSupplyId`			smallint NOT NULL, 
-	`WorkSupplyName`			varchar (35)
+	`BuyPayId`			int not null auto_increment unique, 
+	`BuyId`			int NOT NULL, 
+	`InvId`			varchar (25), 
+	`PayTypeId`			smallint, 
+	`PayDate`			date, 
+	`PaySum`			float, 
+	`CreditId`			varchar (25), 
+	`CreditCardId`			smallint, 
+	`CreditTypeId`			tinyint, 
+	`CreditPayNum`			tinyint
 );
 
 -- CREATE INDEXES ...
-ALTER TABLE `tblCrdBuysWorkSupply` ADD PRIMARY KEY (`WorkSupplyId`);
+ALTER TABLE `tblCrdBuysPays` ADD PRIMARY KEY (`BuyPayId`);
 
-CREATE TABLE `tblCrdClensFits`
+CREATE TABLE `tblCrdBuysWorkTypes`
  (
-	`PerId`			int, 
-	`CheckDate`			datetime, 
-	`FitId`			int not null auto_increment unique, 
-	`DiamR`			numeric (3, 1), 
-	`DiamL`			numeric (3, 1), 
-	`BC1R`			varchar (5), 
-	`BC1L`			varchar (5), 
-	`BC2R`			numeric (3, 2), 
-	`BC2L`			numeric (3, 2), 
+	`WorkTypeId`			smallint NOT NULL, 
+	`WorkTypeName`			varchar (35)
+);
+
+-- CREATE INDEXES ...
+ALTER TABLE `tblCrdBuysWorkTypes` ADD PRIMARY KEY (`WorkTypeId`);
+
+CREATE TABLE `tblCrdClensSolClean`
+ (
+	`ClensSolCleanId`			smallint, 
+	`ClensSolCleanName`			varchar (35)
+);
+
+-- CREATE INDEXES ...
+ALTER TABLE `tblCrdClensSolClean` ADD UNIQUE INDEX `ClensSolCleanName` (`ClensSolCleanName`);
+ALTER TABLE `tblCrdClensSolClean` ADD PRIMARY KEY (`ClensSolCleanId`);
+
+CREATE TABLE `tblCrdClinicChars`
+ (
+	`EyeCheckCharId`			smallint, 
+	`EyeCheckCharName`			varchar (20), 
+	`EyeCheckCharType`			tinyint
+);
+
+-- CREATE INDEXES ...
+ALTER TABLE `tblCrdClinicChars` ADD PRIMARY KEY (`EyeCheckCharId`);
+
+CREATE TABLE `tblCrdGlassChecks`
+ (
+	`PerId`			int NOT NULL, 
+	`CheckDate`			datetime NOT NULL, 
+	`UserId`			int NOT NULL, 
+	`ReCheckDate`			datetime, 
+	`FVR`			varchar (4), 
+	`FVL`			varchar (4), 
 	`SphR`			varchar (6), 
 	`SphL`			varchar (6), 
 	`CylR`			numeric (4, 2), 
 	`CylL`			numeric (4, 2), 
 	`AxR`			tinyint, 
 	`AxL`			tinyint, 
-	`VAR`			varchar (5), 
-	`VAL`			varchar (5), 
-	`VA`			varchar (5), 
-	`PHR`			varchar (5), 
-	`PHL`			varchar (5), 
-	`ClensTypeIdR`			smallint, 
-	`ClensTypeIdL`			smallint, 
-	`ClensManufIdR`			smallint, 
-	`ClensManufIdL`			smallint, 
-	`ClensBrandIdR`			smallint, 
-	`ClensBrandIdL`			smallint, 
-	`ComR`			text, 
-	`ComL`			text
-);
-
--- CREATE INDEXES ...
-ALTER TABLE `tblCrdClensFits` ADD PRIMARY KEY (`PerId`, `CheckDate`, `FitId`);
-
-CREATE TABLE `tblCrdClinicFlds`
- (
-	`FldId`			smallint, 
-	`FldName`			varchar (10)
-);
-
--- CREATE INDEXES ...
-ALTER TABLE `tblCrdClinicFlds` ADD PRIMARY KEY (`FldId`);
-
-CREATE TABLE `tblCrdGlassBrand`
- (
-	`GlassBrandId`			smallint, 
-	`GlassBrandName`			varchar (35)
-);
-
--- CREATE INDEXES ...
-ALTER TABLE `tblCrdGlassBrand` ADD UNIQUE INDEX `GlassBrandName` (`GlassBrandName`);
-ALTER TABLE `tblCrdGlassBrand` ADD PRIMARY KEY (`GlassBrandId`);
-
-CREATE TABLE `tblCrdGlassColor`
- (
-	`GlassColorId`			smallint, 
-	`GlassColorName`			varchar (35)
-);
-
--- CREATE INDEXES ...
-ALTER TABLE `tblCrdGlassColor` ADD UNIQUE INDEX `GlassBrandName` (`GlassColorName`);
-ALTER TABLE `tblCrdGlassColor` ADD PRIMARY KEY (`GlassColorId`);
-
-CREATE TABLE `tblCrdGlassUses`
- (
-	`GlassUseId`			smallint, 
-	`GlassUseName`			varchar (35)
-);
-
--- CREATE INDEXES ...
-ALTER TABLE `tblCrdGlassUses` ADD UNIQUE INDEX `GlassRoleName` (`GlassUseName`);
-ALTER TABLE `tblCrdGlassUses` ADD PRIMARY KEY (`GlassUseId`);
-
-CREATE TABLE `tblCrdOverViews`
- (
-	`PerId`			int NOT NULL, 
-	`CheckDate`			datetime NOT NULL, 
-	`Comments`			text, 
+	`PrisR`			numeric (4, 2), 
+	`PrisL`			numeric (4, 2), 
+	`BaseR`			smallint NOT NULL, 
+	`BaseL`			smallint NOT NULL, 
 	`VAR`			varchar (6), 
 	`VAL`			varchar (6), 
-	`UserId`			int, 
-	`Pic`			varchar (2)
+	`VA`			varchar (6), 
+	`PHR`			varchar (5), 
+	`PHL`			varchar (5), 
+	`ReadR`			numeric (4, 2), 
+	`ReadL`			numeric (4, 2), 
+	`AddBaseR`			smallint NOT NULL, 
+	`AddBaseL`			smallint NOT NULL, 
+	`AddPrisR`			numeric (4, 2), 
+	`AddPrisL`			numeric (4, 2), 
+	`IntR`			numeric (3, 2), 
+	`IntL`			numeric (3, 2), 
+	`BifR`			numeric (3, 2), 
+	`BifL`			numeric (3, 2), 
+	`MulR`			numeric (3, 2), 
+	`MulL`			numeric (3, 2), 
+	`HighR`			numeric (4, 2), 
+	`HighL`			numeric (4, 2), 
+	`PDDistR`			numeric (4, 1), 
+	`PDDistL`			numeric (4, 1), 
+	`PDReadR`			numeric (4, 1), 
+	`PDReadL`			numeric (4, 1), 
+	`DominEye`			varchar (1), 
+	`IOPL`			tinyint, 
+	`IOPR`			tinyint, 
+	`IOPInstId`			smallint NOT NULL, 
+	`IOPTime`			datetime, 
+	`JR`			varchar (4), 
+	`JL`			varchar (4), 
+	`Comments`			text, 
+	`PDDistA`			numeric (4, 1), 
+	`PDReadA`			numeric (4, 1), 
+	`PFVR`			varchar (4), 
+	`PFVL`			varchar (4), 
+	`PSphR`			varchar (6), 
+	`PSphL`			varchar (6), 
+	`PCylR`			numeric (4, 2), 
+	`PCylL`			numeric (4, 2), 
+	`PAxR`			tinyint, 
+	`PAxL`			tinyint, 
+	`PPrisR`			numeric (4, 2), 
+	`PPrisL`			numeric (4, 2), 
+	`PBaseR`			smallint NOT NULL, 
+	`PBaseL`			smallint NOT NULL, 
+	`PVAR`			varchar (6), 
+	`PVAL`			varchar (6), 
+	`PVA`			varchar (6), 
+	`PPHR`			varchar (5), 
+	`PPHL`			varchar (5), 
+	`PReadR`			numeric (4, 2), 
+	`PReadL`			numeric (4, 2), 
+	`PAddBaseR`			smallint NOT NULL, 
+	`PAddBaseL`			smallint NOT NULL, 
+	`PAddPrisR`			numeric (4, 2), 
+	`PAddPrisL`			numeric (4, 2), 
+	`PIntR`			numeric (3, 2), 
+	`PIntL`			numeric (3, 2), 
+	`PBifR`			numeric (3, 2), 
+	`PBifL`			numeric (3, 2), 
+	`PMulR`			numeric (3, 2), 
+	`PMulL`			numeric (3, 2), 
+	`PHighR`			numeric (4, 2), 
+	`PHighL`			numeric (4, 2), 
+	`PPDDistR`			numeric (4, 1), 
+	`PPDDistL`			numeric (4, 1), 
+	`PPDReadR`			numeric (4, 1), 
+	`PPDReadL`			numeric (4, 1), 
+	`PPDDistA`			numeric (4, 1), 
+	`PPDReadA`			numeric (4, 1), 
+	`PJR`			varchar (4), 
+	`PJL`			varchar (4), 
+	`CSR`			varchar (10), 
+	`CSL`			varchar (10), 
+	`ExtPrisR`			numeric (4, 2), 
+	`ExtPrisL`			numeric (4, 2), 
+	`ExtBaseR`			smallint NOT NULL, 
+	`ExtBaseL`			smallint NOT NULL, 
+	`AddExtPrisR`			numeric (4, 2), 
+	`AddExtPrisL`			numeric (4, 2), 
+	`AddExtBaseR`			smallint NOT NULL, 
+	`AddExtBaseL`			smallint NOT NULL, 
+	`ReadDR`			varchar (5), 
+	`ReadDL`			varchar (5), 
+	`IntDR`			varchar (5), 
+	`IntDL`			varchar (5), 
+	`BifDR`			varchar (5), 
+	`BifDL`			varchar (5), 
+	`CTD`			varchar (100), 
+	`CTN`			varchar (100), 
+	`CCD`			varchar (50), 
+	`CCN`			varchar (50), 
+	`HidCom`			text, 
+	`AmslerR`			varchar (100), 
+	`AmslerL`			varchar (100), 
+	`NPCR`			varchar (10), 
+	`NPAL`			numeric (3, 1), 
+	`NPAR`			numeric (3, 1), 
+	`GlassCId`			int not null auto_increment unique
 );
 
 -- CREATE INDEXES ...
-ALTER TABLE `tblCrdOverViews` ADD PRIMARY KEY (`PerId`, `CheckDate`);
+ALTER TABLE `tblCrdGlassChecks` ADD PRIMARY KEY (`PerId`, `CheckDate`);
 
-CREATE TABLE `tblFaxLines`
+CREATE TABLE `tblCrdGlassIOPInsts`
  (
-	`FaxId`			int, 
-	`FldId`			int
+	`IOPInstId`			smallint NOT NULL, 
+	`IOPInstName`			varchar (35)
 );
 
 -- CREATE INDEXES ...
+ALTER TABLE `tblCrdGlassIOPInsts` ADD UNIQUE INDEX `BaseName` (`IOPInstName`);
+ALTER TABLE `tblCrdGlassIOPInsts` ADD PRIMARY KEY (`IOPInstId`);
 
-CREATE TABLE `tblFrmModelTypes`
+CREATE TABLE `tblCrdLVCap`
  (
-	`ModelId`			int NOT NULL, 
-	`ModelName`			varchar (35), 
-	`ISG`			boolean NOT NULL, 
-	`Sizes`			varchar (255)
+	`LVCapId`			smallint, 
+	`LVCapName`			varchar (35)
 );
 
 -- CREATE INDEXES ...
-ALTER TABLE `tblFrmModelTypes` ADD PRIMARY KEY (`ModelId`);
+ALTER TABLE `tblCrdLVCap` ADD UNIQUE INDEX `GlassBrandName` (`LVCapName`);
+ALTER TABLE `tblCrdLVCap` ADD PRIMARY KEY (`LVCapId`);
 
-CREATE TABLE `tblInvoiceTypes`
+CREATE TABLE `tblCreditCards`
  (
-	`InvoiceTypeId`			smallint, 
-	`InvoiceTypeName`			varchar (10)
+	`CreditCardId`			smallint, 
+	`CreditCardName`			varchar (35)
 );
 
 -- CREATE INDEXES ...
-ALTER TABLE `tblInvoiceTypes` ADD PRIMARY KEY (`InvoiceTypeId`);
+ALTER TABLE `tblCreditCards` ADD PRIMARY KEY (`CreditCardId`);
 
-CREATE TABLE `tblItemsAdd`
+CREATE TABLE `tblFaxStats`
  (
-	`ItemId`			int not null auto_increment unique, 
-	`ExCatNum`			varchar (50) NOT NULL, 
-	`BarCode`			varchar (50)
+	`faxStatId`			smallint, 
+	`faxStatName`			varchar (15)
 );
 
 -- CREATE INDEXES ...
-ALTER TABLE `tblItemsAdd` ADD UNIQUE INDEX `ExCatNum` (`ExCatNum`);
-ALTER TABLE `tblItemsAdd` ADD PRIMARY KEY (`ItemId`);
+ALTER TABLE `tblFaxStats` ADD PRIMARY KEY (`faxStatId`);
 
-CREATE TABLE `tblLnsMaterials`
+CREATE TABLE `tblInvoiceCredits`
  (
-	`LensMaterId`			smallint NOT NULL, 
-	`LensMaterName`			varchar (20)
+	`InvoiceCreditId`			int not null auto_increment unique, 
+	`InvoicePayId`			int, 
+	`CreditDate`			date, 
+	`CreditSum`			float
 );
 
 -- CREATE INDEXES ...
-ALTER TABLE `tblLnsMaterials` ADD PRIMARY KEY (`LensMaterId`);
+ALTER TABLE `tblInvoiceCredits` ADD PRIMARY KEY (`InvoiceCreditId`);
 
-CREATE TABLE `tblLnsTypes`
+CREATE TABLE `tblItemCountsYears`
  (
-	`LensTypeId`			smallint NOT NULL, 
-	`LensTypeName`			varchar (35)
+	`CountYear`			int not null auto_increment unique, 
+	`CountDate`			datetime, 
+	`Closed`			boolean NOT NULL
 );
 
 -- CREATE INDEXES ...
-ALTER TABLE `tblLnsTypes` ADD PRIMARY KEY (`LensTypeId`);
+ALTER TABLE `tblItemCountsYears` ADD UNIQUE INDEX `CountDate` (`CountDate`);
+ALTER TABLE `tblItemCountsYears` ADD PRIMARY KEY (`CountYear`);
 
-CREATE TABLE `tblPrlTypes`
+CREATE TABLE `tblLetters`
  (
-	`prlType`			tinyint, 
-	`prlName`			varchar (30)
+	`LetterId`			int not null auto_increment unique, 
+	`LetterName`			varchar (120), 
+	`Text1`			text, 
+	`Text2`			text, 
+	`Text3`			text, 
+	`Text4`			text, 
+	`Text1Style`			tinyint, 
+	`Text2Style`			tinyint, 
+	`Text3Style`			tinyint, 
+	`Text4Style`			tinyint, 
+	`Text1Font`			varchar (50), 
+	`Text2Font`			varchar (50), 
+	`Text3Font`			varchar (50), 
+	`Text4Font`			varchar (50), 
+	`Text1Size`			smallint, 
+	`Text2Size`			smallint, 
+	`Text3Size`			smallint, 
+	`Text4Size`			smallint
 );
 
 -- CREATE INDEXES ...
-ALTER TABLE `tblPrlTypes` ADD PRIMARY KEY (`prlType`);
+ALTER TABLE `tblLetters` ADD PRIMARY KEY (`LetterId`);
 
-CREATE TABLE `tblRefsSub2`
+CREATE TABLE `tblLnsTreatmens`
  (
-	`RefsSub2Id`			int not null auto_increment unique, 
-	`RefsSub2Name`			varchar (35), 
-	`subRefId`			int
+	`SapakID`			smallint NOT NULL, 
+	`TreatId`			smallint NOT NULL, 
+	`TreatCharID`			smallint NOT NULL, 
+	`Price`			float, 
+	`PubPrice`			float, 
+	`RecPrice`			float, 
+	`PrivPrice`			float, 
+	`Active`			boolean NOT NULL
 );
 
 -- CREATE INDEXES ...
-ALTER TABLE `tblRefsSub2` ADD PRIMARY KEY (`RefsSub2Id`);
-ALTER TABLE `tblRefsSub2` ADD UNIQUE INDEX `RefsSub2` (`RefsSub2Name`, `subRefId`);
+ALTER TABLE `tblLnsTreatmens` ADD PRIMARY KEY (`SapakID`, `TreatId`, `TreatCharID`);
 
-CREATE TABLE `tblSapakSendsLensPlan`
+CREATE TABLE `tblPayTypes`
  (
-	`SapakSendId`			int, 
-	`TreatBlock`			boolean NOT NULL, 
-	`TreatWSec`			boolean NOT NULL, 
-	`TreatWScrew`			boolean NOT NULL, 
-	`TreatWNylon`			boolean NOT NULL, 
-	`TreatWKnife`			boolean NOT NULL, 
-	`LensColor`			varchar (15), 
-	`LensLevel`			varchar (15), 
-	`EyeWidth`			numeric (3, 1), 
-	`EyeHeight`			numeric (3, 1), 
-	`BridgeWidth`			numeric (3, 1), 
-	`CenterHeightR`			numeric (3, 1), 
-	`CenterHeightL`			numeric (3, 1), 
-	`SegHeightR`			numeric (3, 1), 
-	`SegHeightL`			numeric (3, 1), 
-	`PicNum`			varchar (2), 
-	`PCom`			varchar (255), 
-	`Basis`			tinyint, 
-	`Pent`			numeric (4, 2), 
-	`VD`			numeric (4, 2)
+	`PayTypeId`			smallint, 
+	`PayTypeName`			varchar (10)
 );
 
 -- CREATE INDEXES ...
-ALTER TABLE `tblSapakSendsLensPlan` ADD PRIMARY KEY (`SapakSendId`);
+ALTER TABLE `tblPayTypes` ADD PRIMARY KEY (`PayTypeId`);
 
-CREATE TABLE `tblSolutionNames`
+CREATE TABLE `tblPropsPrices`
  (
-	`SolutionId`			smallint NOT NULL, 
-	`SolutionName`			varchar (35)
+	`SapakID`			smallint NOT NULL, 
+	`PropId`			int NOT NULL, 
+	`Price`			float, 
+	`PubPrice`			float, 
+	`RecPrice`			float, 
+	`PrivPrice`			float, 
+	`Active`			boolean NOT NULL, 
+	`Quantity`			int
 );
 
 -- CREATE INDEXES ...
-ALTER TABLE `tblSolutionNames` ADD PRIMARY KEY (`SolutionId`);
+ALTER TABLE `tblPropsPrices` ADD PRIMARY KEY (`SapakID`, `PropId`);
 
-CREATE TABLE `tblZipcodeCities`
+CREATE TABLE `tblSettings`
+ (
+	`SetId`			smallint, 
+	`SetVal`			varchar (20)
+);
+
+-- CREATE INDEXES ...
+ALTER TABLE `tblSettings` ADD PRIMARY KEY (`SetId`);
+
+CREATE TABLE `tblSpecials`
+ (
+	`SapakID`			smallint NOT NULL, 
+	`SpecialId`			smallint NOT NULL, 
+	`PrlType`			tinyint, 
+	`Priority`			smallint, 
+	`Price`			float, 
+	`PubPrice`			float, 
+	`RecPrice`			float, 
+	`PrivPrice`			float, 
+	`Formula`			text, 
+	`data`			varchar (2), 
+	`RLOnly`			boolean NOT NULL, 
+	`Active`			boolean NOT NULL
+);
+
+-- CREATE INDEXES ...
+ALTER TABLE `tblSpecials` ADD PRIMARY KEY (`SapakID`, `SpecialId`);
+
+CREATE TABLE `tblZipcodeStreets`
  (
 	`CityCode`			int, 
-	`CityName`			varchar (50), 
-	`CityDivided`			boolean NOT NULL, 
-	`CityZipCode`			int
+	`StreetCode`			varchar (50), 
+	`StreetName`			varchar (50), 
+	`AlternateStreetName`			varchar (50)
 );
 
 -- CREATE INDEXES ...
-ALTER TABLE `tblZipcodeCities` ADD INDEX `CityZipCode` (`CityZipCode`);
-ALTER TABLE `tblZipcodeCities` ADD PRIMARY KEY (`CityCode`);
-
-CREATE TABLE `sqlCrdClinic`
- (
-	`FVal`			varchar (60), 
-	`ICount`			int, 
-	`FldId`			smallint
-);
-
--- CREATE INDEXES ...
+ALTER TABLE `tblZipcodeStreets` ADD INDEX `CityCode` (`CityCode`);
+ALTER TABLE `tblZipcodeStreets` ADD PRIMARY KEY (`StreetCode`, `StreetName`, `AlternateStreetName`);
 
 
 -- CREATE Relationships ...
-ALTER TABLE `tblCrdFrpsLines` ADD CONSTRAINT `tblCrdFrpsLines_FrpId_fk` FOREIGN KEY (`FrpId`) REFERENCES `tblCrdFrps`(`FrpId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblSapakSends` ADD CONSTRAINT `tblSapakSends_spsStatId_fk` FOREIGN KEY (`spsStatId`) REFERENCES `tblSapakSendStats`(`spsStatId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdLVChecks` ADD CONSTRAINT `tblCrdLVChecks_AreaId_fk` FOREIGN KEY (`AreaId`) REFERENCES `tblCrdLVArea`(`LVAreaId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdBuysChecks` ADD CONSTRAINT `tblCrdBuysChecks_BuyPayId_fk` FOREIGN KEY (`BuyPayId`) REFERENCES `tblCrdBuysPays`(`BuyPayId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblInvoices` ADD CONSTRAINT `tblInvoices_InvoicePayId_fk` FOREIGN KEY (`InvoicePayId`) REFERENCES `tblInvoicePays`(`InvoicePayId`) ON UPDATE CASCADE;
-ALTER TABLE `tblItems` ADD CONSTRAINT `tblItems_ItemStatId_fk` FOREIGN KEY (`ItemStatId`) REFERENCES `tblItemStats`(`ItemStatId`) ON UPDATE CASCADE;
-ALTER TABLE `tblInvoicePays` ADD CONSTRAINT `tblInvoicePays_PayTypeId_fk` FOREIGN KEY (`PayTypeId`) REFERENCES `tblPayTypes`(`PayTypeId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdLVChecks` ADD CONSTRAINT `tblCrdLVChecks_FrameId_fk` FOREIGN KEY (`FrameId`) REFERENCES `tblCrdLVFrame`(`LVFrameId`) ON UPDATE CASCADE;
-ALTER TABLE `tblInventory` ADD CONSTRAINT `tblInventory_InvMoveTypeId_fk` FOREIGN KEY (`InvMoveTypeId`) REFERENCES `tblInvMoveTypes`(`InvMoveTypeId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdBuysWorks` ADD CONSTRAINT `tblCrdBuysWorks_SapakId_fk` FOREIGN KEY (`SapakId`) REFERENCES `tblCrdBuysWorkSapaks`(`SapakID`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdBuysWorks` ADD CONSTRAINT `tblCrdBuysWorks_WorkStatId_fk` FOREIGN KEY (`WorkStatId`) REFERENCES `tblCrdBuysWorkStats`(`WorkStatId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdBuysWorks` ADD CONSTRAINT `tblCrdBuysWorks_WorkSupplyId_fk` FOREIGN KEY (`WorkSupplyId`) REFERENCES `tblCrdBuysWorkSupply`(`WorkSupplyId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdBuysWorks` ADD CONSTRAINT `tblCrdBuysWorks_WorkTypeId_fk` FOREIGN KEY (`WorkTypeId`) REFERENCES `tblCrdBuysWorkTypes`(`WorkTypeId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdBuysWorks` ADD CONSTRAINT `tblCrdBuysWorks_LabId_fk` FOREIGN KEY (`LabId`) REFERENCES `tblCrdBuysWorkLabs`(`LabID`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdLVChecks` ADD CONSTRAINT `tblCrdLVChecks_ManufId_fk` FOREIGN KEY (`ManufId`) REFERENCES `tblCrdLVManuf`(`LVManufId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdBuysPays` ADD CONSTRAINT `tblCrdBuysPays_CreditCardId_fk` FOREIGN KEY (`CreditCardId`) REFERENCES `tblCreditCards`(`CreditCardId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdLVChecks` ADD CONSTRAINT `tblCrdLVChecks_CapId_fk` FOREIGN KEY (`CapId`) REFERENCES `tblCrdLVCap`(`LVCapId`) ON UPDATE CASCADE;
-ALTER TABLE `tblSapakSends` ADD CONSTRAINT `tblSapakSends_SapakDestId_fk` FOREIGN KEY (`SapakDestId`) REFERENCES `tblSapakDests`(`SapakDestId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdBuysPays` ADD CONSTRAINT `tblCrdBuysPays_CreditTypeId_fk` FOREIGN KEY (`CreditTypeId`) REFERENCES `tblCreditTypes`(`CreditTypeId`) ON UPDATE CASCADE;
-ALTER TABLE `tblItemLines` ADD CONSTRAINT `tblItemLines_ItemId_fk` FOREIGN KEY (`ItemId`) REFERENCES `tblItems`(`ItemId`) ON UPDATE CASCADE;
-ALTER TABLE `tblInvoiceChecks` ADD CONSTRAINT `tblInvoiceChecks_InvoicePayId_fk` FOREIGN KEY (`InvoicePayId`) REFERENCES `tblInvoicePays`(`InvoicePayId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblItemLines` ADD CONSTRAINT `tblItemLines_InvId_fk` FOREIGN KEY (`InvId`) REFERENCES `tblInventory`(`InvId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblCLnsPrices` ADD CONSTRAINT `tblCLnsPrices_SapakID_fk` FOREIGN KEY (`SapakID`) REFERENCES `tblSapaks`(`SapakID`) ON UPDATE CASCADE;
-ALTER TABLE `tblLnsPrices` ADD CONSTRAINT `tblLnsPrices_SapakID_fk` FOREIGN KEY (`SapakID`) REFERENCES `tblSapaks`(`SapakID`) ON UPDATE CASCADE;
-ALTER TABLE `tblLnsTreatmens` ADD CONSTRAINT `tblLnsTreatmens_SapakID_fk` FOREIGN KEY (`SapakID`) REFERENCES `tblSapaks`(`SapakID`) ON UPDATE CASCADE;
-ALTER TABLE `tblPropsPrices` ADD CONSTRAINT `tblPropsPrices_SapakID_fk` FOREIGN KEY (`SapakID`) REFERENCES `tblSapaks`(`SapakID`) ON UPDATE CASCADE;
-ALTER TABLE `tblSolutionPrices` ADD CONSTRAINT `tblSolutionPrices_SapakID_fk` FOREIGN KEY (`SapakID`) REFERENCES `tblSapaks`(`SapakID`) ON UPDATE CASCADE;
-ALTER TABLE `tblCLnsPrices` ADD CONSTRAINT `tblCLnsPrices_ClensCharID_fk` FOREIGN KEY (`ClensCharID`) REFERENCES `tblCLnsChars`(`CLensCharId`) ON UPDATE CASCADE;
-ALTER TABLE `tblFrmModelColors` ADD CONSTRAINT `tblFrmModelColors_LabelId_fk` FOREIGN KEY (`LabelId`) REFERENCES `tblFrmColors`(`LabelId`) ON UPDATE CASCADE;
-ALTER TABLE `tblFrmModelColors` ADD CONSTRAINT `tblFrmModelColors_FrameColorId_fk` FOREIGN KEY (`FrameColorId`) REFERENCES `tblFrmColors`(`FrameColorId`) ON UPDATE CASCADE;
-ALTER TABLE `tblFrmColors` ADD CONSTRAINT `tblFrmColors_LabelId_fk` FOREIGN KEY (`LabelId`) REFERENCES `tblFrmLabelTypes`(`LabelId`) ON UPDATE CASCADE;
-ALTER TABLE `tblFrmPrices` ADD CONSTRAINT `tblFrmPrices_LabelId_fk` FOREIGN KEY (`LabelId`) REFERENCES `tblFrmLabelTypes`(`LabelId`) ON UPDATE CASCADE;
-ALTER TABLE `tblFrmModelColors` ADD CONSTRAINT `tblFrmModelColors_ModelId_fk` FOREIGN KEY (`ModelId`) REFERENCES `tblFrmModelTypes`(`ModelId`) ON UPDATE CASCADE;
-ALTER TABLE `tblFrmPrices` ADD CONSTRAINT `tblFrmPrices_ModelId_fk` FOREIGN KEY (`ModelId`) REFERENCES `tblFrmModelTypes`(`ModelId`) ON UPDATE CASCADE;
-ALTER TABLE `tblLnsPrices` ADD CONSTRAINT `tblLnsPrices_LensCharID_fk` FOREIGN KEY (`LensCharID`) REFERENCES `tblLnsChars`(`LensCharId`) ON UPDATE CASCADE;
-ALTER TABLE `tblLnsTreatmens` ADD CONSTRAINT `tblLnsTreatmens_TreatCharID_fk` FOREIGN KEY (`TreatCharID`) REFERENCES `tblLnsTreatChars`(`TreatCharId`) ON UPDATE CASCADE;
-ALTER TABLE `tblSapakComments` ADD CONSTRAINT `tblSapakComments_prlType_fk` FOREIGN KEY (`prlType`) REFERENCES `tblPrlTypes`(`prlType`) ON UPDATE CASCADE;
-ALTER TABLE `tblSpecials` ADD CONSTRAINT `tblSpecials_PrlType_fk` FOREIGN KEY (`PrlType`) REFERENCES `tblPrlTypes`(`prlType`) ON UPDATE CASCADE;
-ALTER TABLE `tblFrmPrices` ADD CONSTRAINT `tblFrmPrices_SapakId_fk` FOREIGN KEY (`SapakId`) REFERENCES `tblSapaks`(`SapakID`) ON UPDATE CASCADE;
-ALTER TABLE `tblSapakComments` ADD CONSTRAINT `tblSapakComments_SapakId_fk` FOREIGN KEY (`SapakId`) REFERENCES `tblSapaks`(`SapakID`) ON UPDATE CASCADE;
-ALTER TABLE `tblSpecials` ADD CONSTRAINT `tblSpecials_SapakID_fk` FOREIGN KEY (`SapakID`) REFERENCES `tblSapaks`(`SapakID`) ON UPDATE CASCADE;
-ALTER TABLE `tblSolutionPrices` ADD CONSTRAINT `tblSolutionPrices_SolutionId_fk` FOREIGN KEY (`SolutionId`) REFERENCES `tblSolutionNames`(`SolutionId`) ON UPDATE CASCADE;
-ALTER TABLE `tblSpecials` ADD CONSTRAINT `tblSpecials_SpecialId_fk` FOREIGN KEY (`SpecialId`) REFERENCES `tblSpecialNames`(`SpecialId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdGlassChecksGlassesP` ADD CONSTRAINT `tblCrdGlassChecksGlassesP_UseId_fk` FOREIGN KEY (`UseId`) REFERENCES `tblCrdGlassUses`(`GlassUseId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdGlassChecksGlassesP` ADD CONSTRAINT `tblCrdGlassChecksGlassesP_EyeId_fk` FOREIGN KEY (`EyeId`) REFERENCES `tblEyes`(`EyeId`) ON UPDATE CASCADE;
-ALTER TABLE `tblInvoiceCredits` ADD CONSTRAINT `tblInvoiceCredits_InvoicePayId_fk` FOREIGN KEY (`InvoicePayId`) REFERENCES `tblInvoicePays`(`InvoicePayId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblCrdGlassChecks` ADD CONSTRAINT `tblCrdGlassChecks_BaseR_fk` FOREIGN KEY (`BaseR`) REFERENCES `tblBases`(`BaseId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdGlassChecks` ADD CONSTRAINT `tblCrdGlassChecks_BaseL_fk` FOREIGN KEY (`BaseL`) REFERENCES `tblBases`(`BaseId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdGlassChecks` ADD CONSTRAINT `tblCrdGlassChecks_AddBaseR_fk` FOREIGN KEY (`AddBaseR`) REFERENCES `tblBases`(`BaseId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdGlassChecks` ADD CONSTRAINT `tblCrdGlassChecks_AddBaseL_fk` FOREIGN KEY (`AddBaseL`) REFERENCES `tblBases`(`BaseId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdGlassChecks` ADD CONSTRAINT `tblCrdGlassChecks_PBaseR_fk` FOREIGN KEY (`PBaseR`) REFERENCES `tblBases`(`BaseId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdGlassChecks` ADD CONSTRAINT `tblCrdGlassChecks_PBaseL_fk` FOREIGN KEY (`PBaseL`) REFERENCES `tblBases`(`BaseId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdGlassChecks` ADD CONSTRAINT `tblCrdGlassChecks_PAddBaseR_fk` FOREIGN KEY (`PAddBaseR`) REFERENCES `tblBases`(`BaseId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdGlassChecks` ADD CONSTRAINT `tblCrdGlassChecks_PAddBaseL_fk` FOREIGN KEY (`PAddBaseL`) REFERENCES `tblBases`(`BaseId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdBuys` ADD CONSTRAINT `tblCrdBuys_BranchId_fk` FOREIGN KEY (`BranchId`) REFERENCES `tblBranchs`(`BranchId`) ON UPDATE CASCADE;
-ALTER TABLE `tblInventory` ADD CONSTRAINT `tblInventory_BranchId_fk` FOREIGN KEY (`BranchId`) REFERENCES `tblBranchs`(`BranchId`) ON UPDATE CASCADE;
-ALTER TABLE `tblPerData` ADD CONSTRAINT `tblPerData_BranchId_fk` FOREIGN KEY (`BranchId`) REFERENCES `tblBranchs`(`BranchId`) ON UPDATE CASCADE;
-ALTER TABLE `tblUsers` ADD CONSTRAINT `tblUsers_BranchId_fk` FOREIGN KEY (`BranchId`) REFERENCES `tblBranchs`(`BranchId`) ON UPDATE CASCADE;
-ALTER TABLE `tblContacts` ADD CONSTRAINT `tblContacts_CityID_fk` FOREIGN KEY (`CityID`) REFERENCES `tblCitys`(`CityId`) ON UPDATE CASCADE;
-ALTER TABLE `tblGroups` ADD CONSTRAINT `tblGroups_CityId_fk` FOREIGN KEY (`CityId`) REFERENCES `tblCitys`(`CityId`) ON UPDATE CASCADE;
-ALTER TABLE `tblPerData` ADD CONSTRAINT `tblPerData_CityId_fk` FOREIGN KEY (`CityId`) REFERENCES `tblCitys`(`CityId`) ON UPDATE CASCADE;
-ALTER TABLE `tblUsers` ADD CONSTRAINT `tblUsers_CityId_fk` FOREIGN KEY (`CityId`) REFERENCES `tblCitys`(`CityId`) ON UPDATE CASCADE;
-ALTER TABLE `tblClndrTasks` ADD CONSTRAINT `tblClndrTasks_PriorityId_fk` FOREIGN KEY (`PriorityId`) REFERENCES `tblClndrTasksPriority`(`PriorityId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCLnsPrices` ADD CONSTRAINT `tblCLnsPrices_CLensTypeID_fk` FOREIGN KEY (`CLensTypeID`) REFERENCES `tblCLnsTypes`(`CLensTypeID`) ON UPDATE CASCADE;
-ALTER TABLE `tblContactAgents` ADD CONSTRAINT `tblContactAgents_CntID_fk` FOREIGN KEY (`CntID`) REFERENCES `tblContacts`(`CntID`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblCrdClensChecks` ADD CONSTRAINT `tblCrdClensChecks_TintR_fk` FOREIGN KEY (`TintR`) REFERENCES `tblCrdClensChecksTint`(`TintId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdClensChecks` ADD CONSTRAINT `tblCrdClensChecks_TintL_fk` FOREIGN KEY (`TintL`) REFERENCES `tblCrdClensChecksTint`(`TintId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdBuysWorks` ADD CONSTRAINT `tblCrdBuysWorks_ClensSapakId_fk` FOREIGN KEY (`ClensSapakId`) REFERENCES `tblCrdClensManuf`(`ClensManufId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdClensChecks` ADD CONSTRAINT `tblCrdClensChecks_ClensManufIdR_fk` FOREIGN KEY (`ClensManufIdR`) REFERENCES `tblCrdClensManuf`(`ClensManufId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdClensChecks` ADD CONSTRAINT `tblCrdClensChecks_ClensManufIdL_fk` FOREIGN KEY (`ClensManufIdL`) REFERENCES `tblCrdClensManuf`(`ClensManufId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdClensFits` ADD CONSTRAINT `tblCrdClensFits_ClensManufIdR_fk` FOREIGN KEY (`ClensManufIdR`) REFERENCES `tblCrdClensManuf`(`ClensManufId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdClensFits` ADD CONSTRAINT `tblCrdClensFits_ClensManufIdL_fk` FOREIGN KEY (`ClensManufIdL`) REFERENCES `tblCrdClensManuf`(`ClensManufId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdClensChecks` ADD CONSTRAINT `tblCrdClensChecks_ClensSolCleanId_fk` FOREIGN KEY (`ClensSolCleanId`) REFERENCES `tblCrdClensSolClean`(`ClensSolCleanId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdClensChecks` ADD CONSTRAINT `tblCrdClensChecks_ClensSolDisinfectId_fk` FOREIGN KEY (`ClensSolDisinfectId`) REFERENCES `tblCrdClensSolDisinfect`(`ClensSolDisinfectId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdClensChecks` ADD CONSTRAINT `tblCrdClensChecks_ClensSolRinseId_fk` FOREIGN KEY (`ClensSolRinseId`) REFERENCES `tblCrdClensSolRinse`(`ClensSolRinseId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdClensChecks` ADD CONSTRAINT `tblCrdClensChecks_ClensTypeIdR_fk` FOREIGN KEY (`ClensTypeIdR`) REFERENCES `tblCrdClensTypes`(`ClensTypeId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdClensChecks` ADD CONSTRAINT `tblCrdClensChecks_ClensTypeIdL_fk` FOREIGN KEY (`ClensTypeIdL`) REFERENCES `tblCrdClensTypes`(`ClensTypeId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdClensFits` ADD CONSTRAINT `tblCrdClensFits_ClensTypeIdR_fk` FOREIGN KEY (`ClensTypeIdR`) REFERENCES `tblCrdClensTypes`(`ClensTypeId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdClensFits` ADD CONSTRAINT `tblCrdClensFits_ClensTypeIdL_fk` FOREIGN KEY (`ClensTypeIdL`) REFERENCES `tblCrdClensTypes`(`ClensTypeId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdBuysWorks` ADD CONSTRAINT `tblCrdBuysWorks_GlassSapakId_fk` FOREIGN KEY (`GlassSapakId`) REFERENCES `tblCrdGlassBrand`(`GlassBrandId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdGlassChecksGlasses` ADD CONSTRAINT `tblCrdGlassChecksGlasses_BrandId_fk` FOREIGN KEY (`BrandId`) REFERENCES `tblCrdGlassBrand`(`GlassBrandId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdGlassChecksGlasses` ADD CONSTRAINT `tblCrdGlassChecksGlasses_PerId_fk` FOREIGN KEY (`PerId`) REFERENCES `tblCrdGlassChecks`(`PerId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblCrdGlassChecksGlasses` ADD CONSTRAINT `tblCrdGlassChecksGlasses_CheckDate_fk` FOREIGN KEY (`CheckDate`) REFERENCES `tblCrdGlassChecks`(`CheckDate`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblItemLineBuys` ADD CONSTRAINT `tblItemLineBuys_CatId_fk` FOREIGN KEY (`CatId`) REFERENCES `tblCrdBuysCatNums`(`CatId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblCrdBuysCatNums` ADD CONSTRAINT `tblCrdBuysCatNums_BuyId_fk` FOREIGN KEY (`BuyId`) REFERENCES `tblCrdBuys`(`BuyId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblCrdBuysPays` ADD CONSTRAINT `tblCrdBuysPays_BuyId_fk` FOREIGN KEY (`BuyId`) REFERENCES `tblCrdBuys`(`BuyId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblCrdBuysWorks` ADD CONSTRAINT `tblCrdBuysWorks_FLabelId_fk` FOREIGN KEY (`FLabelId`) REFERENCES `tblCrdBuysWorkLabels`(`LabelId`) ON UPDATE CASCADE;
-ALTER TABLE `tblContacts` ADD CONSTRAINT `tblContacts_SapakID_fk` FOREIGN KEY (`SapakID`) REFERENCES `tblCrdBuysWorkSapaks`(`SapakID`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblCrdBuysWorkLabels` ADD CONSTRAINT `tblCrdBuysWorkLabels_SapakId_fk` FOREIGN KEY (`SapakId`) REFERENCES `tblCrdBuysWorkSapaks`(`SapakID`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblCrdBuysWorks` ADD CONSTRAINT `tblCrdBuysWorks_FSapakId_fk` FOREIGN KEY (`FSapakId`) REFERENCES `tblCrdBuysWorkSapaks`(`SapakID`) ON UPDATE CASCADE;
-ALTER TABLE `tblInventory` ADD CONSTRAINT `tblInventory_InvSapakId_fk` FOREIGN KEY (`InvSapakId`) REFERENCES `tblCrdBuysWorkSapaks`(`SapakID`) ON UPDATE CASCADE;
-ALTER TABLE `tblInvoicePays` ADD CONSTRAINT `tblInvoicePays_SapakID_fk` FOREIGN KEY (`SapakID`) REFERENCES `tblCrdBuysWorkSapaks`(`SapakID`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblInvoices` ADD CONSTRAINT `tblInvoices_SapakID_fk` FOREIGN KEY (`SapakID`) REFERENCES `tblCrdBuysWorkSapaks`(`SapakID`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblCrdClensChecks` ADD CONSTRAINT `tblCrdClensChecks_ClensBrandIdR_fk` FOREIGN KEY (`ClensBrandIdR`) REFERENCES `tblCrdClensBrands`(`ClensBrandId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdClensChecks` ADD CONSTRAINT `tblCrdClensChecks_ClensBrandIdL_fk` FOREIGN KEY (`ClensBrandIdL`) REFERENCES `tblCrdClensBrands`(`ClensBrandId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdClensFits` ADD CONSTRAINT `tblCrdClensFits_ClensBrandIdR_fk` FOREIGN KEY (`ClensBrandIdR`) REFERENCES `tblCrdClensBrands`(`ClensBrandId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdClensFits` ADD CONSTRAINT `tblCrdClensFits_ClensBrandIdL_fk` FOREIGN KEY (`ClensBrandIdL`) REFERENCES `tblCrdClensBrands`(`ClensBrandId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdClensChecks` ADD CONSTRAINT `tblCrdClensChecks_MaterR_fk` FOREIGN KEY (`MaterR`) REFERENCES `tblCrdClensChecksMater`(`MaterId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdClensChecks` ADD CONSTRAINT `tblCrdClensChecks_MaterL_fk` FOREIGN KEY (`MaterL`) REFERENCES `tblCrdClensChecksMater`(`MaterId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdClensChecks` ADD CONSTRAINT `tblCrdClensChecks_PrR_fk` FOREIGN KEY (`PrR`) REFERENCES `tblCrdClensChecksPr`(`PrId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdClensChecks` ADD CONSTRAINT `tblCrdClensChecks_PrL_fk` FOREIGN KEY (`PrL`) REFERENCES `tblCrdClensChecksPr`(`PrId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdClensFits` ADD CONSTRAINT `tblCrdClensFits_PerId_fk` FOREIGN KEY (`PerId`) REFERENCES `tblCrdClensChecks`(`PerId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblCrdClensFits` ADD CONSTRAINT `tblCrdClensFits_CheckDate_fk` FOREIGN KEY (`CheckDate`) REFERENCES `tblCrdClensChecks`(`CheckDate`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblCrdGlassChecksGlassesP` ADD CONSTRAINT `tblCrdGlassChecksGlassesP_PerId_fk` FOREIGN KEY (`PerId`) REFERENCES `tblCrdGlassChecks`(`PerId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblCrdGlassChecksGlassesP` ADD CONSTRAINT `tblCrdGlassChecksGlassesP_CheckDate_fk` FOREIGN KEY (`CheckDate`) REFERENCES `tblCrdGlassChecks`(`CheckDate`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblCrdGlassChecksPrevs` ADD CONSTRAINT `tblCrdGlassChecksPrevs_PerId_fk` FOREIGN KEY (`PerId`) REFERENCES `tblCrdGlassChecks`(`PerId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblCrdGlassChecksPrevs` ADD CONSTRAINT `tblCrdGlassChecksPrevs_CheckDate_fk` FOREIGN KEY (`CheckDate`) REFERENCES `tblCrdGlassChecks`(`CheckDate`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblCrdLVChecks` ADD CONSTRAINT `tblCrdLVChecks_PerId_fk` FOREIGN KEY (`PerId`) REFERENCES `tblCrdGlassChecks`(`PerId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblCrdLVChecks` ADD CONSTRAINT `tblCrdLVChecks_CheckDate_fk` FOREIGN KEY (`CheckDate`) REFERENCES `tblCrdGlassChecks`(`CheckDate`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblCrdGlassChecksGlasses` ADD CONSTRAINT `tblCrdGlassChecksGlasses_CoatId_fk` FOREIGN KEY (`CoatId`) REFERENCES `tblCrdGlassCoat`(`GlassCoatId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdGlassChecksGlasses` ADD CONSTRAINT `tblCrdGlassChecksGlasses_ColorId_fk` FOREIGN KEY (`ColorId`) REFERENCES `tblCrdGlassColor`(`GlassColorId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdGlassChecks` ADD CONSTRAINT `tblCrdGlassChecks_IOPInstId_fk` FOREIGN KEY (`IOPInstId`) REFERENCES `tblCrdGlassIOPInsts`(`IOPInstId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdGlassChecksGlasses` ADD CONSTRAINT `tblCrdGlassChecksGlasses_MaterId_fk` FOREIGN KEY (`MaterId`) REFERENCES `tblCrdGlassMater`(`GlassMaterId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdGlassChecksGlasses` ADD CONSTRAINT `tblCrdGlassChecksGlasses_ModelId_fk` FOREIGN KEY (`ModelId`) REFERENCES `tblCrdGlassModel`(`GlassModelId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdGlassChecksPrevs` ADD CONSTRAINT `tblCrdGlassChecksPrevs_RetDistId1_fk` FOREIGN KEY (`RetDistId1`) REFERENCES `tblCrdGlassRetDists`(`RetDistId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdGlassChecksPrevs` ADD CONSTRAINT `tblCrdGlassChecksPrevs_RetDistId2_fk` FOREIGN KEY (`RetDistId2`) REFERENCES `tblCrdGlassRetDists`(`RetDistId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdGlassChecksPrevs` ADD CONSTRAINT `tblCrdGlassChecksPrevs_RetTypeId1_fk` FOREIGN KEY (`RetTypeId1`) REFERENCES `tblCrdGlassRetTypes`(`RetTypeId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdGlassChecksPrevs` ADD CONSTRAINT `tblCrdGlassChecksPrevs_RetTypeId2_fk` FOREIGN KEY (`RetTypeId2`) REFERENCES `tblCrdGlassRetTypes`(`RetTypeId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdGlassChecksGlasses` ADD CONSTRAINT `tblCrdGlassChecksGlasses_RoleId_fk` FOREIGN KEY (`RoleId`) REFERENCES `tblCrdGlassRole`(`GlassRoleId`) ON UPDATE CASCADE;
-ALTER TABLE `tblInvoicePays` ADD CONSTRAINT `tblInvoicePays_CreditCardId_fk` FOREIGN KEY (`CreditCardId`) REFERENCES `tblCreditCards`(`CreditCardId`) ON UPDATE CASCADE;
-ALTER TABLE `tblGroups` ADD CONSTRAINT `tblGroups_DiscountId_fk` FOREIGN KEY (`DiscountId`) REFERENCES `tblDiscounts`(`DiscountId`) ON UPDATE CASCADE;
-ALTER TABLE `tblPerData` ADD CONSTRAINT `tblPerData_DiscountId_fk` FOREIGN KEY (`DiscountId`) REFERENCES `tblDiscounts`(`DiscountId`) ON UPDATE CASCADE;
-ALTER TABLE `tblFaxes` ADD CONSTRAINT `tblFaxes_faxStatId_fk` FOREIGN KEY (`faxStatId`) REFERENCES `tblFaxStats`(`faxStatId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblPerData` ADD CONSTRAINT `tblPerData_GroupId_fk` FOREIGN KEY (`GroupId`) REFERENCES `tblGroups`(`GroupId`) ON UPDATE CASCADE;
-ALTER TABLE `tblInvoicesInvs` ADD CONSTRAINT `tblInvoicesInvs_InvId_fk` FOREIGN KEY (`InvId`) REFERENCES `tblInventory`(`InvId`) ON UPDATE CASCADE;
-ALTER TABLE `tblInventory` ADD CONSTRAINT `tblInventory_InvMovePropId_fk` FOREIGN KEY (`InvMovePropId`) REFERENCES `tblInvMoveProps`(`InvMovePropId`) ON UPDATE CASCADE;
-ALTER TABLE `tblInvoicesInvs` ADD CONSTRAINT `tblInvoicesInvs_InvoiceId_fk` FOREIGN KEY (`InvoiceId`) REFERENCES `tblInvoices`(`InvoiceId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblInvoices` ADD CONSTRAINT `tblInvoices_InvoiceTypeId_fk` FOREIGN KEY (`InvoiceTypeId`) REFERENCES `tblInvoiceTypes`(`InvoiceTypeId`) ON UPDATE CASCADE;
-ALTER TABLE `tblItemCounts` ADD CONSTRAINT `tblItemCounts_CountYear_fk` FOREIGN KEY (`CountYear`) REFERENCES `tblItemCountsYears`(`CountYear`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblItemLineBuys` ADD CONSTRAINT `tblItemLineBuys_ItemLineId_fk` FOREIGN KEY (`ItemLineId`) REFERENCES `tblItemLines`(`ItemLineId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblItemCounts` ADD CONSTRAINT `tblItemCounts_ItemId_fk` FOREIGN KEY (`ItemId`) REFERENCES `tblItems`(`ItemId`) ON UPDATE CASCADE;
-ALTER TABLE `tblPerData` ADD CONSTRAINT `tblPerData_LangId_fk` FOREIGN KEY (`LangId`) REFERENCES `tblLangs`(`LangId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdGlassChecksGlassesP` ADD CONSTRAINT `tblCrdGlassChecksGlassesP_LensCharId_fk` FOREIGN KEY (`LensCharId`) REFERENCES `tblLnsChars`(`LensCharId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdGlassChecksGlassesP` ADD CONSTRAINT `tblCrdGlassChecksGlassesP_LensMaterId_fk` FOREIGN KEY (`LensMaterId`) REFERENCES `tblLnsMaterials`(`LensMaterId`) ON UPDATE CASCADE;
-ALTER TABLE `tblLnsPrices` ADD CONSTRAINT `tblLnsPrices_LensMaterID_fk` FOREIGN KEY (`LensMaterID`) REFERENCES `tblLnsMaterials`(`LensMaterId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdGlassChecksGlassesP` ADD CONSTRAINT `tblCrdGlassChecksGlassesP_TreatCharId_fk` FOREIGN KEY (`TreatCharId`) REFERENCES `tblLnsTreatChars`(`TreatCharId`) ON UPDATE CASCADE;
-ALTER TABLE `tblLnsTreatmens` ADD CONSTRAINT `tblLnsTreatmens_TreatId_fk` FOREIGN KEY (`TreatId`) REFERENCES `tblLnsTreatTypes`(`TreatId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdGlassChecksGlassesP` ADD CONSTRAINT `tblCrdGlassChecksGlassesP_LensTypeId_fk` FOREIGN KEY (`LensTypeId`) REFERENCES `tblLnsTypes`(`LensTypeId`) ON UPDATE CASCADE;
-ALTER TABLE `tblLnsPrices` ADD CONSTRAINT `tblLnsPrices_LensTypeID_fk` FOREIGN KEY (`LensTypeID`) REFERENCES `tblLnsTypes`(`LensTypeId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdBuysPays` ADD CONSTRAINT `tblCrdBuysPays_PayTypeId_fk` FOREIGN KEY (`PayTypeId`) REFERENCES `tblPayTypes`(`PayTypeId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdBuysWorks` ADD CONSTRAINT `tblCrdBuysWorks_PerId_fk` FOREIGN KEY (`PerId`) REFERENCES `tblPerData`(`PerId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblCrdClensChecks` ADD CONSTRAINT `tblCrdClensChecks_PerId_fk` FOREIGN KEY (`PerId`) REFERENCES `tblPerData`(`PerId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblCrdClinicChecks` ADD CONSTRAINT `tblCrdClinicChecks_PerId_fk` FOREIGN KEY (`PerId`) REFERENCES `tblPerData`(`PerId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblCrdDiags` ADD CONSTRAINT `tblCrdDiags_PerId_fk` FOREIGN KEY (`PerId`) REFERENCES `tblPerData`(`PerId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblCrdDisDiags` ADD CONSTRAINT `tblCrdDisDiags_PerId_fk` FOREIGN KEY (`PerId`) REFERENCES `tblPerData`(`PerId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblCrdFrps` ADD CONSTRAINT `tblCrdFrps_PerId_fk` FOREIGN KEY (`PerId`) REFERENCES `tblPerData`(`PerId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblCrdGlassChecks` ADD CONSTRAINT `tblCrdGlassChecks_PerId_fk` FOREIGN KEY (`PerId`) REFERENCES `tblPerData`(`PerId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblCrdOverViews` ADD CONSTRAINT `tblCrdOverViews_PerId_fk` FOREIGN KEY (`PerId`) REFERENCES `tblPerData`(`PerId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblLettersFollowup` ADD CONSTRAINT `tblLettersFollowup_PerId_fk` FOREIGN KEY (`PerId`) REFERENCES `tblPerData`(`PerId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblPerLast` ADD CONSTRAINT `tblPerLast_PerId_fk` FOREIGN KEY (`PerId`) REFERENCES `tblPerData`(`PerId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblSapakPerComments` ADD CONSTRAINT `tblSapakPerComments_prlType_fk` FOREIGN KEY (`prlType`) REFERENCES `tblPrlTypes`(`prlType`) ON UPDATE CASCADE;
-ALTER TABLE `tblPropsPrices` ADD CONSTRAINT `tblPropsPrices_PropId_fk` FOREIGN KEY (`PropId`) REFERENCES `tblPropsNames`(`PropId`) ON UPDATE CASCADE;
-ALTER TABLE `tblPerData` ADD CONSTRAINT `tblPerData_RefsSub1Id_fk` FOREIGN KEY (`RefsSub1Id`) REFERENCES `tblRefsSub1`(`RefsSub1Id`) ON UPDATE CASCADE;
-ALTER TABLE `tblRefsSub2` ADD CONSTRAINT `tblRefsSub2_subRefId_fk` FOREIGN KEY (`subRefId`) REFERENCES `tblRefsSub1`(`RefsSub1Id`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblPerData` ADD CONSTRAINT `tblPerData_RefsSub2Id_fk` FOREIGN KEY (`RefsSub2Id`) REFERENCES `tblRefsSub2`(`RefsSub2Id`) ON UPDATE CASCADE;
-ALTER TABLE `tblPerData` ADD CONSTRAINT `tblPerData_RefId_fk` FOREIGN KEY (`RefId`) REFERENCES `tblRefs`(`RefId`) ON UPDATE CASCADE;
-ALTER TABLE `tblRefsSub1` ADD CONSTRAINT `tblRefsSub1_RefId_fk` FOREIGN KEY (`RefId`) REFERENCES `tblRefs`(`RefId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblFaxes` ADD CONSTRAINT `tblFaxes_SapakDestId_fk` FOREIGN KEY (`SapakDestId`) REFERENCES `tblSapakDests`(`SapakDestId`) ON UPDATE CASCADE;
-ALTER TABLE `tblSapakSendsLensPlan` ADD CONSTRAINT `tblSapakSendsLensPlan_SapakSendId_fk` FOREIGN KEY (`SapakSendId`) REFERENCES `tblSapakSends`(`SapakSendId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblCrdBuysWorks` ADD CONSTRAINT `tblCrdBuysWorks_LnsSapakId_fk` FOREIGN KEY (`LnsSapakId`) REFERENCES `tblSapaks`(`SapakID`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdGlassChecksGlassesP` ADD CONSTRAINT `tblCrdGlassChecksGlassesP_SapakId_fk` FOREIGN KEY (`SapakId`) REFERENCES `tblSapaks`(`SapakID`) ON UPDATE CASCADE;
-ALTER TABLE `tblSapakDests` ADD CONSTRAINT `tblSapakDests_SapakId_fk` FOREIGN KEY (`SapakId`) REFERENCES `tblSapaks`(`SapakID`) ON UPDATE CASCADE;
-ALTER TABLE `tblSapakPerComments` ADD CONSTRAINT `tblSapakPerComments_SapakId_fk` FOREIGN KEY (`SapakId`) REFERENCES `tblSapaks`(`SapakID`) ON UPDATE CASCADE;
-ALTER TABLE `tblUsers` ADD CONSTRAINT `tblUsers_LevelId_fk` FOREIGN KEY (`LevelId`) REFERENCES `tblSysLevels`(`LevelId`) ON UPDATE CASCADE;
-ALTER TABLE `tblClndrApt` ADD CONSTRAINT `tblClndrApt_UserID_fk` FOREIGN KEY (`UserID`) REFERENCES `tblUsers`(`UserId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblClndrSal` ADD CONSTRAINT `tblClndrSal_UserID_fk` FOREIGN KEY (`UserID`) REFERENCES `tblUsers`(`UserId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblClndrTasks` ADD CONSTRAINT `tblClndrTasks_UserId_fk` FOREIGN KEY (`UserId`) REFERENCES `tblUsers`(`UserId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblClndrWrk` ADD CONSTRAINT `tblClndrWrk_UserID_fk` FOREIGN KEY (`UserID`) REFERENCES `tblUsers`(`UserId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblClndrWrkFD` ADD CONSTRAINT `tblClndrWrkFD_UserID_fk` FOREIGN KEY (`UserID`) REFERENCES `tblUsers`(`UserId`) ON UPDATE CASCADE ON DELETE CASCADE;
-ALTER TABLE `tblCrdBuys` ADD CONSTRAINT `tblCrdBuys_UserId_fk` FOREIGN KEY (`UserId`) REFERENCES `tblUsers`(`UserId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdBuysWorks` ADD CONSTRAINT `tblCrdBuysWorks_UserId_fk` FOREIGN KEY (`UserId`) REFERENCES `tblUsers`(`UserId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdClensChecks` ADD CONSTRAINT `tblCrdClensChecks_UserId_fk` FOREIGN KEY (`UserId`) REFERENCES `tblUsers`(`UserId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdDiags` ADD CONSTRAINT `tblCrdDiags_UserId_fk` FOREIGN KEY (`UserId`) REFERENCES `tblUsers`(`UserId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdDisDiags` ADD CONSTRAINT `tblCrdDisDiags_UserId_fk` FOREIGN KEY (`UserId`) REFERENCES `tblUsers`(`UserId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdGlassChecks` ADD CONSTRAINT `tblCrdGlassChecks_UserId_fk` FOREIGN KEY (`UserId`) REFERENCES `tblUsers`(`UserId`) ON UPDATE CASCADE;
-ALTER TABLE `tblCrdOverViews` ADD CONSTRAINT `tblCrdOverViews_UserId_fk` FOREIGN KEY (`UserId`) REFERENCES `tblUsers`(`UserId`) ON UPDATE CASCADE;
-ALTER TABLE `tblInventory` ADD CONSTRAINT `tblInventory_UserId_fk` FOREIGN KEY (`UserId`) REFERENCES `tblUsers`(`UserId`) ON UPDATE CASCADE;
-ALTER TABLE `tblPerData` ADD CONSTRAINT `tblPerData_UserId_fk` FOREIGN KEY (`UserId`) REFERENCES `tblUsers`(`UserId`) ON UPDATE CASCADE;
-ALTER TABLE `tblSapakSends` ADD CONSTRAINT `tblSapakSends_UserId_fk` FOREIGN KEY (`UserId`) REFERENCES `tblUsers`(`UserId`) ON UPDATE CASCADE;

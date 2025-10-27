@@ -2,8 +2,10 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 16.9 (Ubuntu 16.9-0ubuntu0.24.04.1)
--- Dumped by pg_dump version 16.9 (Ubuntu 16.9-0ubuntu0.24.04.1)
+\restrict tPbKurbEkXtAsm80P1AaBOhAgXflwtN8H4EGlioUgIhSXT5Oc5ld6yeAkNZmHiH
+
+-- Dumped from database version 16.10 (Ubuntu 16.10-0ubuntu0.24.04.1)
+-- Dumped by pg_dump version 16.10 (Ubuntu 16.10-0ubuntu0.24.04.1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -16,9 +18,164 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+--
+-- Name: ChatChannelType; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public."ChatChannelType" AS ENUM (
+    'GENERAL',
+    'URGENT',
+    'VISIT',
+    'DIRECT',
+    'SYSTEM'
+);
+
+
+ALTER TYPE public."ChatChannelType" OWNER TO postgres;
+
+--
+-- Name: ChatMessageType; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public."ChatMessageType" AS ENUM (
+    'TEXT',
+    'QUICK_ACTION',
+    'CHECKLIST',
+    'STATUS',
+    'ALERT',
+    'SYSTEM',
+    'TEMPLATE'
+);
+
+
+ALTER TYPE public."ChatMessageType" OWNER TO postgres;
+
+--
+-- Name: ChatNotificationType; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public."ChatNotificationType" AS ENUM (
+    'MESSAGE',
+    'MENTION',
+    'REACTION',
+    'SYSTEM',
+    'URGENT'
+);
+
+
+ALTER TYPE public."ChatNotificationType" OWNER TO postgres;
+
+--
+-- Name: ChatRole; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public."ChatRole" AS ENUM (
+    'ADMIN',
+    'MODERATOR',
+    'MEMBER',
+    'OBSERVER'
+);
+
+
+ALTER TYPE public."ChatRole" OWNER TO postgres;
+
+--
+-- Name: ChatRoomType; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public."ChatRoomType" AS ENUM (
+    'ROOM',
+    'LOBBY',
+    'VISIT',
+    'DIRECT'
+);
+
+
+ALTER TYPE public."ChatRoomType" OWNER TO postgres;
+
+--
+-- Name: MigrationPhase; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public."MigrationPhase" AS ENUM (
+    'UPLOAD',
+    'EXTRACTION',
+    'MIGRATION',
+    'VERIFICATION',
+    'CLEANUP'
+);
+
+
+ALTER TYPE public."MigrationPhase" OWNER TO postgres;
+
+--
+-- Name: MigrationStatus; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public."MigrationStatus" AS ENUM (
+    'PENDING',
+    'UPLOADING',
+    'UPLOADED',
+    'EXTRACTING',
+    'EXTRACTED',
+    'MIGRATING',
+    'VERIFYING',
+    'COMPLETED',
+    'FAILED',
+    'CANCELLED'
+);
+
+
+ALTER TYPE public."MigrationStatus" OWNER TO postgres;
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
+
+--
+-- Name: AISuggestion; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."AISuggestion" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "examinationId" text NOT NULL,
+    "suggestionType" text NOT NULL,
+    suggestion jsonb NOT NULL,
+    reasoning text,
+    confidence double precision,
+    accepted boolean,
+    "acceptedAt" timestamp(3) without time zone,
+    "rejectedReason" text,
+    "modifiedSuggestion" jsonb,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."AISuggestion" OWNER TO postgres;
+
+--
+-- Name: AddressLookup; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."AddressLookup" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "cityCode" integer,
+    "streetCode" text,
+    "startingHouseNumber" integer,
+    "endingHouseNumber" integer,
+    "streetZipcode" integer,
+    "streetName" text,
+    "alternateStreetName" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."AddressLookup" OWNER TO postgres;
 
 --
 -- Name: AdvancedExamination; Type: TABLE; Schema: public; Owner: postgres
@@ -153,6 +310,23 @@ CREATE TABLE public."AdvancedExamination" (
 ALTER TABLE public."AdvancedExamination" OWNER TO postgres;
 
 --
+-- Name: ApplicationSetting; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ApplicationSetting" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "setId" integer,
+    "setVal" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."ApplicationSetting" OWNER TO postgres;
+
+--
 -- Name: Appointment; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -167,15 +341,38 @@ CREATE TABLE public."Appointment" (
     status text DEFAULT 'SCHEDULED'::text NOT NULL,
     notes text,
     "reminderSent" boolean DEFAULT false NOT NULL,
-    "SMSSent"      Boolean
-    "TookPlace"    Integer
     "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     "updatedAt" timestamp(3) without time zone NOT NULL,
-    "branchId" text
+    "branchId" text,
+    "SMSSent" boolean DEFAULT false NOT NULL,
+    "TookPlace" text NOT NULL
 );
 
 
 ALTER TABLE public."Appointment" OWNER TO postgres;
+
+--
+-- Name: AuditLog; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."AuditLog" (
+    id text NOT NULL,
+    "tenantId" text,
+    "userId" text NOT NULL,
+    action text NOT NULL,
+    resource text NOT NULL,
+    "resourceId" text,
+    details text,
+    "oldValues" jsonb,
+    "newValues" jsonb,
+    "ipAddress" text,
+    "userAgent" text,
+    metadata jsonb,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."AuditLog" OWNER TO postgres;
 
 --
 -- Name: BarcodeManagement; Type: TABLE; Schema: public; Owner: postgres
@@ -186,15 +383,58 @@ CREATE TABLE public."BarcodeManagement" (
     "tenantId" text NOT NULL,
     "productId" text,
     barcode text NOT NULL,
-    "CatNum" text,
     "barcodeType" text DEFAULT 'EAN13'::text NOT NULL,
     "isActive" boolean DEFAULT true NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "branchId" text
+);
+
+
+ALTER TABLE public."BarcodeManagement" OWNER TO postgres;
+
+--
+-- Name: Base; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."Base" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "baseId" integer,
+    "baseName" text,
     "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     "updatedAt" timestamp(3) without time zone NOT NULL
 );
 
 
-ALTER TABLE public."BarcodeManagement" OWNER TO postgres;
+ALTER TABLE public."Base" OWNER TO postgres;
+
+--
+-- Name: BisData; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."BisData" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "bisId" integer,
+    "bisNum" text,
+    "bisName" text,
+    phone text,
+    fax text,
+    email text,
+    address text,
+    "zipCode" integer,
+    "creditMode" integer,
+    "creditDays" integer,
+    "creditFactor" numeric(65,30),
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."BisData" OWNER TO postgres;
 
 --
 -- Name: Branch; Type: TABLE; Schema: public; Owner: postgres
@@ -241,6 +481,39 @@ CREATE TABLE public."Brand" (
 
 
 ALTER TABLE public."Brand" OWNER TO postgres;
+
+--
+-- Name: BusinessContact; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."BusinessContact" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "cntID" integer,
+    "lastName" text,
+    "firstName" text,
+    "workPhone" text,
+    "homePhone" text,
+    "cellPhone" text,
+    fax text,
+    address text,
+    "zipCode" integer,
+    "cityID" integer,
+    "eMail" text,
+    "webSite" text,
+    comment text,
+    "hidCom" text,
+    "isSapak" integer,
+    "creditCon" integer,
+    "remDate" timestamp(3) without time zone,
+    "sapakID" integer,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."BusinessContact" OWNER TO postgres;
 
 --
 -- Name: CashDrawerEvent; Type: TABLE; Schema: public; Owner: postgres
@@ -328,6 +601,206 @@ CREATE TABLE public."CashierShift" (
 ALTER TABLE public."CashierShift" OWNER TO postgres;
 
 --
+-- Name: ChatChannel; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ChatChannel" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "roomId" text NOT NULL,
+    name text NOT NULL,
+    "displayName" text NOT NULL,
+    type public."ChatChannelType" DEFAULT 'GENERAL'::public."ChatChannelType" NOT NULL,
+    description text,
+    "isActive" boolean DEFAULT true NOT NULL,
+    "isArchived" boolean DEFAULT false NOT NULL,
+    "archivedAt" timestamp(3) without time zone,
+    "archivedBy" text,
+    "visitId" text,
+    "patientId" text,
+    settings jsonb,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."ChatChannel" OWNER TO postgres;
+
+--
+-- Name: ChatChannelMember; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ChatChannelMember" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "channelId" text NOT NULL,
+    "userId" text NOT NULL,
+    "userType" text NOT NULL,
+    role public."ChatRole" DEFAULT 'MEMBER'::public."ChatRole" NOT NULL,
+    permissions jsonb,
+    "muteNotifications" boolean DEFAULT false NOT NULL,
+    "mutedUntil" timestamp(3) without time zone,
+    "lastSeenAt" timestamp(3) without time zone,
+    "unreadCount" integer DEFAULT 0 NOT NULL,
+    "joinedAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "leftAt" timestamp(3) without time zone
+);
+
+
+ALTER TABLE public."ChatChannelMember" OWNER TO postgres;
+
+--
+-- Name: ChatMessage; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ChatMessage" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "channelId" text NOT NULL,
+    "senderId" text NOT NULL,
+    "senderType" text NOT NULL,
+    "senderName" text,
+    content text NOT NULL,
+    "messageType" public."ChatMessageType" DEFAULT 'TEXT'::public."ChatMessageType" NOT NULL,
+    "structuredData" jsonb,
+    attachments jsonb,
+    "readAt" timestamp(3) without time zone,
+    "readBy" text,
+    "pinnedAt" timestamp(3) without time zone,
+    "pinnedBy" text,
+    reactions jsonb,
+    "replyToId" text,
+    "threadId" text,
+    "quickActions" jsonb,
+    metadata jsonb,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "deletedAt" timestamp(3) without time zone
+);
+
+
+ALTER TABLE public."ChatMessage" OWNER TO postgres;
+
+--
+-- Name: ChatMessageTemplate; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ChatMessageTemplate" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    name text NOT NULL,
+    content text NOT NULL,
+    type public."ChatMessageType" DEFAULT 'TEXT'::public."ChatMessageType" NOT NULL,
+    category text,
+    variables jsonb,
+    "quickActions" jsonb,
+    "isActive" boolean DEFAULT true NOT NULL,
+    "isSystem" boolean DEFAULT false NOT NULL,
+    "usageCount" integer DEFAULT 0 NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."ChatMessageTemplate" OWNER TO postgres;
+
+--
+-- Name: ChatNotification; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ChatNotification" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "userId" text NOT NULL,
+    "channelId" text NOT NULL,
+    "messageId" text,
+    type public."ChatNotificationType" NOT NULL,
+    title text NOT NULL,
+    content text NOT NULL,
+    data jsonb,
+    "isRead" boolean DEFAULT false NOT NULL,
+    "readAt" timestamp(3) without time zone,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."ChatNotification" OWNER TO postgres;
+
+--
+-- Name: ChatRoom; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ChatRoom" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    name text NOT NULL,
+    "displayName" text NOT NULL,
+    type public."ChatRoomType" DEFAULT 'ROOM'::public."ChatRoomType" NOT NULL,
+    description text,
+    "isActive" boolean DEFAULT true NOT NULL,
+    settings jsonb,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."ChatRoom" OWNER TO postgres;
+
+--
+-- Name: ChatRoomMember; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ChatRoomMember" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "roomId" text NOT NULL,
+    "userId" text NOT NULL,
+    "userType" text NOT NULL,
+    role public."ChatRole" DEFAULT 'MEMBER'::public."ChatRole" NOT NULL,
+    permissions jsonb,
+    "joinedAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "leftAt" timestamp(3) without time zone
+);
+
+
+ALTER TABLE public."ChatRoomMember" OWNER TO postgres;
+
+--
+-- Name: ChatSearch; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ChatSearch" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "userId" text NOT NULL,
+    query text NOT NULL,
+    filters jsonb,
+    results jsonb,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."ChatSearch" OWNER TO postgres;
+
+--
+-- Name: ChatTyping; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ChatTyping" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "channelId" text NOT NULL,
+    "userId" text NOT NULL,
+    "userType" text NOT NULL,
+    "userName" text,
+    "startedAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."ChatTyping" OWNER TO postgres;
+
+--
 -- Name: CheckType; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -340,7 +813,8 @@ CREATE TABLE public."CheckType" (
     description text,
     "isActive" boolean DEFAULT true NOT NULL,
     "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    "updatedAt" timestamp(3) without time zone NOT NULL
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "branchId" text
 );
 
 
@@ -362,6 +836,140 @@ CREATE TABLE public."City" (
 
 
 ALTER TABLE public."City" OWNER TO postgres;
+
+--
+-- Name: ClinicalData; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ClinicalData" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "eyeCheckCharId" integer,
+    "eyeCheckCharName" text,
+    "eyeCheckCharType" integer,
+    "clinicCheckId" integer,
+    "perId" integer,
+    "userId" integer,
+    "checkDate" timestamp(3) without time zone,
+    "reCheckDate" timestamp(3) without time zone,
+    "glassCheckDate" timestamp(3) without time zone,
+    "yN1" integer,
+    "yN2" integer,
+    "yN3" integer,
+    "yN4" integer,
+    "yN5" integer,
+    "yN6" integer,
+    "yN7" integer,
+    "yN8" integer,
+    "yN9" integer,
+    "yN10" integer,
+    "yN11" integer,
+    "yN12" integer,
+    "yN13" integer,
+    "yN14" integer,
+    "yN15" integer,
+    "yN16" integer,
+    "yN17" integer,
+    "yN18" integer,
+    "yN19" integer,
+    "yN20" integer,
+    "yN21" integer,
+    "yN22" integer,
+    "yN23" integer,
+    "yN24" integer,
+    "yN25" integer,
+    "yN26" integer,
+    "yN27" integer,
+    "yN28" integer,
+    "yN29" integer,
+    "yN30" integer,
+    "yN31" integer,
+    "yN32" integer,
+    "yN33" integer,
+    "yN34" integer,
+    "yN35" integer,
+    "yN36" integer,
+    "yN37" integer,
+    "yN38" integer,
+    "yN39" integer,
+    "yN40" integer,
+    "yN41" integer,
+    "yN42" integer,
+    "yN43" integer,
+    "yN44" integer,
+    "yN45" integer,
+    "yN46" integer,
+    "yN47" integer,
+    "yN48" integer,
+    "yN49" integer,
+    "yN50" integer,
+    "yN51" integer,
+    "yN52" integer,
+    "yN53" integer,
+    "yN54" integer,
+    "yN55" integer,
+    "yN56" integer,
+    "yN57" integer,
+    "yN58" integer,
+    meds text,
+    "medsEye" text,
+    "prevTreat" text,
+    com text,
+    other1 text,
+    other2 text,
+    other3 text,
+    other4 text,
+    "eyeLidR" text,
+    "eyeLidL" text,
+    "tearWayR" text,
+    "tearWayL" text,
+    "choroidR" text,
+    "choroidL" text,
+    "limitR" text,
+    "limitL" text,
+    "cornR" text,
+    "cornL" text,
+    "chamberR" text,
+    "chamberL" text,
+    "angleR" text,
+    "angleL" text,
+    "iOPR" text,
+    "iOPL" text,
+    "irisR" text,
+    "irisL" text,
+    "pupilR" text,
+    "pupilL" text,
+    "lensR" text,
+    "lensL" text,
+    "enamelR" text,
+    "enamelL" text,
+    "diskR" text,
+    "diskL" text,
+    "cDAVR" text,
+    "cDAVL" text,
+    "maculaR" text,
+    "maculaL" text,
+    "perimeterR" text,
+    "perimeterL" text,
+    "amslaR" text,
+    "amslaL" text,
+    "vFieldR" text,
+    "vFieldL" text,
+    pic3 text,
+    pic4 text,
+    "cSR" text,
+    "cSL" text,
+    "fldId" integer,
+    "fldName" text,
+    "fVal" text,
+    "iCount" integer,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."ClinicalData" OWNER TO postgres;
 
 --
 -- Name: ClinicalDiagnosis; Type: TABLE; Schema: public; Owner: postgres
@@ -471,11 +1079,243 @@ CREATE TABLE public."ClinicalExamination" (
     "lensLeft" text,
     "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     "updatedAt" timestamp(3) without time zone NOT NULL,
-    "branchId" text
+    "branchId" text,
+    "choroidLeft" text,
+    "choroidRight" text,
+    "limitLeft" text,
+    "limitRight" text,
+    "perimeterLeft" text,
+    "perimeterRight" text
 );
 
 
 ALTER TABLE public."ClinicalExamination" OWNER TO postgres;
+
+--
+-- Name: ClinicalImage; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ClinicalImage" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "examinationId" text,
+    "customerId" text NOT NULL,
+    "imageType" text NOT NULL,
+    eye text,
+    "imageUrl" text NOT NULL,
+    "thumbnailUrl" text,
+    "fileName" text NOT NULL,
+    "fileSize" integer NOT NULL,
+    "mimeType" text NOT NULL,
+    width integer,
+    height integer,
+    "captureDate" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "captureDevice" text,
+    annotations jsonb,
+    metadata jsonb,
+    notes text,
+    tags text[],
+    diagnosis text,
+    findings text,
+    "aiAnalysis" jsonb,
+    "aiConfidence" double precision,
+    "uploadedBy" text NOT NULL,
+    "isPrivate" boolean DEFAULT false NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "deletedAt" timestamp(3) without time zone
+);
+
+
+ALTER TABLE public."ClinicalImage" OWNER TO postgres;
+
+--
+-- Name: ClinicalProtocol; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ClinicalProtocol" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    name text NOT NULL,
+    "nameHe" text,
+    description text,
+    "protocolType" text NOT NULL,
+    "triggerConditions" jsonb NOT NULL,
+    "recommendedTests" jsonb,
+    "mandatoryFields" jsonb,
+    "followUpRules" jsonb,
+    "referralRules" jsonb,
+    "isActive" boolean DEFAULT true NOT NULL,
+    priority integer DEFAULT 0 NOT NULL,
+    "createdBy" text NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."ClinicalProtocol" OWNER TO postgres;
+
+--
+-- Name: ClinicalReferral; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ClinicalReferral" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "customerId" text NOT NULL,
+    "examinationId" text,
+    "referralType" text NOT NULL,
+    specialty text,
+    reason text NOT NULL,
+    "reasonHe" text,
+    urgency text DEFAULT 'ROUTINE'::text NOT NULL,
+    "specialistName" text,
+    "specialistPhone" text,
+    "specialistEmail" text,
+    "clinicName" text,
+    "referralDate" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "letterSent" boolean DEFAULT false NOT NULL,
+    "letterSentAt" timestamp(3) without time zone,
+    "appointmentDate" timestamp(3) without time zone,
+    "appointmentConfirmed" boolean DEFAULT false NOT NULL,
+    status text DEFAULT 'PENDING'::text NOT NULL,
+    "resultsReceived" boolean DEFAULT false NOT NULL,
+    "resultsDate" timestamp(3) without time zone,
+    "resultsSummary" text,
+    "referralLetter" text,
+    "resultsDocument" text,
+    notes text,
+    "createdBy" text NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."ClinicalReferral" OWNER TO postgres;
+
+--
+-- Name: ClinicalRule; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ClinicalRule" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "ruleName" text NOT NULL,
+    "ruleNameHe" text,
+    description text,
+    "ruleType" text NOT NULL,
+    "triggerConditions" jsonb NOT NULL,
+    action jsonb NOT NULL,
+    priority text DEFAULT 'MEDIUM'::text NOT NULL,
+    "isActive" boolean DEFAULT true NOT NULL,
+    "autoExecute" boolean DEFAULT false NOT NULL,
+    "createdBy" text NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."ClinicalRule" OWNER TO postgres;
+
+--
+-- Name: ClinicalRuleTrigger; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ClinicalRuleTrigger" (
+    id text NOT NULL,
+    "ruleId" text NOT NULL,
+    "tenantId" text NOT NULL,
+    "examinationId" text,
+    "customerId" text,
+    "triggeredAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "triggeredBy" text,
+    "conditionsMet" jsonb NOT NULL,
+    "actionTaken" jsonb,
+    status text NOT NULL,
+    "resultMessage" text,
+    "completedAt" timestamp(3) without time zone
+);
+
+
+ALTER TABLE public."ClinicalRuleTrigger" OWNER TO postgres;
+
+--
+-- Name: ClndrSal; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ClndrSal" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "userID" integer,
+    month timestamp(3) without time zone,
+    salery numeric(65,30),
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."ClndrSal" OWNER TO postgres;
+
+--
+-- Name: ClndrTasksPriority; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ClndrTasksPriority" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "priorityId" integer,
+    "priorityName" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."ClndrTasksPriority" OWNER TO postgres;
+
+--
+-- Name: ClndrWrk; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ClndrWrk" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "wrkId" integer,
+    "userID" integer,
+    "wrkDate" timestamp(3) without time zone,
+    "wrkTime" numeric(65,30),
+    "startTime" timestamp(3) without time zone,
+    "endTime" timestamp(3) without time zone,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."ClndrWrk" OWNER TO postgres;
+
+--
+-- Name: CollectionItem; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."CollectionItem" (
+    id text NOT NULL,
+    "collectionId" text NOT NULL,
+    type text NOT NULL,
+    "frameCatalogId" text,
+    "lensCatalogId" text,
+    "supplierCode" text,
+    "priceOverride" numeric(10,2),
+    stock integer,
+    description text,
+    "isPublished" boolean DEFAULT true NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."CollectionItem" OWNER TO postgres;
 
 --
 -- Name: Commission; Type: TABLE; Schema: public; Owner: postgres
@@ -816,8 +1656,6 @@ CREATE TABLE public."ContactLensFitting" (
     "customerId" text NOT NULL,
     "fitterId" text,
     "fittingDate" timestamp(3) without time zone NOT NULL,
-    "rightEyeParams" text,
-    "leftEyeParams" text,
     "trialLenses" text,
     "finalSelection" text,
     "wearSchedule" text,
@@ -827,7 +1665,48 @@ CREATE TABLE public."ContactLensFitting" (
     status text DEFAULT 'TRIAL'::text NOT NULL,
     "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     "updatedAt" timestamp(3) without time zone NOT NULL,
-    "branchId" text
+    "branchId" text,
+    "cleaningSolution" text,
+    complications text,
+    "dailyWearHours" integer,
+    "disinfectingSolution" text,
+    "enzymaticCleaner" text,
+    "kReadingOdAxis" integer,
+    "kReadingOdFlat" double precision,
+    "kReadingOdSteep" double precision,
+    "kReadingOsAxis" integer,
+    "kReadingOsFlat" double precision,
+    "kReadingOsSteep" double precision,
+    "leftEyeAddPower" double precision,
+    "leftEyeAxis" integer,
+    "leftEyeBaseCurve" double precision,
+    "leftEyeBrand" text,
+    "leftEyeCentering" text,
+    "leftEyeColor" text,
+    "leftEyeCylinder" double precision,
+    "leftEyeDiameter" double precision,
+    "leftEyeFitQuality" text,
+    "leftEyeMaterial" text,
+    "leftEyeMovement" text,
+    "leftEyePower" double precision,
+    "leftEyeType" text,
+    "patientEducation" text,
+    "replacementSchedule" text,
+    "rewettingDrops" text,
+    "rightEyeAddPower" double precision,
+    "rightEyeAxis" integer,
+    "rightEyeBaseCurve" double precision,
+    "rightEyeBrand" text,
+    "rightEyeCentering" text,
+    "rightEyeColor" text,
+    "rightEyeCylinder" double precision,
+    "rightEyeDiameter" double precision,
+    "rightEyeFitQuality" text,
+    "rightEyeMaterial" text,
+    "rightEyeMovement" text,
+    "rightEyePower" double precision,
+    "rightEyeType" text,
+    "trialResults" text
 );
 
 
@@ -870,7 +1749,9 @@ CREATE TABLE public."ContactLensFittingDetail" (
     "commentR" text,
     "commentL" text,
     "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    "updatedAt" timestamp(3) without time zone NOT NULL
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "pupilHeightL" double precision,
+    "pupilHeightR" double precision
 );
 
 
@@ -954,6 +1835,30 @@ CREATE TABLE public."ContactLensPrescription" (
 ALTER TABLE public."ContactLensPrescription" OWNER TO postgres;
 
 --
+-- Name: ContactLensPricing; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ContactLensPricing" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "sapakID" integer,
+    "cLensTypeID" integer,
+    "clensCharID" integer,
+    price numeric(65,30),
+    "pubPrice" numeric(65,30),
+    "recPrice" numeric(65,30),
+    "privPrice" numeric(65,30),
+    active integer,
+    quantity integer,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."ContactLensPricing" OWNER TO postgres;
+
+--
 -- Name: ContactLensRinsingSolution; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -1008,6 +1913,376 @@ CREATE TABLE public."ContactLensType" (
 ALTER TABLE public."ContactLensType" OWNER TO postgres;
 
 --
+-- Name: Conversation; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."Conversation" (
+    id text NOT NULL,
+    "supplierId" text NOT NULL,
+    "tenantId" text NOT NULL,
+    "relatedToType" text,
+    "relatedToId" text,
+    "lastMessageAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "isArchived" boolean DEFAULT false NOT NULL,
+    "archivedBy" text,
+    "archivedAt" timestamp(3) without time zone,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."Conversation" OWNER TO postgres;
+
+--
+-- Name: ConversationParticipant; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ConversationParticipant" (
+    id text NOT NULL,
+    "conversationId" text NOT NULL,
+    "participantId" text NOT NULL,
+    "participantType" text NOT NULL,
+    "muteNotifications" boolean DEFAULT false NOT NULL,
+    "mutedUntil" timestamp(3) without time zone,
+    "lastSeenAt" timestamp(3) without time zone,
+    "unreadCount" integer DEFAULT 0 NOT NULL,
+    "joinedAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "leftAt" timestamp(3) without time zone
+);
+
+
+ALTER TABLE public."ConversationParticipant" OWNER TO postgres;
+
+--
+-- Name: ConversationTyping; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ConversationTyping" (
+    id text NOT NULL,
+    "conversationId" text NOT NULL,
+    "typingUserId" text NOT NULL,
+    "typingUserType" text NOT NULL,
+    "typingUserName" text,
+    "startedAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."ConversationTyping" OWNER TO postgres;
+
+--
+-- Name: CrdBuysWorkLab; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."CrdBuysWorkLab" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "labID" integer,
+    "labName" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."CrdBuysWorkLab" OWNER TO postgres;
+
+--
+-- Name: CrdBuysWorkSapak; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."CrdBuysWorkSapak" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "sapakID" integer,
+    "sapakName" text,
+    "itemCode" integer,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."CrdBuysWorkSapak" OWNER TO postgres;
+
+--
+-- Name: CrdBuysWorkStat; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."CrdBuysWorkStat" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "workStatId" integer,
+    "workStatName" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."CrdBuysWorkStat" OWNER TO postgres;
+
+--
+-- Name: CrdBuysWorkSupply; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."CrdBuysWorkSupply" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "workSupplyId" integer,
+    "workSupplyName" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."CrdBuysWorkSupply" OWNER TO postgres;
+
+--
+-- Name: CrdBuysWorkType; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."CrdBuysWorkType" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "workTypeId" integer,
+    "workTypeName" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."CrdBuysWorkType" OWNER TO postgres;
+
+--
+-- Name: CrdClensChecksMater; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."CrdClensChecksMater" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "materId" integer,
+    "materName" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."CrdClensChecksMater" OWNER TO postgres;
+
+--
+-- Name: CrdClensChecksPr; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."CrdClensChecksPr" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "prId" integer,
+    "prName" text,
+    "idCount" integer,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."CrdClensChecksPr" OWNER TO postgres;
+
+--
+-- Name: CrdClensChecksTint; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."CrdClensChecksTint" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "tintId" integer,
+    "tintName" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."CrdClensChecksTint" OWNER TO postgres;
+
+--
+-- Name: CrdClensManuf; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."CrdClensManuf" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "clensManufId" integer,
+    "clensManufName" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."CrdClensManuf" OWNER TO postgres;
+
+--
+-- Name: CrdClensSolClean; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."CrdClensSolClean" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "clensSolCleanId" integer,
+    "clensSolCleanName" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."CrdClensSolClean" OWNER TO postgres;
+
+--
+-- Name: CrdClensSolDisinfect; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."CrdClensSolDisinfect" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "clensSolDisinfectId" integer,
+    "clensSolDisinfectName" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."CrdClensSolDisinfect" OWNER TO postgres;
+
+--
+-- Name: CrdClensSolRinse; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."CrdClensSolRinse" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "clensSolRinseId" integer,
+    "clensSolRinseName" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."CrdClensSolRinse" OWNER TO postgres;
+
+--
+-- Name: CrdClensType; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."CrdClensType" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "clensTypeId" integer,
+    "clensTypeName" text,
+    "idCount" integer,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."CrdClensType" OWNER TO postgres;
+
+--
+-- Name: CrdGlassIOPInst; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."CrdGlassIOPInst" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "iOPInstId" integer,
+    "iOPInstName" text,
+    "idCount" integer,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."CrdGlassIOPInst" OWNER TO postgres;
+
+--
+-- Name: CrdGlassRetDist; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."CrdGlassRetDist" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "retDistId" integer,
+    "retDistName" text,
+    "idCount" integer,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."CrdGlassRetDist" OWNER TO postgres;
+
+--
+-- Name: CrdGlassRetType; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."CrdGlassRetType" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "retTypeId" integer,
+    "retTypeName" text,
+    "idCount" integer,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."CrdGlassRetType" OWNER TO postgres;
+
+--
+-- Name: CrdGlassUse; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."CrdGlassUse" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "glassUseId" integer,
+    "glassUseName" text,
+    "idCount" integer,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."CrdGlassUse" OWNER TO postgres;
+
+--
+-- Name: CreditCard; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."CreditCard" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "creditCardId" integer,
+    "creditCardName" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."CreditCard" OWNER TO postgres;
+
+--
 -- Name: CreditCardTransaction; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -1036,6 +2311,59 @@ CREATE TABLE public."CreditCardTransaction" (
 
 
 ALTER TABLE public."CreditCardTransaction" OWNER TO postgres;
+
+--
+-- Name: CreditType; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."CreditType" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "creditTypeId" integer,
+    "creditTypeName" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."CreditType" OWNER TO postgres;
+
+--
+-- Name: CustomReport; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."CustomReport" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "oRepId" integer,
+    "oRepHeader" text,
+    "oRepName" text,
+    "oRepType" integer,
+    "oRPTPara" text,
+    "secLevel" integer,
+    "inExe" integer,
+    "oRepSql" text,
+    "uRepId" integer,
+    "uRepSql" text,
+    "uRepHeader" text,
+    "uRepName" text,
+    "uRepType" integer,
+    "uRPTPara" text,
+    "loadedForm" text,
+    "firstCtl" text,
+    "firstIndex" integer,
+    "secCtl" text,
+    "secIndex" integer,
+    "shortCutNum" integer,
+    trans text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."CustomReport" OWNER TO postgres;
 
 --
 -- Name: Customer; Type: TABLE; Schema: public; Owner: postgres
@@ -1108,6 +2436,55 @@ CREATE TABLE public."CustomerGroup" (
 ALTER TABLE public."CustomerGroup" OWNER TO postgres;
 
 --
+-- Name: CustomerLastVisit; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."CustomerLastVisit" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "customerId" text NOT NULL,
+    "customerNumber" integer,
+    "lastVisitDate" timestamp(3) without time zone,
+    "lastVisitType" text,
+    "lastAppointmentDate" timestamp(3) without time zone,
+    "lastPurchaseDate" timestamp(3) without time zone,
+    "lastExaminationDate" timestamp(3) without time zone,
+    "visitCount" integer DEFAULT 0 NOT NULL,
+    "purchaseCount" integer DEFAULT 0 NOT NULL,
+    "examinationCount" integer DEFAULT 0 NOT NULL,
+    "totalSpent" double precision DEFAULT 0 NOT NULL,
+    "lastUpdated" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."CustomerLastVisit" OWNER TO postgres;
+
+--
+-- Name: CustomerOrder; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."CustomerOrder" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "itemData" integer,
+    "listIndex" integer,
+    "desc" text,
+    deaf integer,
+    "lblWiz" integer,
+    "lblWizType" integer,
+    "lblWizFld" text,
+    "letterFld" text,
+    "letterWiz" integer,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."CustomerOrder" OWNER TO postgres;
+
+--
 -- Name: CustomerPhoto; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -1128,6 +2505,62 @@ CREATE TABLE public."CustomerPhoto" (
 
 
 ALTER TABLE public."CustomerPhoto" OWNER TO postgres;
+
+--
+-- Name: DataMigrationError; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."DataMigrationError" (
+    id text NOT NULL,
+    "migrationId" text NOT NULL,
+    "timestamp" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    phase public."MigrationPhase" NOT NULL,
+    "table" text,
+    "recordIndex" integer,
+    "recordData" jsonb,
+    "errorType" text NOT NULL,
+    "errorMessage" text NOT NULL,
+    "stackTrace" text,
+    context jsonb
+);
+
+
+ALTER TABLE public."DataMigrationError" OWNER TO postgres;
+
+--
+-- Name: DataMigrationRun; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."DataMigrationRun" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    status public."MigrationStatus" DEFAULT 'PENDING'::public."MigrationStatus" NOT NULL,
+    phase public."MigrationPhase" DEFAULT 'UPLOAD'::public."MigrationPhase" NOT NULL,
+    "fileName" text NOT NULL,
+    "fileSize" integer NOT NULL,
+    "filePath" text NOT NULL,
+    "totalTables" integer DEFAULT 186 NOT NULL,
+    "tablesProcessed" integer DEFAULT 0 NOT NULL,
+    "totalRecords" integer DEFAULT 0 NOT NULL,
+    "recordsProcessed" integer DEFAULT 0 NOT NULL,
+    "currentTable" text,
+    "startTime" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "endTime" timestamp(3) without time zone,
+    duration integer,
+    "recordsInserted" integer DEFAULT 0 NOT NULL,
+    "recordsSkipped" integer DEFAULT 0 NOT NULL,
+    "errorCount" integer DEFAULT 0 NOT NULL,
+    "warningCount" integer DEFAULT 0 NOT NULL,
+    "verificationResults" jsonb,
+    "auditReport" jsonb,
+    "extractedDataPath" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."DataMigrationRun" OWNER TO postgres;
 
 --
 -- Name: DetailedWorkOrder; Type: TABLE; Schema: public; Owner: postgres
@@ -1251,6 +2684,61 @@ CREATE TABLE public."Discount" (
 ALTER TABLE public."Discount" OWNER TO postgres;
 
 --
+-- Name: DiseaseDiagnosis; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."DiseaseDiagnosis" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "perId" integer,
+    "checkDate" timestamp(3) without time zone,
+    "pushUp" integer,
+    "minusLens" integer,
+    "monAccFac6" numeric(65,30),
+    "monAccFac7" numeric(65,30),
+    "monAccFac8" numeric(65,30),
+    "monAccFac13" numeric(65,30),
+    "binAccFac6" numeric(65,30),
+    "binAccFac7" numeric(65,30),
+    "binAccFac8" numeric(65,30),
+    "binAccFac13" numeric(65,30),
+    "mEMRet" numeric(65,30),
+    "fusedXCyl" numeric(65,30),
+    "nRA" numeric(65,30),
+    "pRA" numeric(65,30),
+    "coverDist" text,
+    "coverNear" text,
+    "distLatFor" text,
+    "distVerFor" text,
+    "nearLatFor" text,
+    "nearVerFor" text,
+    "aCARatio" text,
+    "smverBo6M" text,
+    "smverBi6M" text,
+    "smverBo40CM" text,
+    "smverBi40CM" text,
+    "stverBo7" text,
+    "stverBi7" text,
+    "stverBo6M" text,
+    "stverBi6M" text,
+    "stverBo40CM" text,
+    "stverBi40CM" text,
+    "jmpVer5" numeric(65,30),
+    "jmpVer8" numeric(65,30),
+    "accTarget" text,
+    penlight text,
+    "penLightRG" text,
+    summary text,
+    "userId" integer,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."DiseaseDiagnosis" OWNER TO postgres;
+
+--
 -- Name: Document; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -1318,6 +2806,22 @@ CREATE TABLE public."DocumentTemplate" (
 ALTER TABLE public."DocumentTemplate" OWNER TO postgres;
 
 --
+-- Name: Dummy; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."Dummy" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    dummy integer,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."Dummy" OWNER TO postgres;
+
+--
 -- Name: EmployeeCommissionRule; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -1337,6 +2841,83 @@ CREATE TABLE public."EmployeeCommissionRule" (
 
 
 ALTER TABLE public."EmployeeCommissionRule" OWNER TO postgres;
+
+--
+-- Name: EquipmentConfig; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."EquipmentConfig" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "equipmentType" text NOT NULL,
+    manufacturer text NOT NULL,
+    model text NOT NULL,
+    "serialNumber" text,
+    "connectionType" text NOT NULL,
+    "connectionConfig" jsonb NOT NULL,
+    "mappingRules" jsonb,
+    "isActive" boolean DEFAULT true NOT NULL,
+    "autoImport" boolean DEFAULT false NOT NULL,
+    notes text,
+    "installedDate" timestamp(3) without time zone,
+    "lastCalibration" timestamp(3) without time zone,
+    "createdBy" text NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."EquipmentConfig" OWNER TO postgres;
+
+--
+-- Name: EquipmentImportLog; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."EquipmentImportLog" (
+    id text NOT NULL,
+    "equipmentId" text NOT NULL,
+    "tenantId" text NOT NULL,
+    "examinationId" text,
+    "importDate" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "dataType" text NOT NULL,
+    "rawData" jsonb NOT NULL,
+    "mappedData" jsonb,
+    status text NOT NULL,
+    "errorMessage" text,
+    "recordsImported" integer DEFAULT 0 NOT NULL,
+    "importedBy" text NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."EquipmentImportLog" OWNER TO postgres;
+
+--
+-- Name: ExamTemplate; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ExamTemplate" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    name text NOT NULL,
+    "nameHe" text,
+    description text,
+    "templateType" text NOT NULL,
+    sections jsonb NOT NULL,
+    "requiredFields" jsonb NOT NULL,
+    "conditionalRules" jsonb,
+    "defaultValues" jsonb,
+    "isDefault" boolean DEFAULT false NOT NULL,
+    "isActive" boolean DEFAULT true NOT NULL,
+    "isPublic" boolean DEFAULT false NOT NULL,
+    "createdBy" text NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."ExamTemplate" OWNER TO postgres;
 
 --
 -- Name: Examination; Type: TABLE; Schema: public; Owner: postgres
@@ -1442,7 +3023,19 @@ CREATE TABLE public."Examination" (
     "visualFieldsMethod" text,
     "visualFieldsOd" text,
     "visualFieldsOs" text,
-    "branchId" text
+    "branchId" text,
+    "bifocalAddOd" double precision,
+    "bifocalAddOs" double precision,
+    "intermediateAddOd" double precision,
+    "intermediateAddOs" double precision,
+    "multifocalAddOd" double precision,
+    "multifocalAddOs" double precision,
+    "pdNearOd" double precision,
+    "pdNearOs" double precision,
+    "pdOd" double precision,
+    "pdOs" double precision,
+    "protocolId" text,
+    "templateId" text
 );
 
 
@@ -1510,6 +3103,23 @@ CREATE TABLE public."Expense" (
 ALTER TABLE public."Expense" OWNER TO postgres;
 
 --
+-- Name: Eye; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."Eye" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "eyeId" integer,
+    "eyeName" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."Eye" OWNER TO postgres;
+
+--
 -- Name: FRPLine; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -1525,6 +3135,76 @@ CREATE TABLE public."FRPLine" (
 
 
 ALTER TABLE public."FRPLine" OWNER TO postgres;
+
+--
+-- Name: FamilyAuditLog; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."FamilyAuditLog" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "relationshipId" text,
+    "customerId" text NOT NULL,
+    action text NOT NULL,
+    "actionType" text NOT NULL,
+    "oldValue" jsonb,
+    "newValue" jsonb,
+    "userId" text NOT NULL,
+    reason text,
+    "ipAddress" text,
+    "userAgent" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."FamilyAuditLog" OWNER TO postgres;
+
+--
+-- Name: FamilyRelationship; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."FamilyRelationship" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "customerId" text NOT NULL,
+    "relatedCustomerId" text NOT NULL,
+    "relationshipType" text NOT NULL,
+    "isPrimary" boolean DEFAULT false NOT NULL,
+    verified boolean DEFAULT false NOT NULL,
+    "verifiedBy" text,
+    "verifiedAt" timestamp(3) without time zone,
+    "confidenceScore" double precision,
+    notes text,
+    tags text[] DEFAULT ARRAY[]::text[],
+    "createdBy" text NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "deletedAt" timestamp(3) without time zone
+);
+
+
+ALTER TABLE public."FamilyRelationship" OWNER TO postgres;
+
+--
+-- Name: FaxCommunication; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."FaxCommunication" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "faxId" integer,
+    "sapakDestId" integer,
+    "sendTime" timestamp(3) without time zone,
+    "jobInfo" text,
+    "faxStatId" integer,
+    "faxStatName" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."FaxCommunication" OWNER TO postgres;
 
 --
 -- Name: FollowUp; Type: TABLE; Schema: public; Owner: postgres
@@ -1550,6 +3230,34 @@ CREATE TABLE public."FollowUp" (
 
 
 ALTER TABLE public."FollowUp" OWNER TO postgres;
+
+--
+-- Name: FollowUpReminder; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."FollowUpReminder" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "customerId" text NOT NULL,
+    "examinationId" text,
+    "reminderType" text NOT NULL,
+    "dueDate" timestamp(3) without time zone NOT NULL,
+    reason text NOT NULL,
+    "reasonHe" text,
+    notes text,
+    status text DEFAULT 'PENDING'::text NOT NULL,
+    priority text DEFAULT 'NORMAL'::text NOT NULL,
+    "sentAt" timestamp(3) without time zone,
+    "sentVia" text,
+    "completedAt" timestamp(3) without time zone,
+    "scheduledAppointmentId" text,
+    "createdBy" text NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."FollowUpReminder" OWNER TO postgres;
 
 --
 -- Name: Frame; Type: TABLE; Schema: public; Owner: postgres
@@ -1631,6 +3339,65 @@ CREATE TABLE public."FrameCatalog" (
 
 
 ALTER TABLE public."FrameCatalog" OWNER TO postgres;
+
+--
+-- Name: FrameData; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."FrameData" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "sapakId" integer,
+    "labelId" integer,
+    "modelId" integer,
+    price numeric(65,30),
+    "pubPrice" numeric(65,30),
+    "recPrice" numeric(65,30),
+    "privPrice" numeric(65,30),
+    active integer,
+    quantity integer,
+    "modelName" text,
+    "iSG" integer,
+    sizes text,
+    "labelName" text,
+    "privColorId" integer,
+    "privColorName" text,
+    "frameColorId" text,
+    "frameColorName" text,
+    "framePic" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."FrameData" OWNER TO postgres;
+
+--
+-- Name: FrameTrial; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."FrameTrial" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "customerId" text NOT NULL,
+    "examinationId" text,
+    "checkDate" timestamp(3) without time zone NOT NULL,
+    "frameSupplierId" text,
+    "frameBrandId" text,
+    "frameModel" text,
+    "frameColor" text,
+    "frameSize" text,
+    "triedAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    selected boolean DEFAULT false NOT NULL,
+    notes text,
+    "createdBy" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."FrameTrial" OWNER TO postgres;
 
 --
 -- Name: FrequentReplacementProgram; Type: TABLE; Schema: public; Owner: postgres
@@ -1954,6 +3721,50 @@ CREATE TABLE public."GlassUse" (
 ALTER TABLE public."GlassUse" OWNER TO postgres;
 
 --
+-- Name: Household; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."Household" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "householdHash" text NOT NULL,
+    "displayName" text,
+    "primaryContactId" text,
+    "memberCount" integer DEFAULT 1 NOT NULL,
+    "lifetimeValue" numeric(12,2) DEFAULT 0 NOT NULL,
+    "lastActivityDate" timestamp(3) without time zone,
+    address text,
+    city text,
+    "zipCode" text,
+    notes text,
+    tags text[] DEFAULT ARRAY[]::text[],
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "deletedAt" timestamp(3) without time zone
+);
+
+
+ALTER TABLE public."Household" OWNER TO postgres;
+
+--
+-- Name: InvMoveType; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."InvMoveType" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "invMoveTypeId" integer,
+    "invMoveTypeName" text,
+    "moveAction" integer,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."InvMoveType" OWNER TO postgres;
+
+--
 -- Name: InventoryAdjustment; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -1981,6 +3792,7 @@ ALTER TABLE public."InventoryAdjustment" OWNER TO postgres;
 
 CREATE TABLE public."InventoryAdjustmentItem" (
     id text NOT NULL,
+    "tenantId" text NOT NULL,
     "adjustmentId" text NOT NULL,
     "productId" text NOT NULL,
     "oldQuantity" integer NOT NULL,
@@ -1993,6 +3805,29 @@ CREATE TABLE public."InventoryAdjustmentItem" (
 
 
 ALTER TABLE public."InventoryAdjustmentItem" OWNER TO postgres;
+
+--
+-- Name: InventoryReference; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."InventoryReference" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "itemColorId" integer,
+    "itemColorName" text,
+    "itemCode" integer,
+    "itemStatId" integer,
+    "itemStatName" text,
+    "itemLineId" integer,
+    "catId" integer,
+    sold integer,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."InventoryReference" OWNER TO postgres;
 
 --
 -- Name: Invoice; Type: TABLE; Schema: public; Owner: postgres
@@ -2041,6 +3876,7 @@ ALTER TABLE public."InvoiceCredit" OWNER TO postgres;
 
 CREATE TABLE public."InvoicePayment" (
     id text NOT NULL,
+    "tenantId" text NOT NULL,
     "invoiceId" text NOT NULL,
     "paymentDate" timestamp(3) without time zone NOT NULL,
     amount double precision NOT NULL,
@@ -2051,6 +3887,89 @@ CREATE TABLE public."InvoicePayment" (
 
 
 ALTER TABLE public."InvoicePayment" OWNER TO postgres;
+
+--
+-- Name: InvoiceType; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."InvoiceType" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "invoiceTypeId" integer,
+    "invoiceTypeName" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."InvoiceType" OWNER TO postgres;
+
+--
+-- Name: InvoiceVerification; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."InvoiceVerification" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "invoiceCheckId" integer,
+    "invoicePayId" integer,
+    "checkId" text,
+    "checkDate" timestamp(3) without time zone,
+    "checkSum" numeric(65,30),
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."InvoiceVerification" OWNER TO postgres;
+
+--
+-- Name: ItemCountsYear; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ItemCountsYear" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "countYear" integer,
+    "countDate" timestamp(3) without time zone,
+    closed integer,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."ItemCountsYear" OWNER TO postgres;
+
+--
+-- Name: ItemStatus; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ItemStatus" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "productId" text NOT NULL,
+    month integer NOT NULL,
+    year integer NOT NULL,
+    opening double precision DEFAULT 0 NOT NULL,
+    purchases double precision DEFAULT 0 NOT NULL,
+    sales double precision DEFAULT 0 NOT NULL,
+    removals double precision DEFAULT 0 NOT NULL,
+    closing double precision DEFAULT 0 NOT NULL,
+    "costValue" double precision DEFAULT 0 NOT NULL,
+    "saleValue" double precision DEFAULT 0 NOT NULL,
+    revenue double precision DEFAULT 0 NOT NULL,
+    cogs double precision DEFAULT 0 NOT NULL,
+    "grossProfit" double precision DEFAULT 0 NOT NULL,
+    "profitPct" double precision DEFAULT 0 NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."ItemStatus" OWNER TO postgres;
 
 --
 -- Name: LabelPrintJob; Type: TABLE; Schema: public; Owner: postgres
@@ -2119,6 +4038,23 @@ CREATE TABLE public."LabelTemplate" (
 
 
 ALTER TABLE public."LabelTemplate" OWNER TO postgres;
+
+--
+-- Name: Lang; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."Lang" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "langId" integer,
+    "langName" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."Lang" OWNER TO postgres;
 
 --
 -- Name: Lens; Type: TABLE; Schema: public; Owner: postgres
@@ -2242,6 +4178,56 @@ CREATE TABLE public."LensMaterial" (
 ALTER TABLE public."LensMaterial" OWNER TO postgres;
 
 --
+-- Name: LensSolution; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."LensSolution" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "solutionId" integer,
+    "solutionName" text,
+    "sapakID" integer,
+    price numeric(65,30),
+    "pubPrice" numeric(65,30),
+    "recPrice" numeric(65,30),
+    "privPrice" numeric(65,30),
+    active integer,
+    quantity integer,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."LensSolution" OWNER TO postgres;
+
+--
+-- Name: LensTreatment; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."LensTreatment" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "sapakID" integer,
+    "lensTypeID" integer,
+    "lensMaterID" integer,
+    "treatCharID" integer,
+    "treatCharName" text,
+    "idCount" integer,
+    "treatCharId" integer,
+    "treatId" integer,
+    "treatName" text,
+    "fldName" text,
+    "treatRule" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."LensTreatment" OWNER TO postgres;
+
+--
 -- Name: LensTreatmentCharacteristic; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -2253,10 +4239,10 @@ CREATE TABLE public."LensTreatmentCharacteristic" (
     "lensMaterialId" double precision NOT NULL,
     "treatmentCharId" integer NOT NULL,
     name text NOT NULL,
-    "idCount" integer DEFAULT 0 NOT NULL,
     "isActive" boolean DEFAULT true NOT NULL,
     "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    "updatedAt" timestamp(3) without time zone NOT NULL
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "idCount" integer DEFAULT 0 NOT NULL
 );
 
 
@@ -2425,6 +4411,49 @@ CREATE TABLE public."LowVisionManufacturer" (
 ALTER TABLE public."LowVisionManufacturer" OWNER TO postgres;
 
 --
+-- Name: Message; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."Message" (
+    id text NOT NULL,
+    "conversationId" text NOT NULL,
+    "senderId" text NOT NULL,
+    "senderType" text NOT NULL,
+    "senderName" text,
+    content text NOT NULL,
+    attachments jsonb,
+    "readAt" timestamp(3) without time zone,
+    "readBy" text,
+    "messageType" text DEFAULT 'TEXT'::text NOT NULL,
+    metadata jsonb,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "deletedAt" timestamp(3) without time zone
+);
+
+
+ALTER TABLE public."Message" OWNER TO postgres;
+
+--
+-- Name: MessageAttachment; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."MessageAttachment" (
+    id text NOT NULL,
+    "messageId" text,
+    "fileName" text NOT NULL,
+    "fileUrl" text NOT NULL,
+    "fileSize" integer NOT NULL,
+    "mimeType" text NOT NULL,
+    "uploaderId" text NOT NULL,
+    "uploaderType" text NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."MessageAttachment" OWNER TO postgres;
+
+--
 -- Name: MessageTemplate; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -2445,6 +4474,149 @@ CREATE TABLE public."MessageTemplate" (
 
 
 ALTER TABLE public."MessageTemplate" OWNER TO postgres;
+
+--
+-- Name: MigrationLog; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."MigrationLog" (
+    id text NOT NULL,
+    "migrationId" text NOT NULL,
+    "timestamp" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    level text NOT NULL,
+    step text NOT NULL,
+    message text NOT NULL,
+    details jsonb DEFAULT '{}'::jsonb NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."MigrationLog" OWNER TO postgres;
+
+--
+-- Name: MigrationRun; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."MigrationRun" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "fileName" text NOT NULL,
+    "filePath" text NOT NULL,
+    "fileSize" bigint NOT NULL,
+    status text NOT NULL,
+    progress integer DEFAULT 0 NOT NULL,
+    "currentStep" text,
+    "startedAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "completedAt" timestamp(3) without time zone,
+    "errorMessage" text,
+    "tablesProcessed" integer DEFAULT 0 NOT NULL,
+    "recordsImported" integer DEFAULT 0 NOT NULL,
+    "recordsSkipped" integer DEFAULT 0 NOT NULL,
+    "recordsFailed" integer DEFAULT 0 NOT NULL,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    "createdBy" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "branchId" text
+);
+
+
+ALTER TABLE public."MigrationRun" OWNER TO postgres;
+
+--
+-- Name: MigrationTableResult; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."MigrationTableResult" (
+    id text NOT NULL,
+    "migrationId" text NOT NULL,
+    "tableName" text NOT NULL,
+    "sourceTable" text NOT NULL,
+    "recordsSource" integer DEFAULT 0 NOT NULL,
+    "recordsImported" integer DEFAULT 0 NOT NULL,
+    "recordsSkipped" integer DEFAULT 0 NOT NULL,
+    "recordsFailed" integer DEFAULT 0 NOT NULL,
+    "successRate" numeric(5,2) DEFAULT 0 NOT NULL,
+    status text NOT NULL,
+    "errorMessage" text,
+    "startedAt" timestamp(3) without time zone,
+    "completedAt" timestamp(3) without time zone,
+    duration integer,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."MigrationTableResult" OWNER TO postgres;
+
+--
+-- Name: MovementProperty; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."MovementProperty" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "movementPropertyId" integer NOT NULL,
+    name text NOT NULL,
+    "nameHe" text,
+    description text,
+    "isActive" boolean DEFAULT true NOT NULL,
+    "sortOrder" integer DEFAULT 0 NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."MovementProperty" OWNER TO postgres;
+
+--
+-- Name: MovementType; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."MovementType" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "movementTypeId" integer NOT NULL,
+    name text NOT NULL,
+    "nameHe" text,
+    action integer NOT NULL,
+    category text NOT NULL,
+    "requiresInvoice" boolean DEFAULT false NOT NULL,
+    "requiresReason" boolean DEFAULT false NOT NULL,
+    "isActive" boolean DEFAULT true NOT NULL,
+    "sortOrder" integer DEFAULT 0 NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."MovementType" OWNER TO postgres;
+
+--
+-- Name: NewProduct; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."NewProduct" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "productId" text,
+    name text NOT NULL,
+    "nameHe" text,
+    description text,
+    "descriptionHe" text,
+    "imageUrl" text,
+    "isActive" boolean DEFAULT true NOT NULL,
+    "displayFrom" timestamp(3) without time zone NOT NULL,
+    "displayUntil" timestamp(3) without time zone,
+    "displayOrder" integer DEFAULT 0 NOT NULL,
+    category text,
+    tags text[],
+    "createdBy" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."NewProduct" OWNER TO postgres;
 
 --
 -- Name: OpticalBase; Type: TABLE; Schema: public; Owner: postgres
@@ -2502,6 +4674,7 @@ ALTER TABLE public."Order" OWNER TO postgres;
 
 CREATE TABLE public."OrderItem" (
     id text NOT NULL,
+    "tenantId" text NOT NULL,
     "orderId" text NOT NULL,
     "productId" text,
     "productType" text,
@@ -2633,6 +4806,501 @@ CREATE TABLE public."OrthokeratologyTreatment" (
 
 
 ALTER TABLE public."OrthokeratologyTreatment" OWNER TO postgres;
+
+--
+-- Name: POSAuditLog; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."POSAuditLog" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "terminalId" text,
+    "userId" text NOT NULL,
+    action text NOT NULL,
+    "entityType" text NOT NULL,
+    "entityId" text,
+    "beforeState" jsonb,
+    "afterState" jsonb,
+    changes jsonb,
+    "ipAddress" text,
+    "userAgent" text,
+    metadata jsonb,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."POSAuditLog" OWNER TO postgres;
+
+--
+-- Name: POSCashDrop; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."POSCashDrop" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "shiftId" text NOT NULL,
+    "dropNumber" text NOT NULL,
+    amount numeric(12,2) NOT NULL,
+    "billBreakdown" jsonb,
+    reason text,
+    "depositedBy" text NOT NULL,
+    "verifiedBy" text,
+    "verifiedAt" timestamp(3) without time zone,
+    notes text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."POSCashDrop" OWNER TO postgres;
+
+--
+-- Name: POSCashPickup; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."POSCashPickup" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "shiftId" text NOT NULL,
+    "pickupNumber" text NOT NULL,
+    amount numeric(12,2) NOT NULL,
+    "billBreakdown" jsonb,
+    reason text,
+    "pickedUpBy" text NOT NULL,
+    "approvedBy" text,
+    "approvedAt" timestamp(3) without time zone,
+    notes text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."POSCashPickup" OWNER TO postgres;
+
+--
+-- Name: POSInventoryMovement; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."POSInventoryMovement" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "transactionId" text,
+    "productId" text NOT NULL,
+    "branchId" text NOT NULL,
+    "movementType" text NOT NULL,
+    quantity numeric(12,3) NOT NULL,
+    "previousQuantity" numeric(12,3),
+    "newQuantity" numeric(12,3),
+    reason text,
+    notes text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."POSInventoryMovement" OWNER TO postgres;
+
+--
+-- Name: POSPayment; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."POSPayment" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "transactionId" text NOT NULL,
+    "paymentNumber" text NOT NULL,
+    "paymentMethod" text NOT NULL,
+    amount numeric(12,2) NOT NULL,
+    currency text DEFAULT 'ILS'::text NOT NULL,
+    status text DEFAULT 'PENDING'::text NOT NULL,
+    "cardToken" text,
+    "cardLastFour" text,
+    "cardBrand" text,
+    "cardType" text,
+    "cardholderName" text,
+    "expiryMonth" integer,
+    "expiryYear" integer,
+    "authorizationCode" text,
+    "processorTransactionId" text,
+    "gatewayResponse" jsonb,
+    "processorName" text,
+    "installmentPlan" text,
+    "installmentCount" integer,
+    "installmentAmount" numeric(12,2),
+    "firstPayment" numeric(12,2),
+    "checkNumber" text,
+    "checkDate" timestamp(3) without time zone,
+    "bankName" text,
+    "bankBranch" text,
+    "accountNumber" text,
+    "transferReference" text,
+    "transferDate" timestamp(3) without time zone,
+    "voucherCode" text,
+    "voucherType" text,
+    notes text,
+    metadata jsonb,
+    "processedAt" timestamp(3) without time zone,
+    "failedAt" timestamp(3) without time zone,
+    "failureReason" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."POSPayment" OWNER TO postgres;
+
+--
+-- Name: POSPaymentRefund; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."POSPaymentRefund" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "paymentId" text NOT NULL,
+    "refundNumber" text NOT NULL,
+    amount numeric(12,2) NOT NULL,
+    reason text,
+    status text DEFAULT 'PENDING'::text NOT NULL,
+    "processorRefundId" text,
+    "createdBy" text NOT NULL,
+    "approvedBy" text,
+    "approvedAt" timestamp(3) without time zone,
+    "processedAt" timestamp(3) without time zone,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."POSPaymentRefund" OWNER TO postgres;
+
+--
+-- Name: POSPriceList; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."POSPriceList" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    name text NOT NULL,
+    description text,
+    "priceListType" text NOT NULL,
+    priority integer DEFAULT 0 NOT NULL,
+    "isActive" boolean DEFAULT true NOT NULL,
+    "validFrom" timestamp(3) without time zone,
+    "validTo" timestamp(3) without time zone,
+    "applicableTerminals" text[],
+    "applicableCustomerGroups" text[],
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."POSPriceList" OWNER TO postgres;
+
+--
+-- Name: POSPriceListItem; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."POSPriceListItem" (
+    id text NOT NULL,
+    "priceListId" text NOT NULL,
+    "productId" text NOT NULL,
+    price numeric(12,2) NOT NULL,
+    "discountPercent" numeric(5,2),
+    "minQuantity" integer DEFAULT 1,
+    "maxQuantity" integer,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."POSPriceListItem" OWNER TO postgres;
+
+--
+-- Name: POSReceipt; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."POSReceipt" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text NOT NULL,
+    "terminalId" text NOT NULL,
+    "transactionId" text,
+    "receiptNumber" text NOT NULL,
+    "receiptType" text NOT NULL,
+    "customerId" text,
+    "customerName" text,
+    "customerEmail" text,
+    "customerPhone" text,
+    "totalAmount" numeric(12,2) NOT NULL,
+    currency text DEFAULT 'ILS'::text NOT NULL,
+    "receiptTemplate" text DEFAULT 'DEFAULT'::text,
+    "receiptData" jsonb NOT NULL,
+    "qrCode" text,
+    signature text,
+    "printCount" integer DEFAULT 0 NOT NULL,
+    "emailSent" boolean DEFAULT false NOT NULL,
+    "emailSentAt" timestamp(3) without time zone,
+    "printedAt" timestamp(3) without time zone,
+    "voidedAt" timestamp(3) without time zone,
+    notes text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."POSReceipt" OWNER TO postgres;
+
+--
+-- Name: POSReportSnapshot; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."POSReportSnapshot" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "reportType" text NOT NULL,
+    "reportNumber" text NOT NULL,
+    "reportData" jsonb NOT NULL,
+    "periodStart" timestamp(3) without time zone NOT NULL,
+    "periodEnd" timestamp(3) without time zone NOT NULL,
+    "generatedBy" text NOT NULL,
+    notes text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."POSReportSnapshot" OWNER TO postgres;
+
+--
+-- Name: POSSession; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."POSSession" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "terminalId" text NOT NULL,
+    "userId" text NOT NULL,
+    "sessionNumber" text NOT NULL,
+    "startTime" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "endTime" timestamp(3) without time zone,
+    status text DEFAULT 'ACTIVE'::text NOT NULL,
+    notes text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."POSSession" OWNER TO postgres;
+
+--
+-- Name: POSSyncQueue; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."POSSyncQueue" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "terminalId" text NOT NULL,
+    operation text NOT NULL,
+    "entityType" text NOT NULL,
+    "entityId" text NOT NULL,
+    payload jsonb NOT NULL,
+    priority integer DEFAULT 5 NOT NULL,
+    status text DEFAULT 'PENDING'::text NOT NULL,
+    attempts integer DEFAULT 0 NOT NULL,
+    "maxAttempts" integer DEFAULT 3 NOT NULL,
+    "lastError" text,
+    "syncedAt" timestamp(3) without time zone,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."POSSyncQueue" OWNER TO postgres;
+
+--
+-- Name: POSTerminal; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."POSTerminal" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text NOT NULL,
+    "terminalNumber" text NOT NULL,
+    "terminalName" text NOT NULL,
+    "terminalType" text NOT NULL,
+    status text DEFAULT 'ACTIVE'::text NOT NULL,
+    "ipAddress" text,
+    "macAddress" text,
+    "deviceInfo" jsonb,
+    configuration jsonb,
+    "lastHeartbeat" timestamp(3) without time zone,
+    "lastSyncedAt" timestamp(3) without time zone,
+    "receiptPrinter" text,
+    "fiscalPrinter" text,
+    "isOnline" boolean DEFAULT true NOT NULL,
+    "allowOffline" boolean DEFAULT true NOT NULL,
+    "maxOfflineHours" integer DEFAULT 24 NOT NULL,
+    "enableBarcode" boolean DEFAULT true NOT NULL,
+    "enableScale" boolean DEFAULT false NOT NULL,
+    "enableCardReader" boolean DEFAULT true NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "activatedAt" timestamp(3) without time zone,
+    "deactivatedAt" timestamp(3) without time zone
+);
+
+
+ALTER TABLE public."POSTerminal" OWNER TO postgres;
+
+--
+-- Name: POSTransaction; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."POSTransaction" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text NOT NULL,
+    "terminalId" text NOT NULL,
+    "sessionId" text,
+    "shiftId" text,
+    "transactionNumber" text NOT NULL,
+    "transactionType" text NOT NULL,
+    status text DEFAULT 'PENDING'::text NOT NULL,
+    "customerId" text,
+    "cashierId" text NOT NULL,
+    "supervisorId" text,
+    subtotal numeric(12,2) DEFAULT 0 NOT NULL,
+    "discountAmount" numeric(12,2) DEFAULT 0 NOT NULL,
+    "taxAmount" numeric(12,2) DEFAULT 0 NOT NULL,
+    "totalAmount" numeric(12,2) DEFAULT 0 NOT NULL,
+    "paidAmount" numeric(12,2) DEFAULT 0 NOT NULL,
+    "changeAmount" numeric(12,2) DEFAULT 0 NOT NULL,
+    "roundingAdjustment" numeric(12,2) DEFAULT 0 NOT NULL,
+    currency text DEFAULT 'ILS'::text NOT NULL,
+    "exchangeRate" numeric(12,6) DEFAULT 1.0,
+    "originalTransactionId" text,
+    "refundedTransactionId" text,
+    "receiptId" text,
+    "saleId" text,
+    notes text,
+    signature text,
+    "hashField" text,
+    metadata jsonb,
+    "isOffline" boolean DEFAULT false NOT NULL,
+    "syncStatus" text DEFAULT 'SYNCED'::text,
+    "lastSyncedAt" timestamp(3) without time zone,
+    "transactionDate" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "completedAt" timestamp(3) without time zone,
+    "voidedAt" timestamp(3) without time zone,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."POSTransaction" OWNER TO postgres;
+
+--
+-- Name: POSTransactionDiscount; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."POSTransactionDiscount" (
+    id text NOT NULL,
+    "transactionId" text NOT NULL,
+    "discountCode" text,
+    "discountType" text NOT NULL,
+    "discountValue" numeric(12,2) NOT NULL,
+    "discountPercent" numeric(5,2),
+    amount numeric(12,2) NOT NULL,
+    reason text,
+    "requiresApproval" boolean DEFAULT false NOT NULL,
+    "approvedBy" text,
+    "approvedAt" timestamp(3) without time zone,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."POSTransactionDiscount" OWNER TO postgres;
+
+--
+-- Name: POSTransactionEvent; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."POSTransactionEvent" (
+    id text NOT NULL,
+    "transactionId" text NOT NULL,
+    "eventType" text NOT NULL,
+    "eventData" jsonb,
+    "timestamp" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."POSTransactionEvent" OWNER TO postgres;
+
+--
+-- Name: POSTransactionItem; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."POSTransactionItem" (
+    id text NOT NULL,
+    "transactionId" text NOT NULL,
+    "productId" text,
+    "lineNumber" integer NOT NULL,
+    "productName" text NOT NULL,
+    sku text,
+    barcode text,
+    description text,
+    category text,
+    quantity numeric(12,3) DEFAULT 1 NOT NULL,
+    "unitPrice" numeric(12,2) NOT NULL,
+    "originalPrice" numeric(12,2),
+    "discountAmount" numeric(12,2) DEFAULT 0 NOT NULL,
+    "discountPercent" numeric(5,2),
+    "taxRate" numeric(5,2) DEFAULT 0 NOT NULL,
+    "taxAmount" numeric(12,2) DEFAULT 0 NOT NULL,
+    subtotal numeric(12,2) NOT NULL,
+    "totalAmount" numeric(12,2) NOT NULL,
+    notes text,
+    metadata jsonb,
+    "isRefunded" boolean DEFAULT false NOT NULL,
+    "refundedQuantity" numeric(12,3) DEFAULT 0,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."POSTransactionItem" OWNER TO postgres;
+
+--
+-- Name: POSTransactionTax; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."POSTransactionTax" (
+    id text NOT NULL,
+    "transactionId" text NOT NULL,
+    "taxName" text NOT NULL,
+    "taxRate" numeric(5,2) NOT NULL,
+    "taxableAmount" numeric(12,2) NOT NULL,
+    "taxAmount" numeric(12,2) NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."POSTransactionTax" OWNER TO postgres;
+
+--
+-- Name: PayType; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."PayType" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "payTypeId" integer,
+    "payTypeName" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."PayType" OWNER TO postgres;
 
 --
 -- Name: Payment; Type: TABLE; Schema: public; Owner: postgres
@@ -2784,7 +5452,10 @@ CREATE TABLE public."Prescription" (
     "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     "updatedAt" timestamp(3) without time zone NOT NULL,
     "additionalData" jsonb,
-    "branchId" text
+    "branchId" text,
+    "retinoscopyDist" text,
+    "retinoscopyNotes" text,
+    "retinoscopyType" text
 );
 
 
@@ -2925,6 +5596,48 @@ CREATE TABLE public."PriceUpdate" (
 ALTER TABLE public."PriceUpdate" OWNER TO postgres;
 
 --
+-- Name: PrintLabel; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."PrintLabel" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "labelId" integer,
+    "labelName" text,
+    "margRight" numeric(65,30),
+    "margLeft" numeric(65,30),
+    "labelWidth" numeric(65,30),
+    "labelHeight" numeric(65,30),
+    "horSpace" numeric(65,30),
+    "verSpace" numeric(65,30),
+    "margTop" numeric(65,30),
+    "margBot" numeric(65,30),
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."PrintLabel" OWNER TO postgres;
+
+--
+-- Name: PrlType; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."PrlType" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "prlType" integer,
+    "prlName" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."PrlType" OWNER TO postgres;
+
+--
 -- Name: Product; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -2977,6 +5690,67 @@ CREATE TABLE public."Product" (
 ALTER TABLE public."Product" OWNER TO postgres;
 
 --
+-- Name: ProductProperty; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ProductProperty" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "propId" integer,
+    "propName" text,
+    "sapakID" integer,
+    price numeric(65,30),
+    "pubPrice" numeric(65,30),
+    "recPrice" numeric(65,30),
+    "privPrice" numeric(65,30),
+    active integer,
+    quantity integer,
+    "invMovePropId" integer,
+    "invMovePropName" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."ProductProperty" OWNER TO postgres;
+
+--
+-- Name: ProductReview; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ProductReview" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "userId" text NOT NULL,
+    "userName" text,
+    "itemType" text NOT NULL,
+    "itemId" text NOT NULL,
+    "collectionId" text,
+    "supplierId" text NOT NULL,
+    rating integer NOT NULL,
+    title text NOT NULL,
+    comment text NOT NULL,
+    images text[],
+    verified boolean DEFAULT false NOT NULL,
+    "orderReference" text,
+    "helpfulCount" integer DEFAULT 0 NOT NULL,
+    "notHelpfulCount" integer DEFAULT 0 NOT NULL,
+    status text DEFAULT 'PENDING'::text NOT NULL,
+    "moderatedBy" text,
+    "moderatedAt" timestamp(3) without time zone,
+    "supplierResponse" text,
+    "supplierResponseBy" text,
+    "supplierResponseAt" timestamp(3) without time zone,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "deletedAt" timestamp(3) without time zone
+);
+
+
+ALTER TABLE public."ProductReview" OWNER TO postgres;
+
+--
 -- Name: ProductSerial; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -2994,6 +5768,25 @@ CREATE TABLE public."ProductSerial" (
 
 
 ALTER TABLE public."ProductSerial" OWNER TO postgres;
+
+--
+-- Name: Profile; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."Profile" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "profileId" integer,
+    "profileName" text,
+    "profileSql" text,
+    "profileDesc" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."Profile" OWNER TO postgres;
 
 --
 -- Name: Purchase; Type: TABLE; Schema: public; Owner: postgres
@@ -3025,6 +5818,7 @@ ALTER TABLE public."Purchase" OWNER TO postgres;
 
 CREATE TABLE public."PurchaseCheck" (
     id text NOT NULL,
+    "tenantId" text NOT NULL,
     "purchaseId" text NOT NULL,
     "checkNumber" text NOT NULL,
     "bankName" text,
@@ -3043,6 +5837,7 @@ ALTER TABLE public."PurchaseCheck" OWNER TO postgres;
 
 CREATE TABLE public."PurchasePayment" (
     id text NOT NULL,
+    "tenantId" text NOT NULL,
     "purchaseId" text NOT NULL,
     "paymentDate" timestamp(3) without time zone NOT NULL,
     amount double precision NOT NULL,
@@ -3053,6 +5848,28 @@ CREATE TABLE public."PurchasePayment" (
 
 
 ALTER TABLE public."PurchasePayment" OWNER TO postgres;
+
+--
+-- Name: ReferralSource; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ReferralSource" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "refsSub2Id" integer,
+    "refsSub2Name" text,
+    "subRefId" integer,
+    "refsSub1Id" integer,
+    "refsSub1Name" text,
+    "refId" integer,
+    "refName" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."ReferralSource" OWNER TO postgres;
 
 --
 -- Name: RefractionProtocol; Type: TABLE; Schema: public; Owner: postgres
@@ -3113,6 +5930,40 @@ CREATE TABLE public."RetinoscopyType" (
 ALTER TABLE public."RetinoscopyType" OWNER TO postgres;
 
 --
+-- Name: ReviewHelpful; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ReviewHelpful" (
+    id text NOT NULL,
+    "reviewId" text NOT NULL,
+    "userId" text NOT NULL,
+    helpful boolean NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."ReviewHelpful" OWNER TO postgres;
+
+--
+-- Name: ReviewReport; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ReviewReport" (
+    id text NOT NULL,
+    "reviewId" text NOT NULL,
+    "reportedBy" text NOT NULL,
+    reason text NOT NULL,
+    details text,
+    status text DEFAULT 'PENDING'::text NOT NULL,
+    "reviewedBy" text,
+    "reviewedAt" timestamp(3) without time zone,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."ReviewReport" OWNER TO postgres;
+
+--
 -- Name: SMS; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -3138,6 +5989,25 @@ CREATE TABLE public."SMS" (
 ALTER TABLE public."SMS" OWNER TO postgres;
 
 --
+-- Name: SMSLen; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SMSLen" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "sMSProviderPrefix" text,
+    "sMSLang" text,
+    "sMSProviderName" text,
+    "sMSLen" integer,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."SMSLen" OWNER TO postgres;
+
+--
 -- Name: Sale; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -3161,7 +6031,12 @@ CREATE TABLE public."Sale" (
     "updatedAt" timestamp(3) without time zone NOT NULL,
     "deletedAt" timestamp(3) without time zone,
     "branchId" text,
-    "cashierShiftId" text
+    "cashierShiftId" text,
+    "groupReference" text,
+    "invoiceType" text DEFAULT 'NORMAL'::text,
+    "receiptDate" timestamp(3) without time zone,
+    "receiptNumber" text,
+    "sourceReference" text
 );
 
 
@@ -3186,11 +6061,127 @@ CREATE TABLE public."SaleItem" (
     "prescriptionData" jsonb,
     notes text,
     "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    "barcodeId" text
+    "barcodeId" text,
+    "tenantId" text NOT NULL
 );
 
 
 ALTER TABLE public."SaleItem" OWNER TO postgres;
+
+--
+-- Name: SapakComment; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SapakComment" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "sapakId" integer,
+    "prlType" integer,
+    comments text,
+    "prlSp" integer,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."SapakComment" OWNER TO postgres;
+
+--
+-- Name: SapakDest; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SapakDest" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "sapakDestId" integer,
+    "sapakDestName" text,
+    "sapakId" integer,
+    fax1 text,
+    fax2 text,
+    email1 text,
+    email2 text,
+    "clientId" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."SapakDest" OWNER TO postgres;
+
+--
+-- Name: SapakPerComment; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SapakPerComment" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "sapakId" integer,
+    "prlType" integer,
+    comments text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."SapakPerComment" OWNER TO postgres;
+
+--
+-- Name: SearchOrder; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SearchOrder" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "itemData" integer,
+    "listIndex" integer,
+    "desc" text,
+    deaf integer,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."SearchOrder" OWNER TO postgres;
+
+--
+-- Name: ServiceType; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ServiceType" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "serviceId" integer,
+    "serviceName" text,
+    "servicePrice" numeric(65,30),
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."ServiceType" OWNER TO postgres;
+
+--
+-- Name: ShortCut; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ShortCut" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "prKey" integer,
+    "shKey" text,
+    "desc" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."ShortCut" OWNER TO postgres;
 
 --
 -- Name: SlitLampExam; Type: TABLE; Schema: public; Owner: postgres
@@ -3214,6 +6205,71 @@ CREATE TABLE public."SlitLampExam" (
 ALTER TABLE public."SlitLampExam" OWNER TO postgres;
 
 --
+-- Name: Special; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."Special" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "sapakID" integer,
+    "specialId" integer,
+    "prlType" integer,
+    priority integer,
+    price numeric(65,30),
+    "pubPrice" numeric(65,30),
+    "recPrice" numeric(65,30),
+    "privPrice" numeric(65,30),
+    formula text,
+    data text,
+    "rLOnly" integer,
+    active integer,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."Special" OWNER TO postgres;
+
+--
+-- Name: SpecialName; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SpecialName" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "specialId" integer,
+    "specialName" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."SpecialName" OWNER TO postgres;
+
+--
+-- Name: StaffSchedule; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."StaffSchedule" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "userId" text NOT NULL,
+    "workDate" timestamp(3) without time zone NOT NULL,
+    "scheduleType" text NOT NULL,
+    "startTime" timestamp(3) without time zone,
+    "endTime" timestamp(3) without time zone,
+    notes text,
+    "createdBy" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."StaffSchedule" OWNER TO postgres;
+
+--
 -- Name: StockMovement; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -3231,7 +6287,14 @@ CREATE TABLE public."StockMovement" (
     "referenceId" text,
     "costPrice" double precision,
     "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    "branchId" text
+    "branchId" text,
+    "exCatNum" integer,
+    "invoiceId" text,
+    "movementPropertyId" text,
+    "movementTypeId" text,
+    "salePrice" double precision,
+    "totalCost" double precision,
+    "totalSale" double precision
 );
 
 
@@ -3281,6 +6344,282 @@ CREATE TABLE public."Supplier" (
 ALTER TABLE public."Supplier" OWNER TO postgres;
 
 --
+-- Name: SupplierAccountTransaction; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SupplierAccountTransaction" (
+    id text NOT NULL,
+    "accountId" text NOT NULL,
+    type text NOT NULL,
+    amount numeric(12,2) NOT NULL,
+    "orderId" text,
+    "invoiceId" text,
+    "paymentId" text,
+    "balanceBefore" numeric(12,2) NOT NULL,
+    "balanceAfter" numeric(12,2) NOT NULL,
+    description text,
+    notes text,
+    "referenceNumber" text,
+    "paymentMethod" text,
+    "transactionDate" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "createdBy" text
+);
+
+
+ALTER TABLE public."SupplierAccountTransaction" OWNER TO postgres;
+
+--
+-- Name: SupplierAnalytics; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SupplierAnalytics" (
+    id text NOT NULL,
+    "supplierId" text NOT NULL,
+    "periodType" text NOT NULL,
+    "periodStart" timestamp(3) without time zone NOT NULL,
+    "periodEnd" timestamp(3) without time zone NOT NULL,
+    "totalOrders" integer NOT NULL,
+    "totalRevenue" numeric(12,2) NOT NULL,
+    "totalUnits" integer NOT NULL,
+    "averageOrderValue" numeric(10,2) NOT NULL,
+    "topSellingItemId" text,
+    "topSellingItemUnits" integer,
+    "lowStockItems" integer NOT NULL,
+    "outOfStockItems" integer NOT NULL,
+    "activeTenants" integer NOT NULL,
+    "newTenants" integer NOT NULL,
+    "topTenantId" text,
+    "topTenantRevenue" numeric(12,2),
+    "rfqsReceived" integer NOT NULL,
+    "rfqsQuoted" integer NOT NULL,
+    "rfqsConverted" integer NOT NULL,
+    "conversionRate" numeric(5,2),
+    "inventoryValue" numeric(12,2) NOT NULL,
+    "inventoryTurnover" numeric(5,2),
+    "grossProfit" numeric(12,2),
+    "profitMargin" numeric(5,2),
+    "calculatedAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."SupplierAnalytics" OWNER TO postgres;
+
+--
+-- Name: SupplierCatalogCategory; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SupplierCatalogCategory" (
+    id text NOT NULL,
+    "supplierId" text NOT NULL,
+    name text NOT NULL,
+    "nameHe" text,
+    description text,
+    "parentId" text,
+    "displayOrder" integer DEFAULT 0 NOT NULL,
+    "isActive" boolean DEFAULT true NOT NULL,
+    "imageUrl" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."SupplierCatalogCategory" OWNER TO postgres;
+
+--
+-- Name: SupplierCatalogItem; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SupplierCatalogItem" (
+    id text NOT NULL,
+    "supplierId" text NOT NULL,
+    "categoryId" text,
+    sku text NOT NULL,
+    name text NOT NULL,
+    "nameHe" text,
+    description text,
+    "descriptionHe" text,
+    type text NOT NULL,
+    brand text,
+    model text,
+    material text,
+    shape text,
+    color text,
+    "eyeSize" integer,
+    "bridgeSize" integer,
+    "templeLength" integer,
+    gender text,
+    "lensType" text,
+    material_lens text,
+    coating text,
+    "indexValue" numeric(3,2),
+    "basePrice" numeric(10,2) NOT NULL,
+    cost numeric(10,2),
+    msrp numeric(10,2),
+    currency text DEFAULT 'ILS'::text NOT NULL,
+    "stockQuantity" integer DEFAULT 0 NOT NULL,
+    "lowStockAlert" integer DEFAULT 10 NOT NULL,
+    "inStock" boolean DEFAULT true NOT NULL,
+    "backorderAllowed" boolean DEFAULT false NOT NULL,
+    "leadTimeDays" integer DEFAULT 7 NOT NULL,
+    images text[],
+    "primaryImage" text,
+    "catalogPdf" text,
+    "isActive" boolean DEFAULT true NOT NULL,
+    "isFeatured" boolean DEFAULT false NOT NULL,
+    "isNewArrival" boolean DEFAULT false NOT NULL,
+    "publishedAt" timestamp(3) without time zone,
+    barcode text,
+    upc text,
+    weight numeric(8,2),
+    dimensions jsonb,
+    tags text[],
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."SupplierCatalogItem" OWNER TO postgres;
+
+--
+-- Name: SupplierCatalogVariant; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SupplierCatalogVariant" (
+    id text NOT NULL,
+    "itemId" text NOT NULL,
+    name text NOT NULL,
+    sku text NOT NULL,
+    "variantType" text NOT NULL,
+    attributes jsonb NOT NULL,
+    "priceModifier" numeric(10,2),
+    price numeric(10,2),
+    "stockQuantity" integer DEFAULT 0 NOT NULL,
+    "isAvailable" boolean DEFAULT true NOT NULL,
+    images text[],
+    "primaryImage" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."SupplierCatalogVariant" OWNER TO postgres;
+
+--
+-- Name: SupplierCollection; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SupplierCollection" (
+    id text NOT NULL,
+    "supplierId" text NOT NULL,
+    name text NOT NULL,
+    season text,
+    description text,
+    "coverImage" text,
+    published boolean DEFAULT false NOT NULL,
+    "tenantScope" text DEFAULT 'SELECTIVE'::text NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."SupplierCollection" OWNER TO postgres;
+
+--
+-- Name: SupplierCollectionVisibility; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SupplierCollectionVisibility" (
+    id text NOT NULL,
+    "collectionId" text NOT NULL,
+    "tenantId" text NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."SupplierCollectionVisibility" OWNER TO postgres;
+
+--
+-- Name: SupplierDiscount; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SupplierDiscount" (
+    id text NOT NULL,
+    "supplierId" text NOT NULL,
+    name text NOT NULL,
+    "nameHe" text,
+    description text,
+    code text,
+    type text NOT NULL,
+    value numeric(10,2) NOT NULL,
+    tiers jsonb,
+    "applyToAll" boolean DEFAULT false NOT NULL,
+    "itemIds" text[],
+    "categoryIds" text[],
+    "tenantScope" text DEFAULT 'ALL'::text NOT NULL,
+    "tenantIds" text[],
+    "minPurchaseAmount" numeric(10,2),
+    "minQuantity" integer,
+    "maxUsesPerTenant" integer,
+    "maxTotalUses" integer,
+    "currentUses" integer DEFAULT 0 NOT NULL,
+    "startDate" timestamp(3) without time zone NOT NULL,
+    "endDate" timestamp(3) without time zone,
+    "isActive" boolean DEFAULT true NOT NULL,
+    priority integer DEFAULT 0 NOT NULL,
+    stackable boolean DEFAULT false NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."SupplierDiscount" OWNER TO postgres;
+
+--
+-- Name: SupplierDiscountUsage; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SupplierDiscountUsage" (
+    id text NOT NULL,
+    "discountId" text NOT NULL,
+    "tenantId" text NOT NULL,
+    "orderId" text,
+    "discountAmount" numeric(10,2) NOT NULL,
+    "orderAmount" numeric(10,2) NOT NULL,
+    "itemCount" integer NOT NULL,
+    "usedAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."SupplierDiscountUsage" OWNER TO postgres;
+
+--
+-- Name: SupplierInventoryLog; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SupplierInventoryLog" (
+    id text NOT NULL,
+    "itemId" text NOT NULL,
+    type text NOT NULL,
+    quantity integer NOT NULL,
+    "quantityBefore" integer NOT NULL,
+    "quantityAfter" integer NOT NULL,
+    "orderId" text,
+    "rfqId" text,
+    reason text,
+    notes text,
+    "locationCode" text,
+    "batchNumber" text,
+    "expiryDate" timestamp(3) without time zone,
+    cost numeric(10,2),
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "createdBy" text
+);
+
+
+ALTER TABLE public."SupplierInventoryLog" OWNER TO postgres;
+
+--
 -- Name: SupplierOrder; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -3310,7 +6649,8 @@ CREATE TABLE public."SupplierOrder" (
     "sentDate" timestamp(3) without time zone,
     "shippingCost" double precision DEFAULT 0 NOT NULL,
     "shippingMethod" text,
-    subtotal double precision DEFAULT 0 NOT NULL
+    subtotal double precision DEFAULT 0 NOT NULL,
+    "accountId" text
 );
 
 
@@ -3340,6 +6680,357 @@ CREATE TABLE public."SupplierOrderItem" (
 
 
 ALTER TABLE public."SupplierOrderItem" OWNER TO postgres;
+
+--
+-- Name: SupplierPriceAlert; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SupplierPriceAlert" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "userId" text,
+    "frameCatalogId" text,
+    "lensCatalogId" text,
+    "itemType" text NOT NULL,
+    "alertType" text NOT NULL,
+    "targetPrice" numeric(10,2),
+    "percentChange" integer,
+    "isActive" boolean DEFAULT true NOT NULL,
+    "notifyEmail" text,
+    "notifyInApp" boolean DEFAULT true NOT NULL,
+    "lastTriggered" timestamp(3) without time zone,
+    "triggerCount" integer DEFAULT 0 NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."SupplierPriceAlert" OWNER TO postgres;
+
+--
+-- Name: SupplierPriceCache; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SupplierPriceCache" (
+    id text NOT NULL,
+    "frameCatalogId" text,
+    "lensCatalogId" text,
+    "itemType" text NOT NULL,
+    "lowestPrice" numeric(10,2) NOT NULL,
+    "lowestSupplierId" text NOT NULL,
+    "highestPrice" numeric(10,2) NOT NULL,
+    "averagePrice" numeric(10,2) NOT NULL,
+    "supplierCount" integer NOT NULL,
+    "priceRange" jsonb NOT NULL,
+    "supplierPrices" jsonb NOT NULL,
+    "lastCalculated" timestamp(3) without time zone NOT NULL,
+    "expiresAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."SupplierPriceCache" OWNER TO postgres;
+
+--
+-- Name: SupplierPriceHistory; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SupplierPriceHistory" (
+    id text NOT NULL,
+    "supplierId" text NOT NULL,
+    "frameCatalogId" text,
+    "lensCatalogId" text,
+    "itemType" text NOT NULL,
+    price numeric(10,2) NOT NULL,
+    currency text DEFAULT 'ILS'::text NOT NULL,
+    "minQuantity" integer DEFAULT 1 NOT NULL,
+    "maxQuantity" integer,
+    "validFrom" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "validTo" timestamp(3) without time zone,
+    "isActive" boolean DEFAULT true NOT NULL,
+    "priceType" text DEFAULT 'REGULAR'::text NOT NULL,
+    notes text,
+    source text DEFAULT 'MANUAL'::text NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "createdBy" text
+);
+
+
+ALTER TABLE public."SupplierPriceHistory" OWNER TO postgres;
+
+--
+-- Name: SupplierPriceList; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SupplierPriceList" (
+    id text NOT NULL,
+    "supplierId" text NOT NULL,
+    name text NOT NULL,
+    "nameHe" text,
+    description text,
+    type text NOT NULL,
+    "startDate" timestamp(3) without time zone NOT NULL,
+    "endDate" timestamp(3) without time zone,
+    "isActive" boolean DEFAULT true NOT NULL,
+    priority integer DEFAULT 0 NOT NULL,
+    "tenantIds" text[],
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."SupplierPriceList" OWNER TO postgres;
+
+--
+-- Name: SupplierPriceListItem; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SupplierPriceListItem" (
+    id text NOT NULL,
+    "priceListId" text NOT NULL,
+    "itemId" text NOT NULL,
+    price numeric(10,2) NOT NULL,
+    "volumePricing" jsonb,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."SupplierPriceListItem" OWNER TO postgres;
+
+--
+-- Name: SupplierRFQ; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SupplierRFQ" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "supplierId" text NOT NULL,
+    status text DEFAULT 'OPEN'::text NOT NULL,
+    notes text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."SupplierRFQ" OWNER TO postgres;
+
+--
+-- Name: SupplierRFQItem; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SupplierRFQItem" (
+    id text NOT NULL,
+    "rfqId" text NOT NULL,
+    type text NOT NULL,
+    "frameCatalogId" text,
+    "lensCatalogId" text,
+    quantity integer NOT NULL,
+    "targetPrice" numeric(10,2)
+);
+
+
+ALTER TABLE public."SupplierRFQItem" OWNER TO postgres;
+
+--
+-- Name: SupplierShipment; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SupplierShipment" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "sapakSendId" integer,
+    "perId" integer,
+    "glassPId" integer,
+    "workId" integer,
+    "clensId" integer,
+    "sapakDestId" integer,
+    "userId" integer,
+    "sendTime" timestamp(3) without time zone,
+    recived integer,
+    "privPrice" numeric(65,30),
+    "shipmentId" text,
+    "shipmentDate" timestamp(3) without time zone,
+    sent integer,
+    com text,
+    "spsStatId" integer,
+    "spsType" integer,
+    "spsSendType" integer,
+    "faxId" integer,
+    "shFrame" integer,
+    "shLab" integer,
+    "treatBlock" integer,
+    "treatWSec" integer,
+    "treatWScrew" integer,
+    "treatWNylon" integer,
+    "treatWKnife" integer,
+    "lensColor" text,
+    "lensLevel" text,
+    "eyeWidth" numeric(65,30),
+    "eyeHeight" numeric(65,30),
+    "bridgeWidth" numeric(65,30),
+    "centerHeightR" numeric(65,30),
+    "centerHeightL" numeric(65,30),
+    "segHeightR" numeric(65,30),
+    "segHeightL" numeric(65,30),
+    "picNum" text,
+    "pCom" text,
+    basis integer,
+    pent numeric(65,30),
+    "vD" numeric(65,30),
+    "spsStatName" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."SupplierShipment" OWNER TO postgres;
+
+--
+-- Name: SupplierStockAlert; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SupplierStockAlert" (
+    id text NOT NULL,
+    "supplierId" text NOT NULL,
+    "itemId" text NOT NULL,
+    type text NOT NULL,
+    severity text NOT NULL,
+    message text NOT NULL,
+    "currentStock" integer NOT NULL,
+    "thresholdValue" integer NOT NULL,
+    "isRead" boolean DEFAULT false NOT NULL,
+    "isResolved" boolean DEFAULT false NOT NULL,
+    "resolvedAt" timestamp(3) without time zone,
+    "resolvedBy" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."SupplierStockAlert" OWNER TO postgres;
+
+--
+-- Name: SupplierTenantAccount; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SupplierTenantAccount" (
+    id text NOT NULL,
+    "supplierId" text NOT NULL,
+    "tenantId" text NOT NULL,
+    "accountNumber" text NOT NULL,
+    "accountStatus" text DEFAULT 'ACTIVE'::text NOT NULL,
+    "creditLimit" numeric(12,2),
+    "currentBalance" numeric(12,2) DEFAULT 0 NOT NULL,
+    "availableCredit" numeric(12,2) DEFAULT 0 NOT NULL,
+    "paymentTerms" text DEFAULT 'NET_30'::text NOT NULL,
+    "paymentTermsDays" integer DEFAULT 30 NOT NULL,
+    "defaultDiscount" numeric(5,2),
+    "priceListId" text,
+    "totalOrders" integer DEFAULT 0 NOT NULL,
+    "totalRevenue" numeric(12,2) DEFAULT 0 NOT NULL,
+    "averageOrderValue" numeric(10,2) DEFAULT 0 NOT NULL,
+    "lastOrderDate" timestamp(3) without time zone,
+    "firstOrderDate" timestamp(3) without time zone,
+    "billingContactName" text,
+    "billingEmail" text,
+    "billingPhone" text,
+    "shippingAddress" jsonb,
+    "billingAddress" jsonb,
+    "allowBackorders" boolean DEFAULT false NOT NULL,
+    "requirePO" boolean DEFAULT false NOT NULL,
+    "autoApproveOrders" boolean DEFAULT true NOT NULL,
+    "internalNotes" text,
+    "creditHold" boolean DEFAULT false NOT NULL,
+    "creditHoldReason" text,
+    "accountManager" text,
+    rating integer,
+    tags text[],
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "lastActivityAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."SupplierTenantAccount" OWNER TO postgres;
+
+--
+-- Name: SupplierTenantActivity; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SupplierTenantActivity" (
+    id text NOT NULL,
+    "supplierId" text NOT NULL,
+    "tenantId" text NOT NULL,
+    type text NOT NULL,
+    description text NOT NULL,
+    "referenceId" text,
+    "referenceType" text,
+    metadata jsonb,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."SupplierTenantActivity" OWNER TO postgres;
+
+--
+-- Name: SupplierTenantNote; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SupplierTenantNote" (
+    id text NOT NULL,
+    "supplierId" text NOT NULL,
+    "tenantId" text NOT NULL,
+    title text,
+    content text NOT NULL,
+    type text NOT NULL,
+    status text DEFAULT 'OPEN'::text,
+    priority text,
+    "dueDate" timestamp(3) without time zone,
+    attachments text[],
+    "isPrivate" boolean DEFAULT false NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "createdBy" text NOT NULL
+);
+
+
+ALTER TABLE public."SupplierTenantNote" OWNER TO postgres;
+
+--
+-- Name: SupplierUser; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SupplierUser" (
+    id text NOT NULL,
+    "supplierId" text NOT NULL,
+    email text NOT NULL,
+    "passwordHash" text NOT NULL,
+    role text DEFAULT 'SUPPLIER'::text NOT NULL,
+    "isActive" boolean DEFAULT true NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."SupplierUser" OWNER TO postgres;
+
+--
+-- Name: SysLevel; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SysLevel" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "branchId" text,
+    "levelId" integer,
+    "levelName" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."SysLevel" OWNER TO postgres;
 
 --
 -- Name: Task; Type: TABLE; Schema: public; Owner: postgres
@@ -3373,6 +7064,7 @@ ALTER TABLE public."Task" OWNER TO postgres;
 
 CREATE TABLE public."TaskAttachment" (
     id text NOT NULL,
+    "tenantId" text NOT NULL,
     "taskId" text NOT NULL,
     "fileName" text NOT NULL,
     "fileUrl" text NOT NULL,
@@ -3391,6 +7083,7 @@ ALTER TABLE public."TaskAttachment" OWNER TO postgres;
 
 CREATE TABLE public."TaskComment" (
     id text NOT NULL,
+    "tenantId" text NOT NULL,
     "taskId" text NOT NULL,
     "userId" text NOT NULL,
     comment text NOT NULL,
@@ -3512,6 +7205,7 @@ ALTER TABLE public."User" OWNER TO postgres;
 
 CREATE TABLE public."UserSettings" (
     id text NOT NULL,
+    "tenantId" text NOT NULL,
     "userId" text NOT NULL,
     phone text,
     "preferredLanguage" text DEFAULT 'he'::text,
@@ -3524,6 +7218,25 @@ CREATE TABLE public."UserSettings" (
 
 
 ALTER TABLE public."UserSettings" OWNER TO postgres;
+
+--
+-- Name: VATRate; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."VATRate" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "effectiveFrom" timestamp(3) without time zone NOT NULL,
+    "effectiveTo" timestamp(3) without time zone,
+    rate double precision NOT NULL,
+    description text,
+    "isActive" boolean DEFAULT true NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."VATRate" OWNER TO postgres;
 
 --
 -- Name: VisionTest; Type: TABLE; Schema: public; Owner: postgres
@@ -3546,6 +7259,71 @@ CREATE TABLE public."VisionTest" (
 
 
 ALTER TABLE public."VisionTest" OWNER TO postgres;
+
+--
+-- Name: Wishlist; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."Wishlist" (
+    id text NOT NULL,
+    "tenantId" text NOT NULL,
+    "userId" text NOT NULL,
+    name text DEFAULT 'My Wishlist'::text NOT NULL,
+    description text,
+    "isDefault" boolean DEFAULT false NOT NULL,
+    "isPublic" boolean DEFAULT false NOT NULL,
+    "shareToken" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."Wishlist" OWNER TO postgres;
+
+--
+-- Name: WishlistItem; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."WishlistItem" (
+    id text NOT NULL,
+    "wishlistId" text NOT NULL,
+    "itemType" text NOT NULL,
+    "itemId" text NOT NULL,
+    "collectionId" text,
+    "supplierId" text NOT NULL,
+    "productName" text,
+    "productBrand" text,
+    "productPrice" double precision,
+    "productImage" text,
+    "notifyOnSale" boolean DEFAULT false NOT NULL,
+    "notifyOnStock" boolean DEFAULT false NOT NULL,
+    notes text,
+    priority integer DEFAULT 0 NOT NULL,
+    "addedAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."WishlistItem" OWNER TO postgres;
+
+--
+-- Name: WishlistShare; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."WishlistShare" (
+    id text NOT NULL,
+    "wishlistId" text NOT NULL,
+    "sharedWith" text,
+    "sharedBy" text NOT NULL,
+    "accessLevel" text DEFAULT 'VIEW'::text NOT NULL,
+    "viewCount" integer DEFAULT 0 NOT NULL,
+    "lastViewedAt" timestamp(3) without time zone,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "expiresAt" timestamp(3) without time zone
+);
+
+
+ALTER TABLE public."WishlistShare" OWNER TO postgres;
 
 --
 -- Name: WorkLab; Type: TABLE; Schema: public; Owner: postgres
@@ -3666,6 +7444,7 @@ ALTER TABLE public."WorkOrder" OWNER TO postgres;
 
 CREATE TABLE public."WorkOrderStatus" (
     id text NOT NULL,
+    "tenantId" text NOT NULL,
     "workOrderId" text NOT NULL,
     status text NOT NULL,
     notes text,
@@ -3749,6 +7528,18 @@ CREATE TABLE public."ZipCode" (
 ALTER TABLE public."ZipCode" OWNER TO postgres;
 
 --
+-- Name: _DiscountToItems; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."_DiscountToItems" (
+    "A" text NOT NULL,
+    "B" text NOT NULL
+);
+
+
+ALTER TABLE public."_DiscountToItems" OWNER TO postgres;
+
+--
 -- Name: _prisma_migrations; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -3767,11 +7558,2355 @@ CREATE TABLE public._prisma_migrations (
 ALTER TABLE public._prisma_migrations OWNER TO postgres;
 
 --
+-- Data for Name: AISuggestion; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."AISuggestion" (id, "tenantId", "examinationId", "suggestionType", suggestion, reasoning, confidence, accepted, "acceptedAt", "rejectedReason", "modifiedSuggestion", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: AddressLookup; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."AddressLookup" (id, "tenantId", "branchId", "cityCode", "streetCode", "startingHouseNumber", "endingHouseNumber", "streetZipcode", "streetName", "alternateStreetName", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: AdvancedExamination; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."AdvancedExamination" (id, "tenantId", "branchId", "customerId", "examinationId", "examDate", "examinerId", "autorefSphereOD", "autorefCylinderOD", "autorefAxisOD", "autorefSphereOS", "autorefCylinderOS", "autorefAxisOS", "autorefConfidence", "keratometryK1OD", "keratometryK1AxisOD", "keratometryK2OD", "keratometryK2AxisOD", "keratometryK1OS", "keratometryK1AxisOS", "keratometryK2OS", "keratometryK2AxisOS", "keratometryAvgOD", "keratometryAvgOS", "keratometryType", "retinoscopySphereOD", "retinoscopyCylinderOD", "retinoscopyAxisOD", "retinoscopySphereOS", "retinoscopyCylinderOS", "retinoscopyAxisOS", "retinoscopyMethod", "subjSphereOD", "subjCylinderOD", "subjAxisOD", "subjSphereOS", "subjCylinderOS", "subjAxisOS", "subjVAOD", "subjVAOS", "subjVAOU", "nearAddOD", "nearAddOS", "nearVAOD", "nearVAOS", "nearVAOU", "nearWorkingDistance", "coverTestDistance", "coverTestNear", "npcBreak", "npcRecovery", stereopsis, "worthFourDot", "maddoxRodH", "maddoxRodV", "accommodativeAmpOD", "accommodativeAmpOS", "accommodativeFacility", "vergenceNBI", "vergenceNBO", "vergencePBI", "vergencePBO", "pupilSizeOD", "pupilSizeOS", "pupilReactionOD", "pupilReactionOS", "pupilShape", "iopOD", "iopOS", "iopTime", "iopMethod", "cctOD", "cctOS", "colorVisionTest", "colorVisionResult", "colorVisionDetails", "visualFieldOD", "visualFieldOS", "visualFieldMethod", "visualFieldNotes", "lidsOD", "lidsOS", "conjunctivaOD", "conjunctivaOS", "corneaOD", "corneaOS", "anteriorChamberOD", "anteriorChamberOS", "irisOD", "irisOS", "lensOD", "lensOS", "lensOpacityOD", "lensOpacityOS", "vitreousOD", "vitreousOS", "discOD", "discOS", "cdRatioOD", "cdRatioOS", "maculaOD", "maculaOS", "vesselsOD", "vesselsOS", "peripheryOD", "peripheryOS", "tearBreakUpTimeOD", "tearBreakUpTimeOS", "schirmerTestOD", "schirmerTestOS", "primaryDiagnosis", "secondaryDiagnosis", "assessmentNotes", "treatmentPlan", "followUpPeriod", "referralNeeded", "referralTo", "referralReason", "isComplete", "completedAt", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ApplicationSetting; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ApplicationSetting" (id, "tenantId", "branchId", "setId", "setVal", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Appointment; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Appointment" (id, "tenantId", "customerId", "userId", date, duration, type, status, notes, "reminderSent", "createdAt", "updatedAt", "branchId", "SMSSent", "TookPlace") FROM stdin;
+\.
+
+
+--
+-- Data for Name: AuditLog; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."AuditLog" (id, "tenantId", "userId", action, resource, "resourceId", details, "oldValues", "newValues", "ipAddress", "userAgent", metadata, "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: BarcodeManagement; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."BarcodeManagement" (id, "tenantId", "productId", barcode, "barcodeType", "isActive", "createdAt", "updatedAt", "branchId") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Base; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Base" (id, "tenantId", "branchId", "baseId", "baseName", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: BisData; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."BisData" (id, "tenantId", "branchId", "bisId", "bisNum", "bisName", phone, fax, email, address, "zipCode", "creditMode", "creditDays", "creditFactor", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Branch; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Branch" (id, "tenantId", name, "nameHe", code, "isMain", address, city, "zipCode", phone, fax, email, active, "managerId", "operatingHours", "shareInventory", "shareCustomers", "createdAt", "updatedAt") FROM stdin;
+cmh8y34z00001czwwamgq5guk	default-tenant	סניף ראשי	סניף ראשי	MAIN	t	רחוב הרצל 123, תל אביב	תל אביב	67000	03-1234567	\N	main@default-optics.com	t	cmh8y351z0007czwwu5j7wupg	\N	f	t	2025-10-27 09:38:12.588	2025-10-27 09:38:12.698
+\.
+
+
+--
+-- Data for Name: Brand; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Brand" (id, "tenantId", name, type, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: BusinessContact; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."BusinessContact" (id, "tenantId", "branchId", "cntID", "lastName", "firstName", "workPhone", "homePhone", "cellPhone", fax, address, "zipCode", "cityID", "eMail", "webSite", comment, "hidCom", "isSapak", "creditCon", "remDate", "sapakID", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CashDrawerEvent; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CashDrawerEvent" (id, "tenantId", "branchId", "userId", "shiftId", "eventType", reason, amount, "timestamp") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CashReconciliation; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CashReconciliation" (id, "tenantId", "shiftId", "reconciliationType", "performedBy", "performedAt", "expectedAmount", "totalCounted", difference, bills1, bills5, bills10, bills20, bills50, bills100, bills200, coins010, coins050, coins1, coins2, coins5, coins10, notes, "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CashierShift; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CashierShift" (id, "tenantId", "branchId", "userId", "shiftNumber", "startTime", "endTime", status, "openingCash", "closingCash", "expectedCash", "actualCash", "cashDifference", "totalSales", "totalCashPayments", "totalCardPayments", "totalOtherPayments", notes, "terminalId", "closedBy", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ChatChannel; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ChatChannel" (id, "tenantId", "roomId", name, "displayName", type, description, "isActive", "isArchived", "archivedAt", "archivedBy", "visitId", "patientId", settings, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ChatChannelMember; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ChatChannelMember" (id, "tenantId", "channelId", "userId", "userType", role, permissions, "muteNotifications", "mutedUntil", "lastSeenAt", "unreadCount", "joinedAt", "leftAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ChatMessage; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ChatMessage" (id, "tenantId", "channelId", "senderId", "senderType", "senderName", content, "messageType", "structuredData", attachments, "readAt", "readBy", "pinnedAt", "pinnedBy", reactions, "replyToId", "threadId", "quickActions", metadata, "createdAt", "updatedAt", "deletedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ChatMessageTemplate; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ChatMessageTemplate" (id, "tenantId", name, content, type, category, variables, "quickActions", "isActive", "isSystem", "usageCount", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ChatNotification; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ChatNotification" (id, "tenantId", "userId", "channelId", "messageId", type, title, content, data, "isRead", "readAt", "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ChatRoom; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ChatRoom" (id, "tenantId", "branchId", name, "displayName", type, description, "isActive", settings, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ChatRoomMember; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ChatRoomMember" (id, "tenantId", "roomId", "userId", "userType", role, permissions, "joinedAt", "leftAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ChatSearch; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ChatSearch" (id, "tenantId", "userId", query, filters, results, "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ChatTyping; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ChatTyping" (id, "tenantId", "channelId", "userId", "userType", "userName", "startedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CheckType; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CheckType" (id, "tenantId", "checkId", name, price, description, "isActive", "createdAt", "updatedAt", "branchId") FROM stdin;
+\.
+
+
+--
+-- Data for Name: City; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."City" (id, "tenantId", "cityId", name, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ClinicalData; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ClinicalData" (id, "tenantId", "branchId", "eyeCheckCharId", "eyeCheckCharName", "eyeCheckCharType", "clinicCheckId", "perId", "userId", "checkDate", "reCheckDate", "glassCheckDate", "yN1", "yN2", "yN3", "yN4", "yN5", "yN6", "yN7", "yN8", "yN9", "yN10", "yN11", "yN12", "yN13", "yN14", "yN15", "yN16", "yN17", "yN18", "yN19", "yN20", "yN21", "yN22", "yN23", "yN24", "yN25", "yN26", "yN27", "yN28", "yN29", "yN30", "yN31", "yN32", "yN33", "yN34", "yN35", "yN36", "yN37", "yN38", "yN39", "yN40", "yN41", "yN42", "yN43", "yN44", "yN45", "yN46", "yN47", "yN48", "yN49", "yN50", "yN51", "yN52", "yN53", "yN54", "yN55", "yN56", "yN57", "yN58", meds, "medsEye", "prevTreat", com, other1, other2, other3, other4, "eyeLidR", "eyeLidL", "tearWayR", "tearWayL", "choroidR", "choroidL", "limitR", "limitL", "cornR", "cornL", "chamberR", "chamberL", "angleR", "angleL", "iOPR", "iOPL", "irisR", "irisL", "pupilR", "pupilL", "lensR", "lensL", "enamelR", "enamelL", "diskR", "diskL", "cDAVR", "cDAVL", "maculaR", "maculaL", "perimeterR", "perimeterL", "amslaR", "amslaL", "vFieldR", "vFieldL", pic3, pic4, "cSR", "cSL", "fldId", "fldName", "fVal", "iCount", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ClinicalDiagnosis; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ClinicalDiagnosis" (id, "tenantId", "branchId", "customerId", "checkDate", "examinerId", complaints, illnesses, "optometricDiagnosis", "doctorReferral", summary, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ClinicalExamination; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ClinicalExamination" (id, "tenantId", "customerId", "examinerId", "examDate", "recheckDate", symptom1, symptom2, symptom3, symptom4, symptom5, symptom6, symptom7, symptom8, symptom9, symptom10, symptom11, symptom12, symptom13, symptom14, symptom15, symptom16, symptom17, symptom18, symptom19, symptom20, symptom21, symptom22, symptom23, symptom24, symptom25, symptom26, symptom27, symptom28, symptom29, symptom30, symptom31, symptom32, symptom33, symptom34, symptom35, symptom36, symptom37, symptom38, symptom39, symptom40, symptom41, symptom42, symptom43, symptom44, symptom45, symptom46, symptom47, symptom48, symptom49, symptom50, symptom51, symptom52, symptom53, symptom54, symptom55, symptom56, symptom57, symptom58, medications, "eyeMedications", "previousTreatment", comments, "eyeLidRight", "eyeLidLeft", "tearDuctRight", "tearDuctLeft", "corneaRight", "corneaLeft", "irisRight", "irisLeft", "lensRight", "lensLeft", "createdAt", "updatedAt", "branchId", "choroidLeft", "choroidRight", "limitLeft", "limitRight", "perimeterLeft", "perimeterRight") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ClinicalImage; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ClinicalImage" (id, "tenantId", "examinationId", "customerId", "imageType", eye, "imageUrl", "thumbnailUrl", "fileName", "fileSize", "mimeType", width, height, "captureDate", "captureDevice", annotations, metadata, notes, tags, diagnosis, findings, "aiAnalysis", "aiConfidence", "uploadedBy", "isPrivate", "createdAt", "updatedAt", "deletedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ClinicalProtocol; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ClinicalProtocol" (id, "tenantId", name, "nameHe", description, "protocolType", "triggerConditions", "recommendedTests", "mandatoryFields", "followUpRules", "referralRules", "isActive", priority, "createdBy", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ClinicalReferral; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ClinicalReferral" (id, "tenantId", "customerId", "examinationId", "referralType", specialty, reason, "reasonHe", urgency, "specialistName", "specialistPhone", "specialistEmail", "clinicName", "referralDate", "letterSent", "letterSentAt", "appointmentDate", "appointmentConfirmed", status, "resultsReceived", "resultsDate", "resultsSummary", "referralLetter", "resultsDocument", notes, "createdBy", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ClinicalRule; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ClinicalRule" (id, "tenantId", "ruleName", "ruleNameHe", description, "ruleType", "triggerConditions", action, priority, "isActive", "autoExecute", "createdBy", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ClinicalRuleTrigger; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ClinicalRuleTrigger" (id, "ruleId", "tenantId", "examinationId", "customerId", "triggeredAt", "triggeredBy", "conditionsMet", "actionTaken", status, "resultMessage", "completedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ClndrSal; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ClndrSal" (id, "tenantId", "branchId", "userID", month, salery, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ClndrTasksPriority; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ClndrTasksPriority" (id, "tenantId", "branchId", "priorityId", "priorityName", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ClndrWrk; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ClndrWrk" (id, "tenantId", "branchId", "wrkId", "userID", "wrkDate", "wrkTime", "startTime", "endTime", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CollectionItem; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CollectionItem" (id, "collectionId", type, "frameCatalogId", "lensCatalogId", "supplierCode", "priceOverride", stock, description, "isPublished", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Commission; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Commission" (id, "tenantId", "branchId", "employeeId", "saleId", "examinationId", "ruleId", "baseAmount", "commissionRate", "commissionAmount", period, "periodStart", "periodEnd", status, "paidAmount", "paidAt", "paymentRef", notes, "approvedBy", "approvedAt", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CommissionRule; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CommissionRule" (id, "tenantId", "branchId", name, description, "isActive", "ruleType", percentage, "fixedAmount", tiers, "categoryFilter", "brandFilter", "minimumSaleAmount", "validFrom", "validUntil", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CommunicationCampaign; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CommunicationCampaign" (id, "tenantId", "branchId", name, description, type, status, "targetType", "targetFilter", "targetCustomers", "templateId", subject, content, "scheduledAt", "sendAt", "completedAt", "totalRecipients", "sentCount", "deliveredCount", "failedCount", "openedCount", "clickedCount", "unsubscribedCount", "estimatedCost", "actualCost", "respectOptOut", "testMode", priority, "createdBy", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CommunicationLog; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CommunicationLog" (id, "tenantId", "customerId", "recipientEmail", "recipientPhone", "recipientName", type, template, subject, content, status, "sentAt", "deliveredAt", "failedAt", error, provider, "providerMessageId", cost, context, "contextId", "createdAt", "updatedAt", "branchId", "campaignId") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CommunicationSchedule; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CommunicationSchedule" (id, "tenantId", name, description, active, "scheduleType", "triggerType", "triggerDays", "triggerTime", "recurrencePattern", "recurrenceDays", "templateId", "customerFilter", "respectOptOut", "includeInactive", "maxSendsPerDay", "lastRunAt", "nextRunAt", "totalSent", "totalFailed", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ContactAgent; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ContactAgent" (id, "tenantId", "customerId", "agentType", relationship, "firstName", "lastName", phone, email, address, city, "policyNumber", "groupNumber", "isPrimary", "isActive", notes, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ContactLensBrand; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ContactLensBrand" (id, "tenantId", "brandId", name, description, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ContactLensCleaningSolution; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ContactLensCleaningSolution" (id, "tenantId", "solutionId", name, description, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ContactLensDisinfectingSolution; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ContactLensDisinfectingSolution" (id, "tenantId", "solutionId", name, description, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ContactLensExamination; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ContactLensExamination" (id, "tenantId", "branchId", "customerId", "checkDate", "reCheckDate", "examinerId", "pupilDiameter", "cornealDiameter", "eyelidKey", "breakUpTime", "schirmerRight", "schirmerLeft", "eyeColor", "keratometryHR", "keratometryHL", "axisHR", "axisHL", "keratometryVR", "keratometryVL", "keratometryTR", "keratometryTL", "keratometryNR", "keratometryNL", "keratometryIR", "keratometryIL", "keratometrySR", "keratometrySL", "diameterRight", "diameterLeft", "baseCurve1R", "baseCurve1L", "baseCurve2R", "baseCurve2L", "opticalZoneR", "opticalZoneL", "powerR", "powerL", "sphereR", "sphereL", "cylinderR", "cylinderL", "axisR", "axisL", "addR", "addL", "materialR", "materialL", "tintR", "tintL", "visualAcuityR", "visualAcuityL", "visualAcuity", "pinHoleR", "pinHoleL", "lensTypeIdR", "lensTypeIdL", "manufacturerIdR", "manufacturerIdL", "brandIdR", "brandIdL", "cleaningSolutionId", "disinfectingSolutionId", "rinsingSolutionId", "blinkFrequency", "blinkQuality", "lensId", comments, "fittingComment", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ContactLensFitting; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ContactLensFitting" (id, "tenantId", "customerId", "fitterId", "fittingDate", "trialLenses", "finalSelection", "wearSchedule", "careSystem", "followUpDate", notes, status, "createdAt", "updatedAt", "branchId", "cleaningSolution", complications, "dailyWearHours", "disinfectingSolution", "enzymaticCleaner", "kReadingOdAxis", "kReadingOdFlat", "kReadingOdSteep", "kReadingOsAxis", "kReadingOsFlat", "kReadingOsSteep", "leftEyeAddPower", "leftEyeAxis", "leftEyeBaseCurve", "leftEyeBrand", "leftEyeCentering", "leftEyeColor", "leftEyeCylinder", "leftEyeDiameter", "leftEyeFitQuality", "leftEyeMaterial", "leftEyeMovement", "leftEyePower", "leftEyeType", "patientEducation", "replacementSchedule", "rewettingDrops", "rightEyeAddPower", "rightEyeAxis", "rightEyeBaseCurve", "rightEyeBrand", "rightEyeCentering", "rightEyeColor", "rightEyeCylinder", "rightEyeDiameter", "rightEyeFitQuality", "rightEyeMaterial", "rightEyeMovement", "rightEyePower", "rightEyeType", "trialResults") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ContactLensFittingDetail; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ContactLensFittingDetail" (id, "tenantId", "branchId", "customerId", "checkDate", "fittingId", "diameterRight", "diameterLeft", "baseCurve1R", "baseCurve1L", "baseCurve2R", "baseCurve2L", "sphereR", "sphereL", "cylinderR", "cylinderL", "axisR", "axisL", "visualAcuityR", "visualAcuityL", "visualAcuity", "pinHoleR", "pinHoleL", "lensTypeIdR", "lensTypeIdL", "manufacturerIdR", "manufacturerIdL", "brandIdR", "brandIdL", "commentR", "commentL", "createdAt", "updatedAt", "pupilHeightL", "pupilHeightR") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ContactLensManufacturer; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ContactLensManufacturer" (id, "tenantId", "manufacturerId", name, description, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ContactLensMaterial; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ContactLensMaterial" (id, "tenantId", "materialId", name, description, "isActive", "createdAt", "updatedAt") FROM stdin;
+TNT-LOCAL1-001-contact-lens-material-0	TNT-LOCAL1-001	0	[ללא]	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
+TNT-LOCAL1-001-contact-lens-material-1	TNT-LOCAL1-001	1	b4	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
+TNT-LOCAL1-001-contact-lens-material-2	TNT-LOCAL1-001	2	b7	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
+TNT-LOCAL1-001-contact-lens-material-3	TNT-LOCAL1-001	3	f\\t	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
+TNT-LOCAL1-001-contact-lens-material-4	TNT-LOCAL1-001	4	f5	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
+TNT-LOCAL1-001-contact-lens-material-5	TNT-LOCAL1-001	5	f7	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
+TNT-LOCAL1-001-contact-lens-material-6	TNT-LOCAL1-001	6	fl	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
+TNT-LOCAL1-001-contact-lens-material-7	TNT-LOCAL1-001	7	HD	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
+TNT-LOCAL1-001-contact-lens-material-8	TNT-LOCAL1-001	8	pcl 5	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
+TNT-LOCAL1-001-contact-lens-material-9	TNT-LOCAL1-001	9	pmm	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
+TNT-LOCAL1-001-contact-lens-material-10	TNT-LOCAL1-001	10	s4	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
+TNT-LOCAL1-001-contact-lens-material-11	TNT-LOCAL1-001	11	GM3	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
+TNT-LOCAL1-001-contact-lens-material-12	TNT-LOCAL1-001	12	BIO	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
+TNT-LOCAL1-001-contact-lens-material-13	TNT-LOCAL1-001	13	H35	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
+TNT-LOCAL1-001-contact-lens-material-14	TNT-LOCAL1-001	14	New Mater	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
+TNT-LOCAL1-001-contact-lens-material-15	TNT-LOCAL1-001	15	H100	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
+TNT-LOCAL1-001-contact-lens-material-16	TNT-LOCAL1-001	16	VP+MMA	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
+TNT-LOCAL1-001-contact-lens-material-17	TNT-LOCAL1-001	17	CLE 60	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
+TNT-LOCAL1-001-contact-lens-material-18	TNT-LOCAL1-001	18	BENZ 73	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
+TNT-LOCAL1-001-contact-lens-material-19	TNT-LOCAL1-001	19	BENZ 55	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
+TNT-LOCAL1-001-contact-lens-material-20	TNT-LOCAL1-001	20	H60	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
+\.
+
+
+--
+-- Data for Name: ContactLensPrescription; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ContactLensPrescription" (id, "tenantId", "customerId", "doctorId", "prescriptionDate", "validUntil", "rightBrand", "rightPower", "rightBC", "rightDiameter", "rightCylinder", "rightAxis", "rightAdd", "rightColor", "leftBrand", "leftPower", "leftBC", "leftDiameter", "leftCylinder", "leftAxis", "leftAdd", "leftColor", "wearingSchedule", "replacementSchedule", notes, recommendations, "trialLensUsed", "createdAt", "updatedAt", "additionalData", "branchId") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ContactLensPricing; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ContactLensPricing" (id, "tenantId", "branchId", "sapakID", "cLensTypeID", "clensCharID", price, "pubPrice", "recPrice", "privPrice", active, quantity, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ContactLensRinsingSolution; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ContactLensRinsingSolution" (id, "tenantId", "solutionId", name, description, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ContactLensTint; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ContactLensTint" (id, "tenantId", "tintId", name, description, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ContactLensType; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ContactLensType" (id, "tenantId", "lensTypeId", name, description, "isActive", "createdAt", "updatedAt") FROM stdin;
+TNT-LOCAL1-001-contact-lens-type-0	TNT-LOCAL1-001	0	[ללא]	\N	t	2025-10-27 16:36:59.961	2025-10-27 16:36:59.961
+TNT-LOCAL1-001-contact-lens-type-1	TNT-LOCAL1-001	1	FRP	\N	t	2025-10-27 16:36:59.961	2025-10-27 16:36:59.961
+TNT-LOCAL1-001-contact-lens-type-2	TNT-LOCAL1-001	2	GP	\N	t	2025-10-27 16:36:59.961	2025-10-27 16:36:59.961
+TNT-LOCAL1-001-contact-lens-type-3	TNT-LOCAL1-001	3	pmm	\N	t	2025-10-27 16:36:59.961	2025-10-27 16:36:59.961
+TNT-LOCAL1-001-contact-lens-type-4	TNT-LOCAL1-001	4	SF	\N	t	2025-10-27 16:36:59.961	2025-10-27 16:36:59.961
+TNT-LOCAL1-001-contact-lens-type-10	TNT-LOCAL1-001	10	Contact Lens Type 10	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
+TNT-LOCAL1-001-contact-lens-type-1001	TNT-LOCAL1-001	1001	רכות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
+TNT-LOCAL1-001-contact-lens-type-1002	TNT-LOCAL1-001	1002	טוריות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
+TNT-LOCAL1-001-contact-lens-type-1003	TNT-LOCAL1-001	1003	מיוחדות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
+TNT-LOCAL1-001-contact-lens-type-1004	TNT-LOCAL1-001	1004	קוסמטיות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
+TNT-LOCAL1-001-contact-lens-type-1005	TNT-LOCAL1-001	1005	רב מוקדיות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
+TNT-LOCAL1-001-contact-lens-type-1006	TNT-LOCAL1-001	1006	חד פעמיות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
+TNT-LOCAL1-001-contact-lens-type-1007	TNT-LOCAL1-001	1007	גמיש נושם	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
+TNT-LOCAL1-001-contact-lens-type-1008	TNT-LOCAL1-001	1008	פלנו	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
+TNT-LOCAL1-001-contact-lens-type-1009	TNT-LOCAL1-001	1009	Visitint	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
+TNT-LOCAL1-001-contact-lens-type-1010	TNT-LOCAL1-001	1010	יומיות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
+TNT-LOCAL1-001-contact-lens-type-1011	TNT-LOCAL1-001	1011	חודשיות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
+TNT-LOCAL1-001-contact-lens-type-1012	TNT-LOCAL1-001	1012	צבעוניות זמניות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
+TNT-LOCAL1-001-contact-lens-type-1013	TNT-LOCAL1-001	1013	רכות קבועות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
+TNT-LOCAL1-001-contact-lens-type-1014	TNT-LOCAL1-001	1014	רכות קצובות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
+TNT-LOCAL1-001-contact-lens-type-1015	TNT-LOCAL1-001	1015	רכות יומיות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
+TNT-LOCAL1-001-contact-lens-type-1016	TNT-LOCAL1-001	1016	קשות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
+TNT-LOCAL1-001-contact-lens-type-1017	TNT-LOCAL1-001	1017	רכות סיליקון הידרוג'ל	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
+TNT-LOCAL1-001-contact-lens-type-1018	TNT-LOCAL1-001	1018	רכות ספריות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
+TNT-LOCAL1-001-contact-lens-type-1019	TNT-LOCAL1-001	1019	זמניות ספריות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
+TNT-LOCAL1-001-contact-lens-type-1020	TNT-LOCAL1-001	1020	רב מוקדיות-זמניות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
+TNT-LOCAL1-001-contact-lens-type-1021	TNT-LOCAL1-001	1021	טוריות-זמניות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
+TNT-LOCAL1-001-contact-lens-type-1022	TNT-LOCAL1-001	1022	טוריות יומיות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
+TNT-LOCAL1-001-contact-lens-type-1023	TNT-LOCAL1-001	1023	אורטוקרטולוגיה	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
+TNT-LOCAL1-001-contact-lens-type-1024	TNT-LOCAL1-001	1024	מיוחדות לקרניות מעוותות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
+TNT-LOCAL1-001-contact-lens-type-1025	TNT-LOCAL1-001	1025	סקלריות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
+TNT-LOCAL1-001-contact-lens-type-1026	TNT-LOCAL1-001	1026	Rose K	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
+TNT-LOCAL1-001-contact-lens-type-1027	TNT-LOCAL1-001	1027	תוספות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
+\.
+
+
+--
+-- Data for Name: Conversation; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Conversation" (id, "supplierId", "tenantId", "relatedToType", "relatedToId", "lastMessageAt", "isArchived", "archivedBy", "archivedAt", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ConversationParticipant; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ConversationParticipant" (id, "conversationId", "participantId", "participantType", "muteNotifications", "mutedUntil", "lastSeenAt", "unreadCount", "joinedAt", "leftAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ConversationTyping; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ConversationTyping" (id, "conversationId", "typingUserId", "typingUserType", "typingUserName", "startedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CrdBuysWorkLab; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CrdBuysWorkLab" (id, "tenantId", "branchId", "labID", "labName", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CrdBuysWorkSapak; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CrdBuysWorkSapak" (id, "tenantId", "branchId", "sapakID", "sapakName", "itemCode", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CrdBuysWorkStat; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CrdBuysWorkStat" (id, "tenantId", "branchId", "workStatId", "workStatName", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CrdBuysWorkSupply; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CrdBuysWorkSupply" (id, "tenantId", "branchId", "workSupplyId", "workSupplyName", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CrdBuysWorkType; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CrdBuysWorkType" (id, "tenantId", "branchId", "workTypeId", "workTypeName", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CrdClensChecksMater; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CrdClensChecksMater" (id, "tenantId", "branchId", "materId", "materName", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CrdClensChecksPr; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CrdClensChecksPr" (id, "tenantId", "branchId", "prId", "prName", "idCount", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CrdClensChecksTint; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CrdClensChecksTint" (id, "tenantId", "branchId", "tintId", "tintName", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CrdClensManuf; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CrdClensManuf" (id, "tenantId", "branchId", "clensManufId", "clensManufName", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CrdClensSolClean; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CrdClensSolClean" (id, "tenantId", "branchId", "clensSolCleanId", "clensSolCleanName", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CrdClensSolDisinfect; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CrdClensSolDisinfect" (id, "tenantId", "branchId", "clensSolDisinfectId", "clensSolDisinfectName", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CrdClensSolRinse; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CrdClensSolRinse" (id, "tenantId", "branchId", "clensSolRinseId", "clensSolRinseName", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CrdClensType; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CrdClensType" (id, "tenantId", "branchId", "clensTypeId", "clensTypeName", "idCount", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CrdGlassIOPInst; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CrdGlassIOPInst" (id, "tenantId", "branchId", "iOPInstId", "iOPInstName", "idCount", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CrdGlassRetDist; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CrdGlassRetDist" (id, "tenantId", "branchId", "retDistId", "retDistName", "idCount", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CrdGlassRetType; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CrdGlassRetType" (id, "tenantId", "branchId", "retTypeId", "retTypeName", "idCount", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CrdGlassUse; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CrdGlassUse" (id, "tenantId", "branchId", "glassUseId", "glassUseName", "idCount", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CreditCard; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CreditCard" (id, "tenantId", "branchId", "creditCardId", "creditCardName", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CreditCardTransaction; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CreditCardTransaction" (id, "tenantId", "saleId", "invoiceId", "cardType", "last4Digits", "cardHolderName", "expiryMonth", "expiryYear", "transactionId", amount, currency, status, "processorName", "authorizationCode", "referenceNumber", "processedAt", "createdAt", "updatedAt", "branchId") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CreditType; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CreditType" (id, "tenantId", "branchId", "creditTypeId", "creditTypeName", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CustomReport; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CustomReport" (id, "tenantId", "branchId", "oRepId", "oRepHeader", "oRepName", "oRepType", "oRPTPara", "secLevel", "inExe", "oRepSql", "uRepId", "uRepSql", "uRepHeader", "uRepName", "uRepType", "uRPTPara", "loadedForm", "firstCtl", "firstIndex", "secCtl", "secIndex", "shortCutNum", trans, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Customer; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Customer" (id, "tenantId", "customerId", "firstName", "lastName", "firstNameHe", "lastNameHe", "idNumber", "birthDate", gender, occupation, "cellPhone", "homePhone", "workPhone", fax, email, address, city, "zipCode", "customerType", "groupId", "discountId", "referralId", "familyId", "preferredLanguage", "mailList", "smsConsent", notes, tags, rating, "wantsLaser", "laserDate", "didOperation", "createdAt", "updatedAt", "deletedAt", "branchId", allergies, "healthFund", "medicalConditions", medications) FROM stdin;
+\.
+
+
+--
+-- Data for Name: CustomerGroup; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CustomerGroup" (id, "tenantId", "groupCode", name, "nameHe", discount, "isActive", "createdAt", "updatedAt") FROM stdin;
+cmh8y352a000dczwweh1yq8cy	default-tenant	DEFAULT	Default Group	קבוצה ברירת מחדל	0	t	2025-10-27 09:38:12.706	2025-10-27 09:38:12.706
+cmh8y352c000fczwwb3opoai4	default-tenant	VIP	VIP Customers	לקוחות VIP	15	t	2025-10-27 09:38:12.709	2025-10-27 09:38:12.709
+cmh8y352e000hczwwyvfnvmwe	default-tenant	INSURANCE	Insurance Customers	לקוחות ביטוח	10	t	2025-10-27 09:38:12.71	2025-10-27 09:38:12.71
+\.
+
+
+--
+-- Data for Name: CustomerLastVisit; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CustomerLastVisit" (id, "tenantId", "customerId", "customerNumber", "lastVisitDate", "lastVisitType", "lastAppointmentDate", "lastPurchaseDate", "lastExaminationDate", "visitCount", "purchaseCount", "examinationCount", "totalSpent", "lastUpdated", "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CustomerOrder; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CustomerOrder" (id, "tenantId", "branchId", "itemData", "listIndex", "desc", deaf, "lblWiz", "lblWizType", "lblWizFld", "letterFld", "letterWiz", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: CustomerPhoto; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CustomerPhoto" (id, "tenantId", "customerId", "photoType", "fileName", "filePath", "fileSize", "mimeType", description, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: DataMigrationError; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."DataMigrationError" (id, "migrationId", "timestamp", phase, "table", "recordIndex", "recordData", "errorType", "errorMessage", "stackTrace", context) FROM stdin;
+\.
+
+
+--
+-- Data for Name: DataMigrationRun; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."DataMigrationRun" (id, "tenantId", "branchId", status, phase, "fileName", "fileSize", "filePath", "totalTables", "tablesProcessed", "totalRecords", "recordsProcessed", "currentTable", "startTime", "endTime", duration, "recordsInserted", "recordsSkipped", "errorCount", "warningCount", "verificationResults", "auditReport", "extractedDataPath", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: DetailedWorkOrder; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."DetailedWorkOrder" (id, "tenantId", "branchId", "workId", "workDate", "customerId", "examinerId", "workTypeId", "checkDate", "workStatusId", "workSupplyId", "labId", "supplierId", "bagNumber", "promiseDate", "deliveryDate", "frameSupplierId", "frameLabelId", "frameModel", "frameColor", "frameSize", "frameSold", "lensSupplierId", "glassSupplierId", "lensCleanSupplierId", "glassId", "workType", "smsSent", "itemId", "tailId", canceled, comments, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Diagnosis; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Diagnosis" (id, "tenantId", "customerId", "examinerId", "diagnosisDate", complaints, illnesses, "doctorReferral", summary, "icdCode", "createdAt", "updatedAt", "optometricDiagnosis", "branchId") FROM stdin;
+\.
+
+
+--
+-- Data for Name: DiagnosticProtocol; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."DiagnosticProtocol" (id, "tenantId", name, category, description, "requiredTests", "alertConditions", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Discount; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Discount" (id, "tenantId", name, code, type, value, "appliesTo", "productIds", "minimumPurchase", "maximumDiscount", "customerGroupIds", "customerIds", "validFrom", "validTo", "usageLimit", "usageCount", "perCustomerLimit", combinable, priority, active, "requiresApproval", notes, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: DiseaseDiagnosis; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."DiseaseDiagnosis" (id, "tenantId", "branchId", "perId", "checkDate", "pushUp", "minusLens", "monAccFac6", "monAccFac7", "monAccFac8", "monAccFac13", "binAccFac6", "binAccFac7", "binAccFac8", "binAccFac13", "mEMRet", "fusedXCyl", "nRA", "pRA", "coverDist", "coverNear", "distLatFor", "distVerFor", "nearLatFor", "nearVerFor", "aCARatio", "smverBo6M", "smverBi6M", "smverBo40CM", "smverBi40CM", "stverBo7", "stverBi7", "stverBo6M", "stverBi6M", "stverBo40CM", "stverBi40CM", "jmpVer5", "jmpVer8", "accTarget", penlight, "penLightRG", summary, "userId", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Document; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Document" (id, "tenantId", "branchId", "documentNumber", title, type, category, "templateId", "generatedFrom", content, "contentType", "fileUrl", "customerId", "appointmentId", "examinationId", "prescriptionId", "saleId", metadata, variables, status, "sentAt", "sentTo", "sentMethod", "createdById", version, "previousVersionId", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: DocumentTemplate; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."DocumentTemplate" (id, "tenantId", "branchId", name, description, category, type, language, subject, content, variables, metadata, "isActive", "isSystem", "paperSize", orientation, margins, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Dummy; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Dummy" (id, "tenantId", "branchId", dummy, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: EmployeeCommissionRule; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."EmployeeCommissionRule" (id, "tenantId", "employeeId", "ruleId", "customPercentage", "customAmount", "isActive", "validFrom", "validUntil", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: EquipmentConfig; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."EquipmentConfig" (id, "tenantId", "branchId", "equipmentType", manufacturer, model, "serialNumber", "connectionType", "connectionConfig", "mappingRules", "isActive", "autoImport", notes, "installedDate", "lastCalibration", "createdBy", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: EquipmentImportLog; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."EquipmentImportLog" (id, "equipmentId", "tenantId", "examinationId", "importDate", "dataType", "rawData", "mappedData", status, "errorMessage", "recordsImported", "importedBy", "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ExamTemplate; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ExamTemplate" (id, "tenantId", name, "nameHe", description, "templateType", sections, "requiredFields", "conditionalRules", "defaultValues", "isDefault", "isActive", "isPublic", "createdBy", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Examination; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Examination" (id, "tenantId", "customerId", "doctorId", "examDate", "examType", "vaRightDist", "vaLeftDist", "vaRightNear", "vaLeftNear", "refractionData", "currentRxData", "autoRxData", "coverTest", "npcDistance", "accommodationAmp", "pupilDistance", "iopRight", "iopLeft", "iopTime", "iopMethod", "slitLampData", "clinicalNotes", recommendations, "internalNotes", "prescriptionData", "nextExamDate", "followUpRequired", "createdAt", "updatedAt", "accommodativeFunction", allergies, "amslergridOd", "amslergridOs", "anteriorOdAc", "anteriorOdConjunctiva", "anteriorOdCornea", "anteriorOdIris", "anteriorOdLens", "anteriorOdLids", "anteriorOdVitreous", "anteriorOsAc", "anteriorOsConjunctiva", "anteriorOsCornea", "anteriorOsIris", "anteriorOsLens", "anteriorOsLids", "anteriorOsVitreous", "binocularFunction", "colorVisionResult", "colorVisionTest", complaints, "contactLensComfort", "contactLensFit", "contactLensHygiene", "contactLensWear", "contrastSensitivity", "deletedAt", "dilationDone", "dilationDrop", "dilationTime", "eomDiplopia", "eomFull", "eomRestrictions", "familyHistory", "followUpReason", "fusionalAmplitudes", "imageIds", "imageNotes", lifestyle, "medicalHistory", medications, "pdNear", "posteriorOdCdRatio", "posteriorOdMacula", "posteriorOdOpticDisc", "posteriorOdPeriphery", "posteriorOdVessels", "posteriorOsCdRatio", "posteriorOsMacula", "posteriorOsOpticDisc", "posteriorOsPeriphery", "posteriorOsVessels", "pupilsOdReaction", "pupilsOdSize", "pupilsOsReaction", "pupilsOsSize", "pupilsRapd", "reviewDate", "reviewNotes", "reviewRequired", "reviewedBy", stereopsis, "treatmentPlan", "vaBinocular", "visualFieldsDefects", "visualFieldsMethod", "visualFieldsOd", "visualFieldsOs", "branchId", "bifocalAddOd", "bifocalAddOs", "intermediateAddOd", "intermediateAddOs", "multifocalAddOd", "multifocalAddOs", "pdNearOd", "pdNearOs", "pdOd", "pdOs", "protocolId", "templateId") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ExaminationOverview; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ExaminationOverview" (id, "tenantId", "branchId", "customerId", "checkDate", "examinerId", comments, "visualAcuityR", "visualAcuityL", picture, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Expense; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Expense" (id, "tenantId", "branchId", "employeeId", title, description, category, subcategory, amount, currency, "receiptUrl", "receiptNumber", "vendorName", "expenseDate", period, status, "approvedBy", "approvedAt", "rejectedBy", "rejectedAt", "rejectionReason", reimbursed, "reimbursedAt", "reimbursementRef", "isDeductible", "taxRate", notes, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Eye; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Eye" (id, "tenantId", "branchId", "eyeId", "eyeName", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: FRPLine; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."FRPLine" (id, "tenantId", "frpLineId", "frpId", "lineDate", quantity, "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: FamilyAuditLog; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."FamilyAuditLog" (id, "tenantId", "relationshipId", "customerId", action, "actionType", "oldValue", "newValue", "userId", reason, "ipAddress", "userAgent", "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: FamilyRelationship; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."FamilyRelationship" (id, "tenantId", "customerId", "relatedCustomerId", "relationshipType", "isPrimary", verified, "verifiedBy", "verifiedAt", "confidenceScore", notes, tags, "createdBy", "createdAt", "updatedAt", "deletedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: FaxCommunication; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."FaxCommunication" (id, "tenantId", "branchId", "faxId", "sapakDestId", "sendTime", "jobInfo", "faxStatId", "faxStatName", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: FollowUp; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."FollowUp" (id, "tenantId", "customerId", "scheduledDate", type, reason, priority, status, "completedDate", "completedBy", outcome, notes, "createdAt", "updatedAt", "branchId") FROM stdin;
+\.
+
+
+--
+-- Data for Name: FollowUpReminder; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."FollowUpReminder" (id, "tenantId", "customerId", "examinationId", "reminderType", "dueDate", reason, "reasonHe", notes, status, priority, "sentAt", "sentVia", "completedAt", "scheduledAppointmentId", "createdBy", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Frame; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Frame" (id, "tenantId", "frameId", brand, model, color, size, material, style, gender, "eyeSize", "bridgeSize", "templeLength", "costPrice", "retailPrice", sku, barcode, supplier, "supplierCode", "inStock", discontinued, notes, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: FrameCatalog; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."FrameCatalog" (id, "tenantId", "catalogNumber", barcode, brand, "brandCode", model, "modelCode", collection, material, "rimType", shape, "eyeSize", "bridgeSize", "templeLength", "totalWidth", "lensHeight", "frontColor", "templeColor", "colorCode", "colorFamily", gender, "ageGroup", features, cost, "retailPrice", "salePrice", "supplierId", "supplierCode", active, discontinued, "launchDate", "imageUrls", tags, notes, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: FrameData; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."FrameData" (id, "tenantId", "branchId", "sapakId", "labelId", "modelId", price, "pubPrice", "recPrice", "privPrice", active, quantity, "modelName", "iSG", sizes, "labelName", "privColorId", "privColorName", "frameColorId", "frameColorName", "framePic", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: FrameTrial; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."FrameTrial" (id, "tenantId", "customerId", "examinationId", "checkDate", "frameSupplierId", "frameBrandId", "frameModel", "frameColor", "frameSize", "triedAt", selected, notes, "createdBy", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: FrequentReplacementProgram; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."FrequentReplacementProgram" (id, "tenantId", "programId", "customerId", "startDate", "endDate", "rightEyeBrand", "rightEyeType", "rightEyePower", "leftEyeBrand", "leftEyeType", "leftEyePower", "replacementSchedule", "quantityPerBox", "boxesPerYear", "pricePerBox", "annualSupply", status, notes, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: FrequentReplacementProgramDetail; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."FrequentReplacementProgramDetail" (id, "tenantId", "branchId", "frpId", "customerId", "brandId", "frpDate", "totalFrp", "exchangeNumber", "dayInterval", supply, "saleAdd", comments, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: FrpDelivery; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."FrpDelivery" (id, "programId", "scheduledDate", "deliveredDate", quantity, status, "trackingNumber", notes, "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: GlassBrand; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."GlassBrand" (id, "tenantId", "brandId", name, description, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: GlassCoating; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."GlassCoating" (id, "tenantId", "coatingId", name, description, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: GlassColor; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."GlassColor" (id, "tenantId", "colorId", name, description, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: GlassExamination; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."GlassExamination" (id, "tenantId", "branchId", "customerId", "checkDate", "glassId", "roleId", "materialId", "brandId", "coatId", "modelId", "colorId", diameter, segment, "saleAdd", comments, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: GlassMaterial; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."GlassMaterial" (id, "tenantId", "materialId", name, description, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: GlassModel; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."GlassModel" (id, "tenantId", "modelId", name, description, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: GlassPrescription; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."GlassPrescription" (id, "tenantId", "branchId", "customerId", "checkDate", "prevId", "refractiveSphereR", "refractiveSphereL", "refractiveCylinderR", "refractiveCylinderL", "refractiveAxisR", "refractiveAxisL", "retTypeId1", "retDistId1", "retComment1", "refractiveSphereR2", "refractiveSphereL2", "refractiveCylinderR2", "refractiveCylinderL2", "refractiveAxisR2", "refractiveAxisL2", "retTypeId2", "retDistId2", "retComment2", "sphereR", "sphereL", "cylinderR", "cylinderL", "axisR", "axisL", "prismR", "prismL", "baseR", "baseL", "visualAcuityR", "visualAcuityL", "visualAcuity", "pinHoleR", "pinHoleL", "externalPrismR", "externalPrismL", "externalBaseR", "externalBaseL", "pupillaryDistanceR", "pupillaryDistanceL", "pupillaryDistanceA", "additionR", "additionL", comments, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: GlassPrescriptionDetail; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."GlassPrescriptionDetail" (id, "tenantId", "branchId", "customerId", "checkDate", "glassPId", "useId", "supplierId", "lensTypeId", "lensMaterialId", "lensCharId", "treatmentCharId", "treatmentCharId1", "treatmentCharId2", "treatmentCharId3", diameter, "eyeId", "saleAdd", comments, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: GlassRole; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."GlassRole" (id, "tenantId", "roleId", name, description, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: GlassUse; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."GlassUse" (id, "tenantId", "useId", name, description, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Household; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Household" (id, "tenantId", "householdHash", "displayName", "primaryContactId", "memberCount", "lifetimeValue", "lastActivityDate", address, city, "zipCode", notes, tags, "createdAt", "updatedAt", "deletedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: InvMoveType; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."InvMoveType" (id, "tenantId", "branchId", "invMoveTypeId", "invMoveTypeName", "moveAction", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: InventoryAdjustment; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."InventoryAdjustment" (id, "tenantId", "adjustmentDate", "adjustmentType", reason, notes, "adjustedBy", "approvedBy", "approvedAt", "physicalCountId", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: InventoryAdjustmentItem; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."InventoryAdjustmentItem" (id, "tenantId", "adjustmentId", "productId", "oldQuantity", "newQuantity", "adjustmentAmount", "unitCost", "totalCostImpact", notes) FROM stdin;
+\.
+
+
+--
+-- Data for Name: InventoryReference; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."InventoryReference" (id, "tenantId", "branchId", "itemColorId", "itemColorName", "itemCode", "itemStatId", "itemStatName", "itemLineId", "catId", sold, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Invoice; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Invoice" (id, "tenantId", "invoiceId", "invoiceNumber", "supplierId", "invoiceDate", "dueDate", "totalAmount", "paidAmount", "invoiceType", comment, status, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: InvoiceCredit; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."InvoiceCredit" (id, "invoiceId", "creditDate", amount, reason, reference, "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: InvoicePayment; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."InvoicePayment" (id, "tenantId", "invoiceId", "paymentDate", amount, "paymentMethod", reference, "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: InvoiceType; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."InvoiceType" (id, "tenantId", "branchId", "invoiceTypeId", "invoiceTypeName", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: InvoiceVerification; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."InvoiceVerification" (id, "tenantId", "branchId", "invoiceCheckId", "invoicePayId", "checkId", "checkDate", "checkSum", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ItemCountsYear; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ItemCountsYear" (id, "tenantId", "branchId", "countYear", "countDate", closed, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ItemStatus; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ItemStatus" (id, "tenantId", "productId", month, year, opening, purchases, sales, removals, closing, "costValue", "saleValue", revenue, cogs, "grossProfit", "profitPct", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: LabelPrintJob; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."LabelPrintJob" (id, "tenantId", "branchId", "templateId", "jobNumber", status, "dataSource", "dataQuery", labels, quantity, "totalLabels", "printerName", "outputFormat", "outputUrl", error, "errorDetails", "createdBy", "printedBy", "createdAt", "printedAt", "completedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: LabelTemplate; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."LabelTemplate" (id, "tenantId", "branchId", name, description, category, width, height, orientation, "pageSize", "pageWidth", "pageHeight", "labelsPerRow", "labelsPerColumn", "marginTop", "marginLeft", "labelSpacingX", "labelSpacingY", design, "defaultFields", "isDefault", "isActive", "printerName", copies, "createdAt", "updatedAt", "createdById") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Lang; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Lang" (id, "tenantId", "branchId", "langId", "langName", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Lens; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Lens" (id, "tenantId", "lensId", type, material, index, "sphereMin", "sphereMax", "cylinderMin", "cylinderMax", "addMin", "addMax", diameter, coating, tint, photochromic, polarized, "baseCost", "basePrice", supplier, "supplierCode", "labCode", available, notes, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: LensCatalog; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."LensCatalog" (id, "tenantId", "catalogNumber", "productCode", manufacturer, brand, series, "lensType", design, material, "refractiveIndex", "abbeValue", "specificGravity", "sphereMin", "sphereMax", "cylinderMin", "cylinderMax", "addMin", "addMax", "baseCurves", diameters, "centerThickness", coatings, "corridorLengths", "pricingMatrix", "supplierId", "supplierCode", "labProcessing", "surfacingRequired", active, "stockItem", "leadTime", "uvProtection", impact, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: LensCharacteristic; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."LensCharacteristic" (id, "tenantId", "supplierId", "lensTypeId", "lensMaterialId", "characteristicId", name, "idCount", "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: LensMaterial; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."LensMaterial" (id, "tenantId", "materialId", name, description, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: LensSolution; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."LensSolution" (id, "tenantId", "branchId", "solutionId", "solutionName", "sapakID", price, "pubPrice", "recPrice", "privPrice", active, quantity, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: LensTreatment; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."LensTreatment" (id, "tenantId", "branchId", "sapakID", "lensTypeID", "lensMaterID", "treatCharID", "treatCharName", "idCount", "treatCharId", "treatId", "treatName", "fldName", "treatRule", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: LensTreatmentCharacteristic; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."LensTreatmentCharacteristic" (id, "tenantId", "supplierId", "lensTypeId", "lensMaterialId", "treatmentCharId", name, "isActive", "createdAt", "updatedAt", "idCount") FROM stdin;
+\.
+
+
+--
+-- Data for Name: LensType; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."LensType" (id, "tenantId", "lensTypeId", name, description, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Letter; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Letter" (id, "tenantId", "templateName", subject, content, category, "mergeFields", "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: LowVisionArea; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."LowVisionArea" (id, "tenantId", "areaId", name, description, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: LowVisionCap; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."LowVisionCap" (id, "tenantId", "capId", name, description, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: LowVisionCheck; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."LowVisionCheck" (id, "tenantId", "customerId", "examinerId", "examDate", "visualAcuity", "contrastSensitivity", "visualField", "aidsRecommended", notes, "createdAt", "branchId") FROM stdin;
+\.
+
+
+--
+-- Data for Name: LowVisionExamination; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."LowVisionExamination" (id, "tenantId", "branchId", "customerId", "checkDate", "lowVisionId", "eyeId", "pupillaryDistanceR", "pupillaryDistanceL", "manufacturerId", "frameId", "areaId", "capId", "visualAcuityDistance", "visualAcuityNear", "visualAcuityDistanceLeft", "visualAcuityNearLeft", comments, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: LowVisionFrame; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."LowVisionFrame" (id, "tenantId", "frameId", name, description, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: LowVisionManufacturer; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."LowVisionManufacturer" (id, "tenantId", "manufacturerId", name, description, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Message; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Message" (id, "conversationId", "senderId", "senderType", "senderName", content, attachments, "readAt", "readBy", "messageType", metadata, "createdAt", "updatedAt", "deletedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: MessageAttachment; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."MessageAttachment" (id, "messageId", "fileName", "fileUrl", "fileSize", "mimeType", "uploaderId", "uploaderType", "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: MessageTemplate; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."MessageTemplate" (id, "tenantId", name, type, language, subject, content, active, "isSystem", variables, "createdAt", "updatedAt") FROM stdin;
+cmh8y352f000jczwwjgf4hzku	default-tenant	appointment_reminder	SMS	he	\N	שלום {{customerName}}, זוהי תזכורת לתור שלך מחר בשעה {{appointmentTime}}. להסרה השב "הסר".	t	t	{"customerName": "שם הלקוח", "appointmentDate": "תאריך התור", "appointmentTime": "שעת התור"}	2025-10-27 09:38:12.712	2025-10-27 09:38:12.712
+\.
+
+
+--
+-- Data for Name: MigrationLog; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."MigrationLog" (id, "migrationId", "timestamp", level, step, message, details, "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: MigrationRun; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."MigrationRun" (id, "tenantId", "fileName", "filePath", "fileSize", status, progress, "currentStep", "startedAt", "completedAt", "errorMessage", "tablesProcessed", "recordsImported", "recordsSkipped", "recordsFailed", metadata, "createdBy", "createdAt", "updatedAt", "branchId") FROM stdin;
+\.
+
+
+--
+-- Data for Name: MigrationTableResult; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."MigrationTableResult" (id, "migrationId", "tableName", "sourceTable", "recordsSource", "recordsImported", "recordsSkipped", "recordsFailed", "successRate", status, "errorMessage", "startedAt", "completedAt", duration, "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: MovementProperty; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."MovementProperty" (id, "tenantId", "movementPropertyId", name, "nameHe", description, "isActive", "sortOrder", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: MovementType; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."MovementType" (id, "tenantId", "movementTypeId", name, "nameHe", action, category, "requiresInvoice", "requiresReason", "isActive", "sortOrder", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: NewProduct; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."NewProduct" (id, "tenantId", "productId", name, "nameHe", description, "descriptionHe", "imageUrl", "isActive", "displayFrom", "displayUntil", "displayOrder", category, tags, "createdBy", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: OpticalBase; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."OpticalBase" (id, "tenantId", "baseId", name, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Order; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Order" (id, "tenantId", "customerId", "orderNumber", "orderDate", "deliveryDate", status, "paymentStatus", "workType", "labId", "supplierId", "prescriptionId", subtotal, discount, "taxAmount", "totalAmount", "paidAmount", "depositAmount", notes, "internalNotes", "createdAt", "updatedAt", "branchId") FROM stdin;
+\.
+
+
+--
+-- Data for Name: OrderItem; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."OrderItem" (id, "tenantId", "orderId", "productId", "productType", description, quantity, "unitPrice", discount, "totalPrice", "lensData", status, notes, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Orthokeratology; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Orthokeratology" (id, "tenantId", "customerId", "prescriberId", "startDate", "rightEyeData", "leftEyeData", "treatmentPlan", "progressNotes", status, "createdAt", "updatedAt", "branchId") FROM stdin;
+\.
+
+
+--
+-- Data for Name: OrthokeratologyTreatment; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."OrthokeratologyTreatment" (id, "tenantId", "branchId", "customerId", "orthokId", "checkDate", "reCheckDate", "examinerId", "keratometryHR", "keratometryHL", "axisHR", "axisHL", "keratometryVR", "keratometryVL", "keratometryTR", "keratometryTL", "keratometryNR", "keratometryNL", "keratometryIR", "keratometryIL", "keratometrySR", "keratometrySL", "diameterR", "diameterL", "baseCurve1R", "baseCurve1L", "opticalZoneR", "opticalZoneL", "sphereR", "sphereL", "fittingCurveR", "fittingCurveL", "alignmentCurveR", "alignmentCurveL", "alignment2CurveR", "alignment2CurveL", "secondaryR", "secondaryL", "edgeR", "edgeL", "fittingCurveThicknessR", "fittingCurveThicknessL", "alignmentCurveThicknessR", "alignmentCurveThicknessL", "alignment2CurveThicknessR", "alignment2CurveThicknessL", "edgeThicknessR", "edgeThicknessL", "opticalZoneThicknessR", "opticalZoneThicknessL", "materialR", "materialL", "tintR", "tintL", "visualAcuityR", "visualAcuityL", "visualAcuity", "lensTypeIdR", "lensTypeIdL", "manufacturerIdR", "manufacturerIdL", "brandIdR", "brandIdL", "commentR", "commentL", "pictureL", "pictureR", "orderId", "customerId2", "pupilDiameter", "cornealDiameter", "eyelidKey", "checkType", "eccentricityHR", "eccentricityHL", "eccentricityVR", "eccentricityVL", "eccentricityAR", "eccentricityAL", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: POSAuditLog; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."POSAuditLog" (id, "tenantId", "terminalId", "userId", action, "entityType", "entityId", "beforeState", "afterState", changes, "ipAddress", "userAgent", metadata, "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: POSCashDrop; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."POSCashDrop" (id, "tenantId", "shiftId", "dropNumber", amount, "billBreakdown", reason, "depositedBy", "verifiedBy", "verifiedAt", notes, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: POSCashPickup; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."POSCashPickup" (id, "tenantId", "shiftId", "pickupNumber", amount, "billBreakdown", reason, "pickedUpBy", "approvedBy", "approvedAt", notes, "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: POSInventoryMovement; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."POSInventoryMovement" (id, "tenantId", "transactionId", "productId", "branchId", "movementType", quantity, "previousQuantity", "newQuantity", reason, notes, "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: POSPayment; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."POSPayment" (id, "tenantId", "transactionId", "paymentNumber", "paymentMethod", amount, currency, status, "cardToken", "cardLastFour", "cardBrand", "cardType", "cardholderName", "expiryMonth", "expiryYear", "authorizationCode", "processorTransactionId", "gatewayResponse", "processorName", "installmentPlan", "installmentCount", "installmentAmount", "firstPayment", "checkNumber", "checkDate", "bankName", "bankBranch", "accountNumber", "transferReference", "transferDate", "voucherCode", "voucherType", notes, metadata, "processedAt", "failedAt", "failureReason", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: POSPaymentRefund; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."POSPaymentRefund" (id, "tenantId", "paymentId", "refundNumber", amount, reason, status, "processorRefundId", "createdBy", "approvedBy", "approvedAt", "processedAt", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: POSPriceList; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."POSPriceList" (id, "tenantId", name, description, "priceListType", priority, "isActive", "validFrom", "validTo", "applicableTerminals", "applicableCustomerGroups", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: POSPriceListItem; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."POSPriceListItem" (id, "priceListId", "productId", price, "discountPercent", "minQuantity", "maxQuantity", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: POSReceipt; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."POSReceipt" (id, "tenantId", "branchId", "terminalId", "transactionId", "receiptNumber", "receiptType", "customerId", "customerName", "customerEmail", "customerPhone", "totalAmount", currency, "receiptTemplate", "receiptData", "qrCode", signature, "printCount", "emailSent", "emailSentAt", "printedAt", "voidedAt", notes, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: POSReportSnapshot; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."POSReportSnapshot" (id, "tenantId", "branchId", "reportType", "reportNumber", "reportData", "periodStart", "periodEnd", "generatedBy", notes, "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: POSSession; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."POSSession" (id, "tenantId", "terminalId", "userId", "sessionNumber", "startTime", "endTime", status, notes, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: POSSyncQueue; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."POSSyncQueue" (id, "tenantId", "terminalId", operation, "entityType", "entityId", payload, priority, status, attempts, "maxAttempts", "lastError", "syncedAt", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: POSTerminal; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."POSTerminal" (id, "tenantId", "branchId", "terminalNumber", "terminalName", "terminalType", status, "ipAddress", "macAddress", "deviceInfo", configuration, "lastHeartbeat", "lastSyncedAt", "receiptPrinter", "fiscalPrinter", "isOnline", "allowOffline", "maxOfflineHours", "enableBarcode", "enableScale", "enableCardReader", "createdAt", "updatedAt", "activatedAt", "deactivatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: POSTransaction; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."POSTransaction" (id, "tenantId", "branchId", "terminalId", "sessionId", "shiftId", "transactionNumber", "transactionType", status, "customerId", "cashierId", "supervisorId", subtotal, "discountAmount", "taxAmount", "totalAmount", "paidAmount", "changeAmount", "roundingAdjustment", currency, "exchangeRate", "originalTransactionId", "refundedTransactionId", "receiptId", "saleId", notes, signature, "hashField", metadata, "isOffline", "syncStatus", "lastSyncedAt", "transactionDate", "completedAt", "voidedAt", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: POSTransactionDiscount; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."POSTransactionDiscount" (id, "transactionId", "discountCode", "discountType", "discountValue", "discountPercent", amount, reason, "requiresApproval", "approvedBy", "approvedAt", "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: POSTransactionEvent; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."POSTransactionEvent" (id, "transactionId", "eventType", "eventData", "timestamp") FROM stdin;
+\.
+
+
+--
+-- Data for Name: POSTransactionItem; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."POSTransactionItem" (id, "transactionId", "productId", "lineNumber", "productName", sku, barcode, description, category, quantity, "unitPrice", "originalPrice", "discountAmount", "discountPercent", "taxRate", "taxAmount", subtotal, "totalAmount", notes, metadata, "isRefunded", "refundedQuantity", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: POSTransactionTax; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."POSTransactionTax" (id, "transactionId", "taxName", "taxRate", "taxableAmount", "taxAmount", "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: PayType; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."PayType" (id, "tenantId", "branchId", "payTypeId", "payTypeName", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Payment; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Payment" (id, "tenantId", "branchId", "paymentNumber", "paymentDate", "saleId", "invoiceId", "customerId", "paymentType", amount, currency, "cardLastFour", "cardType", "authCode", "checkNumber", "checkDate", "bankName", "bankBranch", "transferRef", status, "receiptNumber", "receiptIssued", notes, "createdBy", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Payroll; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Payroll" (id, "tenantId", "branchId", "employeeId", period, "periodStart", "periodEnd", "payDate", "baseSalary", "hourlyRate", "hoursWorked", "overtimeHours", "overtimeRate", "commissionAmount", "bonusAmount", "taxDeduction", "socialSecurity", "healthInsurance", "otherDeductions", "deductionNotes", "grossPay", "netPay", status, "approvedBy", "approvedAt", "paidAt", "paymentMethod", "paymentRef", notes, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: PhysicalInventoryCount; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."PhysicalInventoryCount" (id, "tenantId", status, "createdAt", "updatedAt", "completedAt", "countName", "createdByUserId", description, "startDate") FROM stdin;
+\.
+
+
+--
+-- Data for Name: PhysicalInventoryCountItem; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."PhysicalInventoryCountItem" (id, "productId", "countedQuantity", "createdAt", "physicalCountId", "systemQuantity", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Prescription; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Prescription" (id, "tenantId", "customerId", "doctorId", "prescriptionDate", "validUntil", "rightSphere", "rightCylinder", "rightAxis", "rightAdd", "rightPrism", "rightBase", "rightPd", "rightVa", "leftSphere", "leftCylinder", "leftAxis", "leftAdd", "leftPrism", "leftBase", "leftPd", "leftVa", pd, "pdNear", "fittingHeight", "prescriptionType", notes, recommendations, "createdAt", "updatedAt", "additionalData", "branchId", "retinoscopyDist", "retinoscopyNotes", "retinoscopyType") FROM stdin;
+\.
+
+
+--
+-- Data for Name: PrescriptionGlassDetail; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."PrescriptionGlassDetail" (id, "tenantId", "prescriptionId", "glassId", "roleId", "materialId", "brandId", "coatingId", "modelId", "colorId", diameter, segment, comments, "saleAddition", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: PrescriptionHistory; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."PrescriptionHistory" (id, "tenantId", "customerId", "prescriptionDate", "previousId", "refRightSphere", "refLeftSphere", "refRightCylinder", "refLeftCylinder", "refRightAxis", "refLeftAxis", "refRightSphere2", "refLeftSphere2", "refRightCylinder2", "refLeftCylinder2", "refRightAxis2", "refLeftAxis2", "rightSphere", "leftSphere", "rightCylinder", "leftCylinder", "rightAxis", "leftAxis", "rightPrism", "leftPrism", "rightBase", "leftBase", "rightVa", "leftVa", "binocularVa", "rightPd", "leftPd", pd, "rightAdd", "leftAdd", "extRightPrism", "extLeftPrism", "extRightBase", "extLeftBase", comments, "retTypeId1", "retDistId1", "retComment1", "retTypeId2", "retDistId2", "retComment2", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: PriceHistory; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."PriceHistory" (id, "tenantId", "productId", "oldPrice", "newPrice", "oldCost", "newCost", "changedBy", "changedAt", "priceUpdateId", reason) FROM stdin;
+\.
+
+
+--
+-- Data for Name: PriceUpdate; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."PriceUpdate" (id, "tenantId", name, description, "updateType", scope, value, "roundTo", filters, status, "scheduledFor", "appliedAt", "productsUpdated", "totalValue", notes, "createdBy", "appliedBy", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: PrintLabel; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."PrintLabel" (id, "tenantId", "branchId", "labelId", "labelName", "margRight", "margLeft", "labelWidth", "labelHeight", "horSpace", "verSpace", "margTop", "margBot", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: PrlType; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."PrlType" (id, "tenantId", "branchId", "prlType", "prlName", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Product; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Product" (id, "tenantId", "productId", name, description, sku, barcode, category, subcategory, brand, model, "costPrice", "sellPrice", "wholeSalePrice", quantity, "minQuantity", unit, location, supplier, "supplierProductCode", "isActive", "trackQuantity", tags, notes, "lensType", material, coating, "sphereMin", "sphereMax", "cylinderMin", "cylinderMax", "frameSize", "frameColor", "frameShape", "frameMaterial", prescription, "createdAt", "updatedAt", "deletedAt", "branchId", "supplierId", "requiresSerial") FROM stdin;
+cmh8y352j000lczwwtvd7cfp5	default-tenant	FRAME001	מסגרת Ray-Ban Aviator	\N	RB3025-001	8053672416077	מסגרות	משקפי שמש	Ray-Ban	Aviator Classic	250	650	\N	15	5	יחידה	\N	\N	\N	t	t	\N	\N	\N	\N	\N	\N	\N	\N	\N	58-14-135	זהב	AVIATOR	METAL	f	2025-10-27 09:38:12.715	2025-10-27 09:38:12.715	\N	cmh8y34z00001czwwamgq5guk	\N	f
+cmh8y352m000nczwwrrwuc4yw	default-tenant	LENS001	עדשה חד מוקדית 1.67	\N	LENS-167-AR	\N	עדשות	חד מוקדית	Essilor	\N	150	400	\N	50	20	זוג	\N	\N	\N	t	t	\N	\N	SINGLE_VISION	HIGH_INDEX	ANTI_REFLECTIVE	-10	10	-6	6	\N	\N	\N	\N	t	2025-10-27 09:38:12.718	2025-10-27 09:38:12.718	\N	cmh8y34z00001czwwamgq5guk	\N	f
+\.
+
+
+--
+-- Data for Name: ProductProperty; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ProductProperty" (id, "tenantId", "branchId", "propId", "propName", "sapakID", price, "pubPrice", "recPrice", "privPrice", active, quantity, "invMovePropId", "invMovePropName", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ProductReview; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ProductReview" (id, "tenantId", "userId", "userName", "itemType", "itemId", "collectionId", "supplierId", rating, title, comment, images, verified, "orderReference", "helpfulCount", "notHelpfulCount", status, "moderatedBy", "moderatedAt", "supplierResponse", "supplierResponseBy", "supplierResponseAt", "createdAt", "updatedAt", "deletedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ProductSerial; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ProductSerial" (id, "tenantId", "productId", "serialNumber", status, "saleItemId", notes, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Profile; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Profile" (id, "tenantId", "branchId", "profileId", "profileName", "profileSql", "profileDesc", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Purchase; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Purchase" (id, "tenantId", "purchaseId", "purchaseDate", "customerId", "userId", "purchaseType", "totalAmount", "paidAmount", comment, status, "createdAt", "updatedAt", "branchId") FROM stdin;
+\.
+
+
+--
+-- Data for Name: PurchaseCheck; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."PurchaseCheck" (id, "tenantId", "purchaseId", "checkNumber", "bankName", "checkDate", amount, status, "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: PurchasePayment; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."PurchasePayment" (id, "tenantId", "purchaseId", "paymentDate", amount, "paymentMethod", reference, "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ReferralSource; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ReferralSource" (id, "tenantId", "branchId", "refsSub2Id", "refsSub2Name", "subRefId", "refsSub1Id", "refsSub1Name", "refId", "refName", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: RefractionProtocol; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."RefractionProtocol" (id, "tenantId", name, description, "isDefault", steps, "includeAutoref", "includeRetino", "includeSubj", "includeBino", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: RetinoscopyDistance; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."RetinoscopyDistance" (id, "tenantId", "retDistId", name, description, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: RetinoscopyType; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."RetinoscopyType" (id, "tenantId", "retTypeId", name, description, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ReviewHelpful; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ReviewHelpful" (id, "reviewId", "userId", helpful, "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ReviewReport; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ReviewReport" (id, "reviewId", "reportedBy", reason, details, status, "reviewedBy", "reviewedAt", "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SMS; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SMS" (id, "tenantId", "customerId", message, type, status, "errorMessage", "createdAt", "branchId", cost, credits, "messageId", phone, "sentAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SMSLen; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SMSLen" (id, "tenantId", "branchId", "sMSProviderPrefix", "sMSLang", "sMSProviderName", "sMSLen", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Sale; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Sale" (id, "tenantId", "saleId", "customerId", "sellerId", "saleDate", status, subtotal, "discountAmount", "taxAmount", total, "paymentMethod", "paymentStatus", "prescriptionId", notes, "createdAt", "updatedAt", "deletedAt", "branchId", "cashierShiftId", "groupReference", "invoiceType", "receiptDate", "receiptNumber", "sourceReference") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SaleItem; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SaleItem" (id, "saleId", "productId", "productName", category, sku, quantity, "unitPrice", "discountPercent", "discountAmount", "lineTotal", "prescriptionData", notes, "createdAt", "barcodeId", "tenantId") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SapakComment; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SapakComment" (id, "tenantId", "branchId", "sapakId", "prlType", comments, "prlSp", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SapakDest; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SapakDest" (id, "tenantId", "branchId", "sapakDestId", "sapakDestName", "sapakId", fax1, fax2, email1, email2, "clientId", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SapakPerComment; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SapakPerComment" (id, "tenantId", "branchId", "sapakId", "prlType", comments, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SearchOrder; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SearchOrder" (id, "tenantId", "branchId", "itemData", "listIndex", "desc", deaf, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ServiceType; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ServiceType" (id, "tenantId", "branchId", "serviceId", "serviceName", "servicePrice", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ShortCut; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ShortCut" (id, "tenantId", "branchId", "prKey", "shKey", "desc", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SlitLampExam; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SlitLampExam" (id, "tenantId", "customerId", "examinerId", "examDate", "rightEyeFindings", "leftEyeFindings", "additionalNotes", images, "createdAt", "branchId") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Special; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Special" (id, "tenantId", "branchId", "sapakID", "specialId", "prlType", priority, price, "pubPrice", "recPrice", "privPrice", formula, data, "rLOnly", active, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SpecialName; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SpecialName" (id, "tenantId", "branchId", "specialId", "specialName", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: StaffSchedule; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."StaffSchedule" (id, "tenantId", "userId", "workDate", "scheduleType", "startTime", "endTime", notes, "createdBy", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: StockMovement; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."StockMovement" (id, "tenantId", "productId", "userId", type, quantity, "previousQuantity", "newQuantity", reason, notes, "referenceId", "costPrice", "createdAt", "branchId", "exCatNum", "invoiceId", "movementPropertyId", "movementTypeId", "salePrice", "totalCost", "totalSale") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Supplier; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Supplier" (id, "tenantId", "supplierId", name, "contactPerson", phone, email, address, website, "taxId", "paymentTerms", "creditLimit", "accountNumber", "suppliesFrames", "suppliesLenses", "suppliesContactLenses", "suppliesAccessories", "isActive", notes, "createdAt", "updatedAt", "bankDetails", city, country, "creditTerms", fax, "leadTimeDays", "minimumOrderAmount", "nameHe", "specialInstructions", "supplierType", "vatNumber", "zipCode") FROM stdin;
+cmh8y352p000pczww33flg5tx	default-tenant	SUP001	Luxottica Group	John Smith	03-9876543	orders@luxottica.com	Industrial Park 1	\N	\N	NET30	50000	\N	t	f	f	t	t	Main frames supplier - Ray-Ban, Oakley, Vogue	2025-10-27 09:38:12.721	2025-10-27 09:38:12.721	\N	\N	\N	30	\N	7	0	\N	\N	OTHER	\N	\N
+cmh8y352t000rczwwic8z2601	default-tenant	SUP002	Essilor Israel	Sarah Cohen	03-1234567	orders@essilor.co.il	Herzl 200, Tel Aviv	\N	\N	NET60	75000	\N	f	t	f	f	t	Premium lens supplier - Varilux, Crizal	2025-10-27 09:38:12.725	2025-10-27 09:38:12.725	\N	\N	\N	30	\N	7	0	\N	\N	OTHER	\N	\N
+cmh8y352w000tczwwhlk1rn7b	default-tenant	SUP003	Johnson & Johnson Vision	Michael Green	09-8765432	contact@jnj-vision.com	Science Park, Rehovot	\N	\N	NET30	30000	\N	f	f	t	f	t	Contact lenses - Acuvue brand	2025-10-27 09:38:12.728	2025-10-27 09:38:12.728	\N	\N	\N	30	\N	7	0	\N	\N	OTHER	\N	\N
+\.
+
+
+--
+-- Data for Name: SupplierAccountTransaction; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SupplierAccountTransaction" (id, "accountId", type, amount, "orderId", "invoiceId", "paymentId", "balanceBefore", "balanceAfter", description, notes, "referenceNumber", "paymentMethod", "transactionDate", "createdAt", "createdBy") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SupplierAnalytics; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SupplierAnalytics" (id, "supplierId", "periodType", "periodStart", "periodEnd", "totalOrders", "totalRevenue", "totalUnits", "averageOrderValue", "topSellingItemId", "topSellingItemUnits", "lowStockItems", "outOfStockItems", "activeTenants", "newTenants", "topTenantId", "topTenantRevenue", "rfqsReceived", "rfqsQuoted", "rfqsConverted", "conversionRate", "inventoryValue", "inventoryTurnover", "grossProfit", "profitMargin", "calculatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SupplierCatalogCategory; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SupplierCatalogCategory" (id, "supplierId", name, "nameHe", description, "parentId", "displayOrder", "isActive", "imageUrl", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SupplierCatalogItem; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SupplierCatalogItem" (id, "supplierId", "categoryId", sku, name, "nameHe", description, "descriptionHe", type, brand, model, material, shape, color, "eyeSize", "bridgeSize", "templeLength", gender, "lensType", material_lens, coating, "indexValue", "basePrice", cost, msrp, currency, "stockQuantity", "lowStockAlert", "inStock", "backorderAllowed", "leadTimeDays", images, "primaryImage", "catalogPdf", "isActive", "isFeatured", "isNewArrival", "publishedAt", barcode, upc, weight, dimensions, tags, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SupplierCatalogVariant; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SupplierCatalogVariant" (id, "itemId", name, sku, "variantType", attributes, "priceModifier", price, "stockQuantity", "isAvailable", images, "primaryImage", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SupplierCollection; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SupplierCollection" (id, "supplierId", name, season, description, "coverImage", published, "tenantScope", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SupplierCollectionVisibility; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SupplierCollectionVisibility" (id, "collectionId", "tenantId", "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SupplierDiscount; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SupplierDiscount" (id, "supplierId", name, "nameHe", description, code, type, value, tiers, "applyToAll", "itemIds", "categoryIds", "tenantScope", "tenantIds", "minPurchaseAmount", "minQuantity", "maxUsesPerTenant", "maxTotalUses", "currentUses", "startDate", "endDate", "isActive", priority, stackable, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SupplierDiscountUsage; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SupplierDiscountUsage" (id, "discountId", "tenantId", "orderId", "discountAmount", "orderAmount", "itemCount", "usedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SupplierInventoryLog; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SupplierInventoryLog" (id, "itemId", type, quantity, "quantityBefore", "quantityAfter", "orderId", "rfqId", reason, notes, "locationCode", "batchNumber", "expiryDate", cost, "createdAt", "createdBy") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SupplierOrder; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SupplierOrder" (id, "supplierId", "orderNumber", "orderDate", "expectedDate", "receivedDate", "totalAmount", status, items, notes, "createdAt", "updatedAt", "branchId", "tenantId", "cancelReason", "cancelledDate", "discountAmount", "lastReceivedDate", "paymentTerms", "receiveNotes", "receivedBy", "referenceNumber", "sentDate", "shippingCost", "shippingMethod", subtotal, "accountId") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SupplierOrderItem; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SupplierOrderItem" (id, "orderId", "productId", "itemCode", "itemDescription", "quantityOrdered", "quantityReceived", "quantityBackordered", "unitCost", discount, "totalCost", status, "receivedDate", "receivedBy", notes) FROM stdin;
+\.
+
+
+--
+-- Data for Name: SupplierPriceAlert; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SupplierPriceAlert" (id, "tenantId", "userId", "frameCatalogId", "lensCatalogId", "itemType", "alertType", "targetPrice", "percentChange", "isActive", "notifyEmail", "notifyInApp", "lastTriggered", "triggerCount", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SupplierPriceCache; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SupplierPriceCache" (id, "frameCatalogId", "lensCatalogId", "itemType", "lowestPrice", "lowestSupplierId", "highestPrice", "averagePrice", "supplierCount", "priceRange", "supplierPrices", "lastCalculated", "expiresAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SupplierPriceHistory; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SupplierPriceHistory" (id, "supplierId", "frameCatalogId", "lensCatalogId", "itemType", price, currency, "minQuantity", "maxQuantity", "validFrom", "validTo", "isActive", "priceType", notes, source, "createdAt", "updatedAt", "createdBy") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SupplierPriceList; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SupplierPriceList" (id, "supplierId", name, "nameHe", description, type, "startDate", "endDate", "isActive", priority, "tenantIds", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SupplierPriceListItem; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SupplierPriceListItem" (id, "priceListId", "itemId", price, "volumePricing", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SupplierRFQ; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SupplierRFQ" (id, "tenantId", "supplierId", status, notes, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SupplierRFQItem; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SupplierRFQItem" (id, "rfqId", type, "frameCatalogId", "lensCatalogId", quantity, "targetPrice") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SupplierShipment; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SupplierShipment" (id, "tenantId", "branchId", "sapakSendId", "perId", "glassPId", "workId", "clensId", "sapakDestId", "userId", "sendTime", recived, "privPrice", "shipmentId", "shipmentDate", sent, com, "spsStatId", "spsType", "spsSendType", "faxId", "shFrame", "shLab", "treatBlock", "treatWSec", "treatWScrew", "treatWNylon", "treatWKnife", "lensColor", "lensLevel", "eyeWidth", "eyeHeight", "bridgeWidth", "centerHeightR", "centerHeightL", "segHeightR", "segHeightL", "picNum", "pCom", basis, pent, "vD", "spsStatName", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SupplierStockAlert; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SupplierStockAlert" (id, "supplierId", "itemId", type, severity, message, "currentStock", "thresholdValue", "isRead", "isResolved", "resolvedAt", "resolvedBy", "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SupplierTenantAccount; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SupplierTenantAccount" (id, "supplierId", "tenantId", "accountNumber", "accountStatus", "creditLimit", "currentBalance", "availableCredit", "paymentTerms", "paymentTermsDays", "defaultDiscount", "priceListId", "totalOrders", "totalRevenue", "averageOrderValue", "lastOrderDate", "firstOrderDate", "billingContactName", "billingEmail", "billingPhone", "shippingAddress", "billingAddress", "allowBackorders", "requirePO", "autoApproveOrders", "internalNotes", "creditHold", "creditHoldReason", "accountManager", rating, tags, "createdAt", "updatedAt", "lastActivityAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SupplierTenantActivity; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SupplierTenantActivity" (id, "supplierId", "tenantId", type, description, "referenceId", "referenceType", metadata, "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SupplierTenantNote; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SupplierTenantNote" (id, "supplierId", "tenantId", title, content, type, status, priority, "dueDate", attachments, "isPrivate", "createdAt", "updatedAt", "createdBy") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SupplierUser; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SupplierUser" (id, "supplierId", email, "passwordHash", role, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: SysLevel; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SysLevel" (id, "tenantId", "branchId", "levelId", "levelName", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Task; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Task" (id, "tenantId", "branchId", title, description, priority, status, "assignedToId", "createdById", "dueDate", "completedAt", "customerId", "relatedType", "relatedId", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: TaskAttachment; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."TaskAttachment" (id, "tenantId", "taskId", "fileName", "fileUrl", "fileSize", "mimeType", "uploadedById", "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: TaskComment; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."TaskComment" (id, "tenantId", "taskId", "userId", comment, "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: TaxRate; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."TaxRate" (id, "tenantId", name, code, rate, "appliesTo", region, "exemptCategories", active, "isDefault", "validFrom", "validTo", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Tenant; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Tenant" (id, name, "nameHe", subdomain, plan, active, "primaryLanguage", timezone, "createdAt", "updatedAt", "ownerId") FROM stdin;
+default-tenant	Default Optical Store	חנות אופטיקה ברירת מחדל	default	professional	t	he	Asia/Jerusalem	2025-10-27 09:38:12.583	2025-10-27 09:38:12.583	\N
+TNT-LOCAL1-001	Default Tenant	\N	TNT-LOCAL1-001.example.com	professional	t	he	Asia/Jerusalem	2025-10-27 15:36:02.966	2025-10-27 15:36:02.966	\N
+\.
+
+
+--
+-- Data for Name: TenantSettings; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."TenantSettings" (id, "tenantId", "businessAddress", "businessPhone", "businessEmail", "businessLicense", "vatNumber", "defaultTaxRate", currency, "enableSmsReminders", "enableEmailReminders", "reminderHoursBefore", "defaultAppointmentDuration", "workingHoursStart", "workingHoursEnd", "workingDays", "enableOnlineBooking", "receiptTemplate", "prescriptionTemplate", "createdAt", "updatedAt", "communicationCredits", "emailCostPerMessage", "monthlyEmailBudget", "monthlySmsBudget", "smsCostPerMessage", "businessTaxId") FROM stdin;
+cmh8y3527000bczwwehcckdgs	default-tenant	רחוב הרצל 123, תל אביב	03-1234567	info@default-optics.com	\N	\N	17	ILS	t	t	24	30	09:00	18:00	{sunday,monday,tuesday,wednesday,thursday}	f	\N	\N	2025-10-27 09:38:12.703	2025-10-27 09:38:12.703	0	0.01	\N	\N	0.1	\N
+\.
+
+
+--
+-- Data for Name: User; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."User" (id, "tenantId", email, password, "firstName", "lastName", "firstNameHe", "lastNameHe", role, active, "createdAt", "updatedAt", "lastLoginAt", "branchId") FROM stdin;
+cmh8y289c0000czdcibcs3pbx	\N	admin@optitech.com	$2b$10$LuXZQqhJrEiX059Ccbsz6ukCv8oQkLVkXJqv3.4.LrTj8hg2Bh7Ia	System	Admin	מנהל	מערכת	SUPER_ADMIN	t	2025-10-27 09:37:30.192	2025-10-27 09:37:30.192	\N	\N
+cmh8y351w0005czwwvoxzantm	default-tenant	razgoldenberg123@gmail.com	$2b$10$SuI9TNYe0sxfq9xy6adYau.tacW91rQhcRNQ9pAIZ2q8bXCRsZsym	Raz	Goldenberg	\N	\N	SUPER_ADMIN	t	2025-10-27 09:38:12.693	2025-10-27 09:38:12.693	\N	cmh8y34z00001czwwamgq5guk
+cmh8y351z0007czwwu5j7wupg	default-tenant	manager@default.com	$2b$10$pFIfnRvrnMl58Cr4KhJ2YOIDWWjkTy2SoW/U7uL00AI81niENP06q	Store	Manager	מנהל	חנות	TENANT_ADMIN	t	2025-10-27 09:38:12.695	2025-10-27 09:38:12.695	\N	cmh8y34z00001czwwamgq5guk
+cmh8y35240009czwwt2eehgz9	default-tenant	doctor@default.com	$2b$10$pFIfnRvrnMl58Cr4KhJ2YOIDWWjkTy2SoW/U7uL00AI81niENP06q	Dr. David	Cohen	ד"ר דוד	כהן	DOCTOR	t	2025-10-27 09:38:12.7	2025-10-27 09:38:12.7	\N	cmh8y34z00001czwwamgq5guk
+\.
+
+
+--
+-- Data for Name: UserSettings; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."UserSettings" (id, "tenantId", "userId", phone, "preferredLanguage", theme, "emailNotifications", "smsNotifications", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: VATRate; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."VATRate" (id, "tenantId", "effectiveFrom", "effectiveTo", rate, description, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: VisionTest; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."VisionTest" (id, "tenantId", "customerId", "examinerId", "testDate", "testType", "rightEye", "leftEye", binocular, notes, "createdAt", "branchId") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Wishlist; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Wishlist" (id, "tenantId", "userId", name, description, "isDefault", "isPublic", "shareToken", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: WishlistItem; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."WishlistItem" (id, "wishlistId", "itemType", "itemId", "collectionId", "supplierId", "productName", "productBrand", "productPrice", "productImage", "notifyOnSale", "notifyOnStock", notes, priority, "addedAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: WishlistShare; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."WishlistShare" (id, "wishlistId", "sharedWith", "sharedBy", "accessLevel", "viewCount", "lastViewedAt", "createdAt", "expiresAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: WorkLab; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."WorkLab" (id, "tenantId", "labId", name, description, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: WorkLabel; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."WorkLabel" (id, "tenantId", "labelId", name, "itemCode", "supplierId", "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: WorkOrder; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."WorkOrder" (id, "tenantId", "branchId", "workOrderNumber", "orderDate", "dueDate", "customerId", "saleId", "prescriptionId", "orderType", priority, status, "labStatus", "labOrderNumber", "labId", "supplierId", "sentToLabDate", "receivedDate", "deliveredDate", "frameId", "frameModel", "frameColor", "frameSize", "rightLensId", "rightLensType", "rightLensMaterial", "rightLensCoating", "rightLensTint", "rightLensDetails", "leftLensId", "leftLensType", "leftLensMaterial", "leftLensCoating", "leftLensTint", "leftLensDetails", "rightSphere", "rightCylinder", "rightAxis", "rightAdd", "rightPrism", "rightPrismBase", "leftSphere", "leftCylinder", "leftAxis", "leftAdd", "leftPrism", "leftPrismBase", pd, "specialInstructions", "internalNotes", "labNotes", "qcCheckedBy", "qcCheckedDate", "qcNotes", remake, "remakeReason", "originalOrderId", "frameCost", "rightLensCost", "leftLensCost", "labCharges", "totalCost", "createdBy", "updatedBy", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: WorkOrderStatus; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."WorkOrderStatus" (id, "tenantId", "workOrderId", status, notes, "changedBy", "changedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: WorkStatus; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."WorkStatus" (id, "tenantId", "statusId", name, description, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: WorkSupplier; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."WorkSupplier" (id, "tenantId", "supplierId", name, "itemCode", "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: WorkSupplyType; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."WorkSupplyType" (id, "tenantId", "supplyTypeId", name, description, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ZipCode; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ZipCode" (id, "zipCode", city, "cityHe", street, "streetHe", region, "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: _DiscountToItems; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."_DiscountToItems" ("A", "B") FROM stdin;
+\.
+
+
+--
+-- Data for Name: _prisma_migrations; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public._prisma_migrations (id, checksum, finished_at, migration_name, logs, rolled_back_at, started_at, applied_steps_count) FROM stdin;
+37cfff6c-4851-4281-966a-e27b320b4d06	1cf22414bda7f121d26ce6e06e2781f0d3891df7b4dec4e451fdf61520bfedd8	2025-10-27 15:07:08.942045+05:30	20251007092122_new_optitech_dev	\N	\N	2025-10-27 15:07:08.40351+05:30	1
+f0696203-0157-4cf0-8d36-0fb3bfe35032	a4ae0dec75453db35ad5455f22c0bd3431a82e3ce9fce5f9b591491aec35b024	2025-10-27 15:07:08.944336+05:30	20251013094912_dev1	\N	\N	2025-10-27 15:07:08.942546+05:30	1
+4d0ca6ce-d165-49db-9170-faf6d1673f13	63fea5c9c8c28d224c628d23292ac7f29611b0a32991a8d8662f1cd74be4cca9	2025-10-27 15:07:08.946982+05:30	20251013102810_dev3	\N	\N	2025-10-27 15:07:08.944809+05:30	1
+f17ffdd9-1c03-4b28-9bff-6959e23e1639	0a0d3f46598f4ca41fb30f044050b25f87bd5dd8b7b742d73a05f4fa24dbf758	2025-10-27 15:07:09.059961+05:30	20251015054111_dev2	\N	\N	2025-10-27 15:07:08.947752+05:30	1
+bd3e113b-72bd-4712-9a6b-4bb0c428524b	ff03d8d18d705df8baa75523c024b38a5b4d3a92d7c6d251ca25dac2faec5938	2025-10-27 15:07:09.062444+05:30	20251015054232_dev2	\N	\N	2025-10-27 15:07:09.060447+05:30	1
+b5ccd212-0dcc-4b02-8448-866ecb023615	aaa994fa7254572c4332621c5b68fd3edfacc59bc2c4868b86ccf8b2af35d77a	2025-10-27 15:07:09.06518+05:30	20251015064316_dev2	\N	\N	2025-10-27 15:07:09.063022+05:30	1
+f6b6ba10-ccc3-4556-b2b6-2c81f53ca606	d2e432029ee8d89d8c00e2c13b5cc2ce5f97803b559fd5d7469785312ba77368	2025-10-27 15:07:09.547081+05:30	20251016070738_dev2	\N	\N	2025-10-27 15:07:09.066443+05:30	1
+98ed2511-682e-4d7c-8da5-86e6f764ceac	d788f8596ffbec4a3722e163552e224e9bea7cd346e91e66728b4f4a71635bc3	2025-10-27 15:07:09.600508+05:30	20251027074717_dev4	\N	\N	2025-10-27 15:07:09.547711+05:30	1
+5fc44309-1c9a-47c7-9e9d-88eb9534ddd0	6b77e9230bf52b231bfef720839ced0de8e34073b37481a437a2bce18b43b846	2025-10-27 15:07:16.933653+05:30	20251027093716_dev1	\N	\N	2025-10-27 15:07:16.929464+05:30	1
+\.
+
+
+--
+-- Name: AISuggestion AISuggestion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."AISuggestion"
+    ADD CONSTRAINT "AISuggestion_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: AddressLookup AddressLookup_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."AddressLookup"
+    ADD CONSTRAINT "AddressLookup_pkey" PRIMARY KEY (id);
+
+
+--
 -- Name: AdvancedExamination AdvancedExamination_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public."AdvancedExamination"
     ADD CONSTRAINT "AdvancedExamination_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ApplicationSetting ApplicationSetting_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ApplicationSetting"
+    ADD CONSTRAINT "ApplicationSetting_pkey" PRIMARY KEY (id);
 
 
 --
@@ -3783,11 +9918,35 @@ ALTER TABLE ONLY public."Appointment"
 
 
 --
+-- Name: AuditLog AuditLog_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."AuditLog"
+    ADD CONSTRAINT "AuditLog_pkey" PRIMARY KEY (id);
+
+
+--
 -- Name: BarcodeManagement BarcodeManagement_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public."BarcodeManagement"
     ADD CONSTRAINT "BarcodeManagement_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: Base Base_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Base"
+    ADD CONSTRAINT "Base_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: BisData BisData_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."BisData"
+    ADD CONSTRAINT "BisData_pkey" PRIMARY KEY (id);
 
 
 --
@@ -3804,6 +9963,14 @@ ALTER TABLE ONLY public."Branch"
 
 ALTER TABLE ONLY public."Brand"
     ADD CONSTRAINT "Brand_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: BusinessContact BusinessContact_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."BusinessContact"
+    ADD CONSTRAINT "BusinessContact_pkey" PRIMARY KEY (id);
 
 
 --
@@ -3831,6 +9998,78 @@ ALTER TABLE ONLY public."CashierShift"
 
 
 --
+-- Name: ChatChannelMember ChatChannelMember_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatChannelMember"
+    ADD CONSTRAINT "ChatChannelMember_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ChatChannel ChatChannel_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatChannel"
+    ADD CONSTRAINT "ChatChannel_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ChatMessageTemplate ChatMessageTemplate_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatMessageTemplate"
+    ADD CONSTRAINT "ChatMessageTemplate_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ChatMessage ChatMessage_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatMessage"
+    ADD CONSTRAINT "ChatMessage_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ChatNotification ChatNotification_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatNotification"
+    ADD CONSTRAINT "ChatNotification_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ChatRoomMember ChatRoomMember_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatRoomMember"
+    ADD CONSTRAINT "ChatRoomMember_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ChatRoom ChatRoom_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatRoom"
+    ADD CONSTRAINT "ChatRoom_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ChatSearch ChatSearch_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatSearch"
+    ADD CONSTRAINT "ChatSearch_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ChatTyping ChatTyping_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatTyping"
+    ADD CONSTRAINT "ChatTyping_pkey" PRIMARY KEY (id);
+
+
+--
 -- Name: CheckType CheckType_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3847,6 +10086,14 @@ ALTER TABLE ONLY public."City"
 
 
 --
+-- Name: ClinicalData ClinicalData_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClinicalData"
+    ADD CONSTRAINT "ClinicalData_pkey" PRIMARY KEY (id);
+
+
+--
 -- Name: ClinicalDiagnosis ClinicalDiagnosis_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3860,6 +10107,78 @@ ALTER TABLE ONLY public."ClinicalDiagnosis"
 
 ALTER TABLE ONLY public."ClinicalExamination"
     ADD CONSTRAINT "ClinicalExamination_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ClinicalImage ClinicalImage_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClinicalImage"
+    ADD CONSTRAINT "ClinicalImage_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ClinicalProtocol ClinicalProtocol_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClinicalProtocol"
+    ADD CONSTRAINT "ClinicalProtocol_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ClinicalReferral ClinicalReferral_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClinicalReferral"
+    ADD CONSTRAINT "ClinicalReferral_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ClinicalRuleTrigger ClinicalRuleTrigger_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClinicalRuleTrigger"
+    ADD CONSTRAINT "ClinicalRuleTrigger_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ClinicalRule ClinicalRule_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClinicalRule"
+    ADD CONSTRAINT "ClinicalRule_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ClndrSal ClndrSal_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClndrSal"
+    ADD CONSTRAINT "ClndrSal_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ClndrTasksPriority ClndrTasksPriority_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClndrTasksPriority"
+    ADD CONSTRAINT "ClndrTasksPriority_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ClndrWrk ClndrWrk_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClndrWrk"
+    ADD CONSTRAINT "ClndrWrk_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: CollectionItem CollectionItem_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CollectionItem"
+    ADD CONSTRAINT "CollectionItem_pkey" PRIMARY KEY (id);
 
 
 --
@@ -3983,6 +10302,14 @@ ALTER TABLE ONLY public."ContactLensPrescription"
 
 
 --
+-- Name: ContactLensPricing ContactLensPricing_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ContactLensPricing"
+    ADD CONSTRAINT "ContactLensPricing_pkey" PRIMARY KEY (id);
+
+
+--
 -- Name: ContactLensRinsingSolution ContactLensRinsingSolution_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4007,6 +10334,166 @@ ALTER TABLE ONLY public."ContactLensType"
 
 
 --
+-- Name: ConversationParticipant ConversationParticipant_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ConversationParticipant"
+    ADD CONSTRAINT "ConversationParticipant_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ConversationTyping ConversationTyping_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ConversationTyping"
+    ADD CONSTRAINT "ConversationTyping_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: Conversation Conversation_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Conversation"
+    ADD CONSTRAINT "Conversation_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: CrdBuysWorkLab CrdBuysWorkLab_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdBuysWorkLab"
+    ADD CONSTRAINT "CrdBuysWorkLab_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: CrdBuysWorkSapak CrdBuysWorkSapak_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdBuysWorkSapak"
+    ADD CONSTRAINT "CrdBuysWorkSapak_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: CrdBuysWorkStat CrdBuysWorkStat_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdBuysWorkStat"
+    ADD CONSTRAINT "CrdBuysWorkStat_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: CrdBuysWorkSupply CrdBuysWorkSupply_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdBuysWorkSupply"
+    ADD CONSTRAINT "CrdBuysWorkSupply_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: CrdBuysWorkType CrdBuysWorkType_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdBuysWorkType"
+    ADD CONSTRAINT "CrdBuysWorkType_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: CrdClensChecksMater CrdClensChecksMater_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdClensChecksMater"
+    ADD CONSTRAINT "CrdClensChecksMater_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: CrdClensChecksPr CrdClensChecksPr_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdClensChecksPr"
+    ADD CONSTRAINT "CrdClensChecksPr_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: CrdClensChecksTint CrdClensChecksTint_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdClensChecksTint"
+    ADD CONSTRAINT "CrdClensChecksTint_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: CrdClensManuf CrdClensManuf_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdClensManuf"
+    ADD CONSTRAINT "CrdClensManuf_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: CrdClensSolClean CrdClensSolClean_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdClensSolClean"
+    ADD CONSTRAINT "CrdClensSolClean_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: CrdClensSolDisinfect CrdClensSolDisinfect_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdClensSolDisinfect"
+    ADD CONSTRAINT "CrdClensSolDisinfect_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: CrdClensSolRinse CrdClensSolRinse_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdClensSolRinse"
+    ADD CONSTRAINT "CrdClensSolRinse_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: CrdClensType CrdClensType_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdClensType"
+    ADD CONSTRAINT "CrdClensType_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: CrdGlassIOPInst CrdGlassIOPInst_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdGlassIOPInst"
+    ADD CONSTRAINT "CrdGlassIOPInst_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: CrdGlassRetDist CrdGlassRetDist_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdGlassRetDist"
+    ADD CONSTRAINT "CrdGlassRetDist_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: CrdGlassRetType CrdGlassRetType_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdGlassRetType"
+    ADD CONSTRAINT "CrdGlassRetType_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: CrdGlassUse CrdGlassUse_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdGlassUse"
+    ADD CONSTRAINT "CrdGlassUse_pkey" PRIMARY KEY (id);
+
+
+--
 -- Name: CreditCardTransaction CreditCardTransaction_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4015,11 +10502,51 @@ ALTER TABLE ONLY public."CreditCardTransaction"
 
 
 --
+-- Name: CreditCard CreditCard_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CreditCard"
+    ADD CONSTRAINT "CreditCard_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: CreditType CreditType_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CreditType"
+    ADD CONSTRAINT "CreditType_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: CustomReport CustomReport_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CustomReport"
+    ADD CONSTRAINT "CustomReport_pkey" PRIMARY KEY (id);
+
+
+--
 -- Name: CustomerGroup CustomerGroup_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public."CustomerGroup"
     ADD CONSTRAINT "CustomerGroup_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: CustomerLastVisit CustomerLastVisit_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CustomerLastVisit"
+    ADD CONSTRAINT "CustomerLastVisit_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: CustomerOrder CustomerOrder_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CustomerOrder"
+    ADD CONSTRAINT "CustomerOrder_pkey" PRIMARY KEY (id);
 
 
 --
@@ -4036,6 +10563,22 @@ ALTER TABLE ONLY public."CustomerPhoto"
 
 ALTER TABLE ONLY public."Customer"
     ADD CONSTRAINT "Customer_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: DataMigrationError DataMigrationError_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."DataMigrationError"
+    ADD CONSTRAINT "DataMigrationError_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: DataMigrationRun DataMigrationRun_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."DataMigrationRun"
+    ADD CONSTRAINT "DataMigrationRun_pkey" PRIMARY KEY (id);
 
 
 --
@@ -4071,6 +10614,14 @@ ALTER TABLE ONLY public."Discount"
 
 
 --
+-- Name: DiseaseDiagnosis DiseaseDiagnosis_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."DiseaseDiagnosis"
+    ADD CONSTRAINT "DiseaseDiagnosis_pkey" PRIMARY KEY (id);
+
+
+--
 -- Name: DocumentTemplate DocumentTemplate_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4087,11 +10638,43 @@ ALTER TABLE ONLY public."Document"
 
 
 --
+-- Name: Dummy Dummy_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Dummy"
+    ADD CONSTRAINT "Dummy_pkey" PRIMARY KEY (id);
+
+
+--
 -- Name: EmployeeCommissionRule EmployeeCommissionRule_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public."EmployeeCommissionRule"
     ADD CONSTRAINT "EmployeeCommissionRule_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: EquipmentConfig EquipmentConfig_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."EquipmentConfig"
+    ADD CONSTRAINT "EquipmentConfig_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: EquipmentImportLog EquipmentImportLog_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."EquipmentImportLog"
+    ADD CONSTRAINT "EquipmentImportLog_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ExamTemplate ExamTemplate_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ExamTemplate"
+    ADD CONSTRAINT "ExamTemplate_pkey" PRIMARY KEY (id);
 
 
 --
@@ -4119,11 +10702,51 @@ ALTER TABLE ONLY public."Expense"
 
 
 --
+-- Name: Eye Eye_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Eye"
+    ADD CONSTRAINT "Eye_pkey" PRIMARY KEY (id);
+
+
+--
 -- Name: FRPLine FRPLine_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public."FRPLine"
     ADD CONSTRAINT "FRPLine_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: FamilyAuditLog FamilyAuditLog_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."FamilyAuditLog"
+    ADD CONSTRAINT "FamilyAuditLog_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: FamilyRelationship FamilyRelationship_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."FamilyRelationship"
+    ADD CONSTRAINT "FamilyRelationship_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: FaxCommunication FaxCommunication_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."FaxCommunication"
+    ADD CONSTRAINT "FaxCommunication_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: FollowUpReminder FollowUpReminder_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."FollowUpReminder"
+    ADD CONSTRAINT "FollowUpReminder_pkey" PRIMARY KEY (id);
 
 
 --
@@ -4140,6 +10763,22 @@ ALTER TABLE ONLY public."FollowUp"
 
 ALTER TABLE ONLY public."FrameCatalog"
     ADD CONSTRAINT "FrameCatalog_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: FrameData FrameData_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."FrameData"
+    ADD CONSTRAINT "FrameData_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: FrameTrial FrameTrial_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."FrameTrial"
+    ADD CONSTRAINT "FrameTrial_pkey" PRIMARY KEY (id);
 
 
 --
@@ -4255,6 +10894,22 @@ ALTER TABLE ONLY public."GlassUse"
 
 
 --
+-- Name: Household Household_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Household"
+    ADD CONSTRAINT "Household_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: InvMoveType InvMoveType_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."InvMoveType"
+    ADD CONSTRAINT "InvMoveType_pkey" PRIMARY KEY (id);
+
+
+--
 -- Name: InventoryAdjustmentItem InventoryAdjustmentItem_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4268,6 +10923,14 @@ ALTER TABLE ONLY public."InventoryAdjustmentItem"
 
 ALTER TABLE ONLY public."InventoryAdjustment"
     ADD CONSTRAINT "InventoryAdjustment_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: InventoryReference InventoryReference_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."InventoryReference"
+    ADD CONSTRAINT "InventoryReference_pkey" PRIMARY KEY (id);
 
 
 --
@@ -4287,11 +10950,43 @@ ALTER TABLE ONLY public."InvoicePayment"
 
 
 --
+-- Name: InvoiceType InvoiceType_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."InvoiceType"
+    ADD CONSTRAINT "InvoiceType_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: InvoiceVerification InvoiceVerification_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."InvoiceVerification"
+    ADD CONSTRAINT "InvoiceVerification_pkey" PRIMARY KEY (id);
+
+
+--
 -- Name: Invoice Invoice_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public."Invoice"
     ADD CONSTRAINT "Invoice_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ItemCountsYear ItemCountsYear_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ItemCountsYear"
+    ADD CONSTRAINT "ItemCountsYear_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ItemStatus ItemStatus_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ItemStatus"
+    ADD CONSTRAINT "ItemStatus_pkey" PRIMARY KEY (id);
 
 
 --
@@ -4308,6 +11003,14 @@ ALTER TABLE ONLY public."LabelPrintJob"
 
 ALTER TABLE ONLY public."LabelTemplate"
     ADD CONSTRAINT "LabelTemplate_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: Lang Lang_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Lang"
+    ADD CONSTRAINT "Lang_pkey" PRIMARY KEY (id);
 
 
 --
@@ -4335,11 +11038,27 @@ ALTER TABLE ONLY public."LensMaterial"
 
 
 --
+-- Name: LensSolution LensSolution_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."LensSolution"
+    ADD CONSTRAINT "LensSolution_pkey" PRIMARY KEY (id);
+
+
+--
 -- Name: LensTreatmentCharacteristic LensTreatmentCharacteristic_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public."LensTreatmentCharacteristic"
     ADD CONSTRAINT "LensTreatmentCharacteristic_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: LensTreatment LensTreatment_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."LensTreatment"
+    ADD CONSTRAINT "LensTreatment_pkey" PRIMARY KEY (id);
 
 
 --
@@ -4415,11 +11134,75 @@ ALTER TABLE ONLY public."LowVisionManufacturer"
 
 
 --
+-- Name: MessageAttachment MessageAttachment_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."MessageAttachment"
+    ADD CONSTRAINT "MessageAttachment_pkey" PRIMARY KEY (id);
+
+
+--
 -- Name: MessageTemplate MessageTemplate_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public."MessageTemplate"
     ADD CONSTRAINT "MessageTemplate_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: Message Message_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Message"
+    ADD CONSTRAINT "Message_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: MigrationLog MigrationLog_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."MigrationLog"
+    ADD CONSTRAINT "MigrationLog_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: MigrationRun MigrationRun_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."MigrationRun"
+    ADD CONSTRAINT "MigrationRun_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: MigrationTableResult MigrationTableResult_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."MigrationTableResult"
+    ADD CONSTRAINT "MigrationTableResult_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: MovementProperty MovementProperty_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."MovementProperty"
+    ADD CONSTRAINT "MovementProperty_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: MovementType MovementType_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."MovementType"
+    ADD CONSTRAINT "MovementType_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: NewProduct NewProduct_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."NewProduct"
+    ADD CONSTRAINT "NewProduct_pkey" PRIMARY KEY (id);
 
 
 --
@@ -4460,6 +11243,158 @@ ALTER TABLE ONLY public."OrthokeratologyTreatment"
 
 ALTER TABLE ONLY public."Orthokeratology"
     ADD CONSTRAINT "Orthokeratology_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: POSAuditLog POSAuditLog_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."POSAuditLog"
+    ADD CONSTRAINT "POSAuditLog_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: POSCashDrop POSCashDrop_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."POSCashDrop"
+    ADD CONSTRAINT "POSCashDrop_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: POSCashPickup POSCashPickup_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."POSCashPickup"
+    ADD CONSTRAINT "POSCashPickup_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: POSInventoryMovement POSInventoryMovement_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."POSInventoryMovement"
+    ADD CONSTRAINT "POSInventoryMovement_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: POSPaymentRefund POSPaymentRefund_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."POSPaymentRefund"
+    ADD CONSTRAINT "POSPaymentRefund_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: POSPayment POSPayment_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."POSPayment"
+    ADD CONSTRAINT "POSPayment_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: POSPriceListItem POSPriceListItem_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."POSPriceListItem"
+    ADD CONSTRAINT "POSPriceListItem_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: POSPriceList POSPriceList_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."POSPriceList"
+    ADD CONSTRAINT "POSPriceList_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: POSReceipt POSReceipt_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."POSReceipt"
+    ADD CONSTRAINT "POSReceipt_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: POSReportSnapshot POSReportSnapshot_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."POSReportSnapshot"
+    ADD CONSTRAINT "POSReportSnapshot_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: POSSession POSSession_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."POSSession"
+    ADD CONSTRAINT "POSSession_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: POSSyncQueue POSSyncQueue_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."POSSyncQueue"
+    ADD CONSTRAINT "POSSyncQueue_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: POSTerminal POSTerminal_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."POSTerminal"
+    ADD CONSTRAINT "POSTerminal_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: POSTransactionDiscount POSTransactionDiscount_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."POSTransactionDiscount"
+    ADD CONSTRAINT "POSTransactionDiscount_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: POSTransactionEvent POSTransactionEvent_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."POSTransactionEvent"
+    ADD CONSTRAINT "POSTransactionEvent_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: POSTransactionItem POSTransactionItem_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."POSTransactionItem"
+    ADD CONSTRAINT "POSTransactionItem_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: POSTransactionTax POSTransactionTax_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."POSTransactionTax"
+    ADD CONSTRAINT "POSTransactionTax_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: POSTransaction POSTransaction_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."POSTransaction"
+    ADD CONSTRAINT "POSTransaction_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: PayType PayType_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."PayType"
+    ADD CONSTRAINT "PayType_pkey" PRIMARY KEY (id);
 
 
 --
@@ -4535,6 +11470,38 @@ ALTER TABLE ONLY public."PriceUpdate"
 
 
 --
+-- Name: PrintLabel PrintLabel_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."PrintLabel"
+    ADD CONSTRAINT "PrintLabel_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: PrlType PrlType_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."PrlType"
+    ADD CONSTRAINT "PrlType_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ProductProperty ProductProperty_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ProductProperty"
+    ADD CONSTRAINT "ProductProperty_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ProductReview ProductReview_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ProductReview"
+    ADD CONSTRAINT "ProductReview_pkey" PRIMARY KEY (id);
+
+
+--
 -- Name: ProductSerial ProductSerial_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4548,6 +11515,14 @@ ALTER TABLE ONLY public."ProductSerial"
 
 ALTER TABLE ONLY public."Product"
     ADD CONSTRAINT "Product_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: Profile Profile_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Profile"
+    ADD CONSTRAINT "Profile_pkey" PRIMARY KEY (id);
 
 
 --
@@ -4575,6 +11550,14 @@ ALTER TABLE ONLY public."Purchase"
 
 
 --
+-- Name: ReferralSource ReferralSource_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ReferralSource"
+    ADD CONSTRAINT "ReferralSource_pkey" PRIMARY KEY (id);
+
+
+--
 -- Name: RefractionProtocol RefractionProtocol_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4596,6 +11579,30 @@ ALTER TABLE ONLY public."RetinoscopyDistance"
 
 ALTER TABLE ONLY public."RetinoscopyType"
     ADD CONSTRAINT "RetinoscopyType_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ReviewHelpful ReviewHelpful_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ReviewHelpful"
+    ADD CONSTRAINT "ReviewHelpful_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ReviewReport ReviewReport_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ReviewReport"
+    ADD CONSTRAINT "ReviewReport_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SMSLen SMSLen_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SMSLen"
+    ADD CONSTRAINT "SMSLen_pkey" PRIMARY KEY (id);
 
 
 --
@@ -4623,6 +11630,54 @@ ALTER TABLE ONLY public."Sale"
 
 
 --
+-- Name: SapakComment SapakComment_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SapakComment"
+    ADD CONSTRAINT "SapakComment_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SapakDest SapakDest_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SapakDest"
+    ADD CONSTRAINT "SapakDest_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SapakPerComment SapakPerComment_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SapakPerComment"
+    ADD CONSTRAINT "SapakPerComment_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SearchOrder SearchOrder_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SearchOrder"
+    ADD CONSTRAINT "SearchOrder_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ServiceType ServiceType_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ServiceType"
+    ADD CONSTRAINT "ServiceType_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ShortCut ShortCut_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ShortCut"
+    ADD CONSTRAINT "ShortCut_pkey" PRIMARY KEY (id);
+
+
+--
 -- Name: SlitLampExam SlitLampExam_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4631,11 +11686,115 @@ ALTER TABLE ONLY public."SlitLampExam"
 
 
 --
+-- Name: SpecialName SpecialName_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SpecialName"
+    ADD CONSTRAINT "SpecialName_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: Special Special_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Special"
+    ADD CONSTRAINT "Special_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: StaffSchedule StaffSchedule_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."StaffSchedule"
+    ADD CONSTRAINT "StaffSchedule_pkey" PRIMARY KEY (id);
+
+
+--
 -- Name: StockMovement StockMovement_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public."StockMovement"
     ADD CONSTRAINT "StockMovement_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SupplierAccountTransaction SupplierAccountTransaction_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierAccountTransaction"
+    ADD CONSTRAINT "SupplierAccountTransaction_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SupplierAnalytics SupplierAnalytics_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierAnalytics"
+    ADD CONSTRAINT "SupplierAnalytics_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SupplierCatalogCategory SupplierCatalogCategory_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierCatalogCategory"
+    ADD CONSTRAINT "SupplierCatalogCategory_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SupplierCatalogItem SupplierCatalogItem_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierCatalogItem"
+    ADD CONSTRAINT "SupplierCatalogItem_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SupplierCatalogVariant SupplierCatalogVariant_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierCatalogVariant"
+    ADD CONSTRAINT "SupplierCatalogVariant_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SupplierCollectionVisibility SupplierCollectionVisibility_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierCollectionVisibility"
+    ADD CONSTRAINT "SupplierCollectionVisibility_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SupplierCollection SupplierCollection_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierCollection"
+    ADD CONSTRAINT "SupplierCollection_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SupplierDiscountUsage SupplierDiscountUsage_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierDiscountUsage"
+    ADD CONSTRAINT "SupplierDiscountUsage_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SupplierDiscount SupplierDiscount_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierDiscount"
+    ADD CONSTRAINT "SupplierDiscount_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SupplierInventoryLog SupplierInventoryLog_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierInventoryLog"
+    ADD CONSTRAINT "SupplierInventoryLog_pkey" PRIMARY KEY (id);
 
 
 --
@@ -4655,11 +11814,123 @@ ALTER TABLE ONLY public."SupplierOrder"
 
 
 --
+-- Name: SupplierPriceAlert SupplierPriceAlert_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierPriceAlert"
+    ADD CONSTRAINT "SupplierPriceAlert_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SupplierPriceCache SupplierPriceCache_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierPriceCache"
+    ADD CONSTRAINT "SupplierPriceCache_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SupplierPriceHistory SupplierPriceHistory_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierPriceHistory"
+    ADD CONSTRAINT "SupplierPriceHistory_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SupplierPriceListItem SupplierPriceListItem_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierPriceListItem"
+    ADD CONSTRAINT "SupplierPriceListItem_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SupplierPriceList SupplierPriceList_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierPriceList"
+    ADD CONSTRAINT "SupplierPriceList_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SupplierRFQItem SupplierRFQItem_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierRFQItem"
+    ADD CONSTRAINT "SupplierRFQItem_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SupplierRFQ SupplierRFQ_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierRFQ"
+    ADD CONSTRAINT "SupplierRFQ_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SupplierShipment SupplierShipment_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierShipment"
+    ADD CONSTRAINT "SupplierShipment_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SupplierStockAlert SupplierStockAlert_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierStockAlert"
+    ADD CONSTRAINT "SupplierStockAlert_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SupplierTenantAccount SupplierTenantAccount_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierTenantAccount"
+    ADD CONSTRAINT "SupplierTenantAccount_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SupplierTenantActivity SupplierTenantActivity_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierTenantActivity"
+    ADD CONSTRAINT "SupplierTenantActivity_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SupplierTenantNote SupplierTenantNote_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierTenantNote"
+    ADD CONSTRAINT "SupplierTenantNote_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SupplierUser SupplierUser_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierUser"
+    ADD CONSTRAINT "SupplierUser_pkey" PRIMARY KEY (id);
+
+
+--
 -- Name: Supplier Supplier_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public."Supplier"
     ADD CONSTRAINT "Supplier_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SysLevel SysLevel_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SysLevel"
+    ADD CONSTRAINT "SysLevel_pkey" PRIMARY KEY (id);
 
 
 --
@@ -4727,11 +11998,43 @@ ALTER TABLE ONLY public."User"
 
 
 --
+-- Name: VATRate VATRate_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."VATRate"
+    ADD CONSTRAINT "VATRate_pkey" PRIMARY KEY (id);
+
+
+--
 -- Name: VisionTest VisionTest_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public."VisionTest"
     ADD CONSTRAINT "VisionTest_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: WishlistItem WishlistItem_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."WishlistItem"
+    ADD CONSTRAINT "WishlistItem_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: WishlistShare WishlistShare_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."WishlistShare"
+    ADD CONSTRAINT "WishlistShare_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: Wishlist Wishlist_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Wishlist"
+    ADD CONSTRAINT "Wishlist_pkey" PRIMARY KEY (id);
 
 
 --
@@ -4799,11 +12102,54 @@ ALTER TABLE ONLY public."ZipCode"
 
 
 --
+-- Name: _DiscountToItems _DiscountToItems_AB_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."_DiscountToItems"
+    ADD CONSTRAINT "_DiscountToItems_AB_pkey" PRIMARY KEY ("A", "B");
+
+
+--
 -- Name: _prisma_migrations _prisma_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public._prisma_migrations
     ADD CONSTRAINT _prisma_migrations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: AISuggestion_examinationId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "AISuggestion_examinationId_idx" ON public."AISuggestion" USING btree ("examinationId");
+
+
+--
+-- Name: AISuggestion_tenantId_accepted_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "AISuggestion_tenantId_accepted_idx" ON public."AISuggestion" USING btree ("tenantId", accepted);
+
+
+--
+-- Name: AISuggestion_tenantId_suggestionType_createdAt_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "AISuggestion_tenantId_suggestionType_createdAt_idx" ON public."AISuggestion" USING btree ("tenantId", "suggestionType", "createdAt");
+
+
+--
+-- Name: AddressLookup_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "AddressLookup_branchId_idx" ON public."AddressLookup" USING btree ("branchId");
+
+
+--
+-- Name: AddressLookup_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "AddressLookup_tenantId_idx" ON public."AddressLookup" USING btree ("tenantId");
 
 
 --
@@ -4835,10 +12181,31 @@ CREATE INDEX "AdvancedExamination_tenantId_examinerId_idx" ON public."AdvancedEx
 
 
 --
+-- Name: ApplicationSetting_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ApplicationSetting_branchId_idx" ON public."ApplicationSetting" USING btree ("branchId");
+
+
+--
+-- Name: ApplicationSetting_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ApplicationSetting_tenantId_idx" ON public."ApplicationSetting" USING btree ("tenantId");
+
+
+--
 -- Name: Appointment_customerId_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX "Appointment_customerId_idx" ON public."Appointment" USING btree ("customerId");
+
+
+--
+-- Name: Appointment_tenantId_branchId_date_status_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Appointment_tenantId_branchId_date_status_idx" ON public."Appointment" USING btree ("tenantId", "branchId", date, status);
 
 
 --
@@ -4849,6 +12216,55 @@ CREATE INDEX "Appointment_tenantId_date_idx" ON public."Appointment" USING btree
 
 
 --
+-- Name: Appointment_tenantId_status_date_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Appointment_tenantId_status_date_idx" ON public."Appointment" USING btree ("tenantId", status, date);
+
+
+--
+-- Name: Appointment_tenantId_userId_date_status_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Appointment_tenantId_userId_date_status_idx" ON public."Appointment" USING btree ("tenantId", "userId", date, status);
+
+
+--
+-- Name: AuditLog_action_createdAt_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "AuditLog_action_createdAt_idx" ON public."AuditLog" USING btree (action, "createdAt");
+
+
+--
+-- Name: AuditLog_createdAt_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "AuditLog_createdAt_idx" ON public."AuditLog" USING btree ("createdAt");
+
+
+--
+-- Name: AuditLog_resource_createdAt_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "AuditLog_resource_createdAt_idx" ON public."AuditLog" USING btree (resource, "createdAt");
+
+
+--
+-- Name: AuditLog_tenantId_createdAt_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "AuditLog_tenantId_createdAt_idx" ON public."AuditLog" USING btree ("tenantId", "createdAt");
+
+
+--
+-- Name: AuditLog_userId_createdAt_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "AuditLog_userId_createdAt_idx" ON public."AuditLog" USING btree ("userId", "createdAt");
+
+
+--
 -- Name: BarcodeManagement_barcode_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -4856,10 +12272,17 @@ CREATE INDEX "BarcodeManagement_barcode_idx" ON public."BarcodeManagement" USING
 
 
 --
--- Name: BarcodeManagement_barcode_key; Type: INDEX; Schema: public; Owner: postgres
+-- Name: BarcodeManagement_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE UNIQUE INDEX "BarcodeManagement_barcode_key" ON public."BarcodeManagement" USING btree (barcode);
+CREATE INDEX "BarcodeManagement_branchId_idx" ON public."BarcodeManagement" USING btree ("branchId");
+
+
+--
+-- Name: BarcodeManagement_tenantId_barcode_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "BarcodeManagement_tenantId_barcode_key" ON public."BarcodeManagement" USING btree ("tenantId", barcode);
 
 
 --
@@ -4867,6 +12290,34 @@ CREATE UNIQUE INDEX "BarcodeManagement_barcode_key" ON public."BarcodeManagement
 --
 
 CREATE INDEX "BarcodeManagement_tenantId_idx" ON public."BarcodeManagement" USING btree ("tenantId");
+
+
+--
+-- Name: Base_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Base_branchId_idx" ON public."Base" USING btree ("branchId");
+
+
+--
+-- Name: Base_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Base_tenantId_idx" ON public."Base" USING btree ("tenantId");
+
+
+--
+-- Name: BisData_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "BisData_branchId_idx" ON public."BisData" USING btree ("branchId");
+
+
+--
+-- Name: BisData_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "BisData_tenantId_idx" ON public."BisData" USING btree ("tenantId");
 
 
 --
@@ -4895,6 +12346,20 @@ CREATE INDEX "Branch_tenantId_idx" ON public."Branch" USING btree ("tenantId");
 --
 
 CREATE UNIQUE INDEX "Brand_tenantId_name_type_key" ON public."Brand" USING btree ("tenantId", name, type);
+
+
+--
+-- Name: BusinessContact_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "BusinessContact_branchId_idx" ON public."BusinessContact" USING btree ("branchId");
+
+
+--
+-- Name: BusinessContact_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "BusinessContact_tenantId_idx" ON public."BusinessContact" USING btree ("tenantId");
 
 
 --
@@ -4940,6 +12405,167 @@ CREATE INDEX "CashierShift_tenantId_branchId_userId_idx" ON public."CashierShift
 
 
 --
+-- Name: ChatChannelMember_channelId_userId_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "ChatChannelMember_channelId_userId_key" ON public."ChatChannelMember" USING btree ("channelId", "userId");
+
+
+--
+-- Name: ChatChannelMember_tenantId_userId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ChatChannelMember_tenantId_userId_idx" ON public."ChatChannelMember" USING btree ("tenantId", "userId");
+
+
+--
+-- Name: ChatChannel_patientId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ChatChannel_patientId_idx" ON public."ChatChannel" USING btree ("patientId");
+
+
+--
+-- Name: ChatChannel_tenantId_roomId_name_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "ChatChannel_tenantId_roomId_name_key" ON public."ChatChannel" USING btree ("tenantId", "roomId", name);
+
+
+--
+-- Name: ChatChannel_tenantId_type_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ChatChannel_tenantId_type_idx" ON public."ChatChannel" USING btree ("tenantId", type);
+
+
+--
+-- Name: ChatChannel_visitId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ChatChannel_visitId_idx" ON public."ChatChannel" USING btree ("visitId");
+
+
+--
+-- Name: ChatMessageTemplate_tenantId_category_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ChatMessageTemplate_tenantId_category_idx" ON public."ChatMessageTemplate" USING btree ("tenantId", category);
+
+
+--
+-- Name: ChatMessageTemplate_tenantId_name_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "ChatMessageTemplate_tenantId_name_key" ON public."ChatMessageTemplate" USING btree ("tenantId", name);
+
+
+--
+-- Name: ChatMessage_channelId_createdAt_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ChatMessage_channelId_createdAt_idx" ON public."ChatMessage" USING btree ("channelId", "createdAt");
+
+
+--
+-- Name: ChatMessage_readAt_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ChatMessage_readAt_idx" ON public."ChatMessage" USING btree ("readAt");
+
+
+--
+-- Name: ChatMessage_senderId_senderType_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ChatMessage_senderId_senderType_idx" ON public."ChatMessage" USING btree ("senderId", "senderType");
+
+
+--
+-- Name: ChatMessage_threadId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ChatMessage_threadId_idx" ON public."ChatMessage" USING btree ("threadId");
+
+
+--
+-- Name: ChatNotification_tenantId_type_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ChatNotification_tenantId_type_idx" ON public."ChatNotification" USING btree ("tenantId", type);
+
+
+--
+-- Name: ChatNotification_userId_isRead_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ChatNotification_userId_isRead_idx" ON public."ChatNotification" USING btree ("userId", "isRead");
+
+
+--
+-- Name: ChatRoomMember_roomId_userId_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "ChatRoomMember_roomId_userId_key" ON public."ChatRoomMember" USING btree ("roomId", "userId");
+
+
+--
+-- Name: ChatRoomMember_tenantId_userId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ChatRoomMember_tenantId_userId_idx" ON public."ChatRoomMember" USING btree ("tenantId", "userId");
+
+
+--
+-- Name: ChatRoom_tenantId_name_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "ChatRoom_tenantId_name_key" ON public."ChatRoom" USING btree ("tenantId", name);
+
+
+--
+-- Name: ChatRoom_tenantId_type_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ChatRoom_tenantId_type_idx" ON public."ChatRoom" USING btree ("tenantId", type);
+
+
+--
+-- Name: ChatSearch_createdAt_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ChatSearch_createdAt_idx" ON public."ChatSearch" USING btree ("createdAt");
+
+
+--
+-- Name: ChatSearch_tenantId_userId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ChatSearch_tenantId_userId_idx" ON public."ChatSearch" USING btree ("tenantId", "userId");
+
+
+--
+-- Name: ChatTyping_channelId_userId_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "ChatTyping_channelId_userId_key" ON public."ChatTyping" USING btree ("channelId", "userId");
+
+
+--
+-- Name: ChatTyping_tenantId_channelId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ChatTyping_tenantId_channelId_idx" ON public."ChatTyping" USING btree ("tenantId", "channelId");
+
+
+--
+-- Name: CheckType_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CheckType_branchId_idx" ON public."CheckType" USING btree ("branchId");
+
+
+--
 -- Name: CheckType_checkId_key; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -4965,6 +12591,20 @@ CREATE UNIQUE INDEX "City_cityId_key" ON public."City" USING btree ("cityId");
 --
 
 CREATE INDEX "City_tenantId_idx" ON public."City" USING btree ("tenantId");
+
+
+--
+-- Name: ClinicalData_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ClinicalData_branchId_idx" ON public."ClinicalData" USING btree ("branchId");
+
+
+--
+-- Name: ClinicalData_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ClinicalData_tenantId_idx" ON public."ClinicalData" USING btree ("tenantId");
 
 
 --
@@ -5000,6 +12640,181 @@ CREATE INDEX "ClinicalExamination_customerId_idx" ON public."ClinicalExamination
 --
 
 CREATE INDEX "ClinicalExamination_examDate_idx" ON public."ClinicalExamination" USING btree ("examDate");
+
+
+--
+-- Name: ClinicalImage_examinationId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ClinicalImage_examinationId_idx" ON public."ClinicalImage" USING btree ("examinationId");
+
+
+--
+-- Name: ClinicalImage_tenantId_customerId_captureDate_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ClinicalImage_tenantId_customerId_captureDate_idx" ON public."ClinicalImage" USING btree ("tenantId", "customerId", "captureDate");
+
+
+--
+-- Name: ClinicalImage_tenantId_deletedAt_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ClinicalImage_tenantId_deletedAt_idx" ON public."ClinicalImage" USING btree ("tenantId", "deletedAt");
+
+
+--
+-- Name: ClinicalImage_tenantId_imageType_captureDate_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ClinicalImage_tenantId_imageType_captureDate_idx" ON public."ClinicalImage" USING btree ("tenantId", "imageType", "captureDate");
+
+
+--
+-- Name: ClinicalProtocol_tenantId_isActive_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ClinicalProtocol_tenantId_isActive_idx" ON public."ClinicalProtocol" USING btree ("tenantId", "isActive");
+
+
+--
+-- Name: ClinicalProtocol_tenantId_protocolType_isActive_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ClinicalProtocol_tenantId_protocolType_isActive_idx" ON public."ClinicalProtocol" USING btree ("tenantId", "protocolType", "isActive");
+
+
+--
+-- Name: ClinicalReferral_customerId_status_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ClinicalReferral_customerId_status_idx" ON public."ClinicalReferral" USING btree ("customerId", status);
+
+
+--
+-- Name: ClinicalReferral_tenantId_referralType_status_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ClinicalReferral_tenantId_referralType_status_idx" ON public."ClinicalReferral" USING btree ("tenantId", "referralType", status);
+
+
+--
+-- Name: ClinicalReferral_tenantId_status_referralDate_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ClinicalReferral_tenantId_status_referralDate_idx" ON public."ClinicalReferral" USING btree ("tenantId", status, "referralDate");
+
+
+--
+-- Name: ClinicalReferral_tenantId_urgency_status_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ClinicalReferral_tenantId_urgency_status_idx" ON public."ClinicalReferral" USING btree ("tenantId", urgency, status);
+
+
+--
+-- Name: ClinicalRuleTrigger_customerId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ClinicalRuleTrigger_customerId_idx" ON public."ClinicalRuleTrigger" USING btree ("customerId");
+
+
+--
+-- Name: ClinicalRuleTrigger_examinationId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ClinicalRuleTrigger_examinationId_idx" ON public."ClinicalRuleTrigger" USING btree ("examinationId");
+
+
+--
+-- Name: ClinicalRuleTrigger_ruleId_triggeredAt_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ClinicalRuleTrigger_ruleId_triggeredAt_idx" ON public."ClinicalRuleTrigger" USING btree ("ruleId", "triggeredAt");
+
+
+--
+-- Name: ClinicalRuleTrigger_tenantId_status_triggeredAt_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ClinicalRuleTrigger_tenantId_status_triggeredAt_idx" ON public."ClinicalRuleTrigger" USING btree ("tenantId", status, "triggeredAt");
+
+
+--
+-- Name: ClinicalRule_tenantId_isActive_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ClinicalRule_tenantId_isActive_idx" ON public."ClinicalRule" USING btree ("tenantId", "isActive");
+
+
+--
+-- Name: ClinicalRule_tenantId_ruleType_isActive_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ClinicalRule_tenantId_ruleType_isActive_idx" ON public."ClinicalRule" USING btree ("tenantId", "ruleType", "isActive");
+
+
+--
+-- Name: ClndrSal_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ClndrSal_branchId_idx" ON public."ClndrSal" USING btree ("branchId");
+
+
+--
+-- Name: ClndrSal_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ClndrSal_tenantId_idx" ON public."ClndrSal" USING btree ("tenantId");
+
+
+--
+-- Name: ClndrTasksPriority_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ClndrTasksPriority_branchId_idx" ON public."ClndrTasksPriority" USING btree ("branchId");
+
+
+--
+-- Name: ClndrTasksPriority_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ClndrTasksPriority_tenantId_idx" ON public."ClndrTasksPriority" USING btree ("tenantId");
+
+
+--
+-- Name: ClndrWrk_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ClndrWrk_branchId_idx" ON public."ClndrWrk" USING btree ("branchId");
+
+
+--
+-- Name: ClndrWrk_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ClndrWrk_tenantId_idx" ON public."ClndrWrk" USING btree ("tenantId");
+
+
+--
+-- Name: CollectionItem_collectionId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CollectionItem_collectionId_idx" ON public."CollectionItem" USING btree ("collectionId");
+
+
+--
+-- Name: CollectionItem_frameCatalogId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CollectionItem_frameCatalogId_idx" ON public."CollectionItem" USING btree ("frameCatalogId");
+
+
+--
+-- Name: CollectionItem_lensCatalogId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CollectionItem_lensCatalogId_idx" ON public."CollectionItem" USING btree ("lensCatalogId");
 
 
 --
@@ -5241,6 +13056,20 @@ CREATE INDEX "ContactLensPrescription_tenantId_prescriptionDate_idx" ON public."
 
 
 --
+-- Name: ContactLensPricing_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ContactLensPricing_branchId_idx" ON public."ContactLensPricing" USING btree ("branchId");
+
+
+--
+-- Name: ContactLensPricing_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ContactLensPricing_tenantId_idx" ON public."ContactLensPricing" USING btree ("tenantId");
+
+
+--
 -- Name: ContactLensRinsingSolution_solutionId_key; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -5283,6 +13112,300 @@ CREATE INDEX "ContactLensType_tenantId_idx" ON public."ContactLensType" USING bt
 
 
 --
+-- Name: ConversationParticipant_conversationId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ConversationParticipant_conversationId_idx" ON public."ConversationParticipant" USING btree ("conversationId");
+
+
+--
+-- Name: ConversationParticipant_conversationId_participantId_partic_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "ConversationParticipant_conversationId_participantId_partic_key" ON public."ConversationParticipant" USING btree ("conversationId", "participantId", "participantType");
+
+
+--
+-- Name: ConversationParticipant_participantId_participantType_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ConversationParticipant_participantId_participantType_idx" ON public."ConversationParticipant" USING btree ("participantId", "participantType");
+
+
+--
+-- Name: ConversationTyping_conversationId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ConversationTyping_conversationId_idx" ON public."ConversationTyping" USING btree ("conversationId");
+
+
+--
+-- Name: ConversationTyping_conversationId_typingUserId_typingUserTy_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "ConversationTyping_conversationId_typingUserId_typingUserTy_key" ON public."ConversationTyping" USING btree ("conversationId", "typingUserId", "typingUserType");
+
+
+--
+-- Name: Conversation_lastMessageAt_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Conversation_lastMessageAt_idx" ON public."Conversation" USING btree ("lastMessageAt");
+
+
+--
+-- Name: Conversation_relatedToType_relatedToId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Conversation_relatedToType_relatedToId_idx" ON public."Conversation" USING btree ("relatedToType", "relatedToId");
+
+
+--
+-- Name: Conversation_supplierId_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Conversation_supplierId_tenantId_idx" ON public."Conversation" USING btree ("supplierId", "tenantId");
+
+
+--
+-- Name: CrdBuysWorkLab_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdBuysWorkLab_branchId_idx" ON public."CrdBuysWorkLab" USING btree ("branchId");
+
+
+--
+-- Name: CrdBuysWorkLab_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdBuysWorkLab_tenantId_idx" ON public."CrdBuysWorkLab" USING btree ("tenantId");
+
+
+--
+-- Name: CrdBuysWorkSapak_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdBuysWorkSapak_branchId_idx" ON public."CrdBuysWorkSapak" USING btree ("branchId");
+
+
+--
+-- Name: CrdBuysWorkSapak_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdBuysWorkSapak_tenantId_idx" ON public."CrdBuysWorkSapak" USING btree ("tenantId");
+
+
+--
+-- Name: CrdBuysWorkStat_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdBuysWorkStat_branchId_idx" ON public."CrdBuysWorkStat" USING btree ("branchId");
+
+
+--
+-- Name: CrdBuysWorkStat_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdBuysWorkStat_tenantId_idx" ON public."CrdBuysWorkStat" USING btree ("tenantId");
+
+
+--
+-- Name: CrdBuysWorkSupply_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdBuysWorkSupply_branchId_idx" ON public."CrdBuysWorkSupply" USING btree ("branchId");
+
+
+--
+-- Name: CrdBuysWorkSupply_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdBuysWorkSupply_tenantId_idx" ON public."CrdBuysWorkSupply" USING btree ("tenantId");
+
+
+--
+-- Name: CrdBuysWorkType_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdBuysWorkType_branchId_idx" ON public."CrdBuysWorkType" USING btree ("branchId");
+
+
+--
+-- Name: CrdBuysWorkType_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdBuysWorkType_tenantId_idx" ON public."CrdBuysWorkType" USING btree ("tenantId");
+
+
+--
+-- Name: CrdClensChecksMater_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdClensChecksMater_branchId_idx" ON public."CrdClensChecksMater" USING btree ("branchId");
+
+
+--
+-- Name: CrdClensChecksMater_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdClensChecksMater_tenantId_idx" ON public."CrdClensChecksMater" USING btree ("tenantId");
+
+
+--
+-- Name: CrdClensChecksPr_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdClensChecksPr_branchId_idx" ON public."CrdClensChecksPr" USING btree ("branchId");
+
+
+--
+-- Name: CrdClensChecksPr_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdClensChecksPr_tenantId_idx" ON public."CrdClensChecksPr" USING btree ("tenantId");
+
+
+--
+-- Name: CrdClensChecksTint_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdClensChecksTint_branchId_idx" ON public."CrdClensChecksTint" USING btree ("branchId");
+
+
+--
+-- Name: CrdClensChecksTint_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdClensChecksTint_tenantId_idx" ON public."CrdClensChecksTint" USING btree ("tenantId");
+
+
+--
+-- Name: CrdClensManuf_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdClensManuf_branchId_idx" ON public."CrdClensManuf" USING btree ("branchId");
+
+
+--
+-- Name: CrdClensManuf_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdClensManuf_tenantId_idx" ON public."CrdClensManuf" USING btree ("tenantId");
+
+
+--
+-- Name: CrdClensSolClean_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdClensSolClean_branchId_idx" ON public."CrdClensSolClean" USING btree ("branchId");
+
+
+--
+-- Name: CrdClensSolClean_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdClensSolClean_tenantId_idx" ON public."CrdClensSolClean" USING btree ("tenantId");
+
+
+--
+-- Name: CrdClensSolDisinfect_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdClensSolDisinfect_branchId_idx" ON public."CrdClensSolDisinfect" USING btree ("branchId");
+
+
+--
+-- Name: CrdClensSolDisinfect_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdClensSolDisinfect_tenantId_idx" ON public."CrdClensSolDisinfect" USING btree ("tenantId");
+
+
+--
+-- Name: CrdClensSolRinse_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdClensSolRinse_branchId_idx" ON public."CrdClensSolRinse" USING btree ("branchId");
+
+
+--
+-- Name: CrdClensSolRinse_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdClensSolRinse_tenantId_idx" ON public."CrdClensSolRinse" USING btree ("tenantId");
+
+
+--
+-- Name: CrdClensType_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdClensType_branchId_idx" ON public."CrdClensType" USING btree ("branchId");
+
+
+--
+-- Name: CrdClensType_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdClensType_tenantId_idx" ON public."CrdClensType" USING btree ("tenantId");
+
+
+--
+-- Name: CrdGlassIOPInst_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdGlassIOPInst_branchId_idx" ON public."CrdGlassIOPInst" USING btree ("branchId");
+
+
+--
+-- Name: CrdGlassIOPInst_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdGlassIOPInst_tenantId_idx" ON public."CrdGlassIOPInst" USING btree ("tenantId");
+
+
+--
+-- Name: CrdGlassRetDist_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdGlassRetDist_branchId_idx" ON public."CrdGlassRetDist" USING btree ("branchId");
+
+
+--
+-- Name: CrdGlassRetDist_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdGlassRetDist_tenantId_idx" ON public."CrdGlassRetDist" USING btree ("tenantId");
+
+
+--
+-- Name: CrdGlassRetType_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdGlassRetType_branchId_idx" ON public."CrdGlassRetType" USING btree ("branchId");
+
+
+--
+-- Name: CrdGlassRetType_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdGlassRetType_tenantId_idx" ON public."CrdGlassRetType" USING btree ("tenantId");
+
+
+--
+-- Name: CrdGlassUse_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdGlassUse_branchId_idx" ON public."CrdGlassUse" USING btree ("branchId");
+
+
+--
+-- Name: CrdGlassUse_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CrdGlassUse_tenantId_idx" ON public."CrdGlassUse" USING btree ("tenantId");
+
+
+--
 -- Name: CreditCardTransaction_status_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -5311,10 +13434,101 @@ CREATE UNIQUE INDEX "CreditCardTransaction_transactionId_key" ON public."CreditC
 
 
 --
+-- Name: CreditCard_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CreditCard_branchId_idx" ON public."CreditCard" USING btree ("branchId");
+
+
+--
+-- Name: CreditCard_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CreditCard_tenantId_idx" ON public."CreditCard" USING btree ("tenantId");
+
+
+--
+-- Name: CreditType_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CreditType_branchId_idx" ON public."CreditType" USING btree ("branchId");
+
+
+--
+-- Name: CreditType_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CreditType_tenantId_idx" ON public."CreditType" USING btree ("tenantId");
+
+
+--
+-- Name: CustomReport_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CustomReport_branchId_idx" ON public."CustomReport" USING btree ("branchId");
+
+
+--
+-- Name: CustomReport_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CustomReport_tenantId_idx" ON public."CustomReport" USING btree ("tenantId");
+
+
+--
 -- Name: CustomerGroup_tenantId_groupCode_key; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE UNIQUE INDEX "CustomerGroup_tenantId_groupCode_key" ON public."CustomerGroup" USING btree ("tenantId", "groupCode");
+
+
+--
+-- Name: CustomerLastVisit_customerId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CustomerLastVisit_customerId_idx" ON public."CustomerLastVisit" USING btree ("customerId");
+
+
+--
+-- Name: CustomerLastVisit_customerId_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "CustomerLastVisit_customerId_key" ON public."CustomerLastVisit" USING btree ("customerId");
+
+
+--
+-- Name: CustomerLastVisit_lastVisitDate_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CustomerLastVisit_lastVisitDate_idx" ON public."CustomerLastVisit" USING btree ("lastVisitDate");
+
+
+--
+-- Name: CustomerLastVisit_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CustomerLastVisit_tenantId_idx" ON public."CustomerLastVisit" USING btree ("tenantId");
+
+
+--
+-- Name: CustomerLastVisit_tenantId_lastVisitDate_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CustomerLastVisit_tenantId_lastVisitDate_idx" ON public."CustomerLastVisit" USING btree ("tenantId", "lastVisitDate");
+
+
+--
+-- Name: CustomerOrder_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CustomerOrder_branchId_idx" ON public."CustomerOrder" USING btree ("branchId");
+
+
+--
+-- Name: CustomerOrder_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "CustomerOrder_tenantId_idx" ON public."CustomerOrder" USING btree ("tenantId");
 
 
 --
@@ -5332,6 +13546,20 @@ CREATE UNIQUE INDEX "Customer_customerId_key" ON public."Customer" USING btree (
 
 
 --
+-- Name: Customer_tenantId_birthDate_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Customer_tenantId_birthDate_idx" ON public."Customer" USING btree ("tenantId", "birthDate");
+
+
+--
+-- Name: Customer_tenantId_branchId_deletedAt_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Customer_tenantId_branchId_deletedAt_idx" ON public."Customer" USING btree ("tenantId", "branchId", "deletedAt");
+
+
+--
 -- Name: Customer_tenantId_cellPhone_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -5346,6 +13574,13 @@ CREATE INDEX "Customer_tenantId_customerId_idx" ON public."Customer" USING btree
 
 
 --
+-- Name: Customer_tenantId_deletedAt_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Customer_tenantId_deletedAt_idx" ON public."Customer" USING btree ("tenantId", "deletedAt");
+
+
+--
 -- Name: Customer_tenantId_email_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -5353,10 +13588,52 @@ CREATE INDEX "Customer_tenantId_email_idx" ON public."Customer" USING btree ("te
 
 
 --
+-- Name: Customer_tenantId_lastNameHe_firstNameHe_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Customer_tenantId_lastNameHe_firstNameHe_idx" ON public."Customer" USING btree ("tenantId", "lastNameHe", "firstNameHe");
+
+
+--
 -- Name: Customer_tenantId_lastName_firstName_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX "Customer_tenantId_lastName_firstName_idx" ON public."Customer" USING btree ("tenantId", "lastName", "firstName");
+
+
+--
+-- Name: DataMigrationError_migrationId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "DataMigrationError_migrationId_idx" ON public."DataMigrationError" USING btree ("migrationId");
+
+
+--
+-- Name: DataMigrationError_timestamp_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "DataMigrationError_timestamp_idx" ON public."DataMigrationError" USING btree ("timestamp");
+
+
+--
+-- Name: DataMigrationRun_createdAt_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "DataMigrationRun_createdAt_idx" ON public."DataMigrationRun" USING btree ("createdAt");
+
+
+--
+-- Name: DataMigrationRun_status_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "DataMigrationRun_status_idx" ON public."DataMigrationRun" USING btree (status);
+
+
+--
+-- Name: DataMigrationRun_tenantId_status_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "DataMigrationRun_tenantId_status_idx" ON public."DataMigrationRun" USING btree ("tenantId", status);
 
 
 --
@@ -5430,6 +13707,20 @@ CREATE INDEX "Discount_tenantId_code_idx" ON public."Discount" USING btree ("ten
 
 
 --
+-- Name: DiseaseDiagnosis_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "DiseaseDiagnosis_branchId_idx" ON public."DiseaseDiagnosis" USING btree ("branchId");
+
+
+--
+-- Name: DiseaseDiagnosis_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "DiseaseDiagnosis_tenantId_idx" ON public."DiseaseDiagnosis" USING btree ("tenantId");
+
+
+--
 -- Name: DocumentTemplate_tenantId_category_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -5486,6 +13777,20 @@ CREATE INDEX "Document_tenantId_status_idx" ON public."Document" USING btree ("t
 
 
 --
+-- Name: Dummy_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Dummy_branchId_idx" ON public."Dummy" USING btree ("branchId");
+
+
+--
+-- Name: Dummy_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Dummy_tenantId_idx" ON public."Dummy" USING btree ("tenantId");
+
+
+--
 -- Name: EmployeeCommissionRule_employeeId_ruleId_key; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -5497,6 +13802,69 @@ CREATE UNIQUE INDEX "EmployeeCommissionRule_employeeId_ruleId_key" ON public."Em
 --
 
 CREATE INDEX "EmployeeCommissionRule_tenantId_employeeId_idx" ON public."EmployeeCommissionRule" USING btree ("tenantId", "employeeId");
+
+
+--
+-- Name: EquipmentConfig_equipmentType_isActive_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "EquipmentConfig_equipmentType_isActive_idx" ON public."EquipmentConfig" USING btree ("equipmentType", "isActive");
+
+
+--
+-- Name: EquipmentConfig_tenantId_branchId_isActive_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "EquipmentConfig_tenantId_branchId_isActive_idx" ON public."EquipmentConfig" USING btree ("tenantId", "branchId", "isActive");
+
+
+--
+-- Name: EquipmentConfig_tenantId_isActive_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "EquipmentConfig_tenantId_isActive_idx" ON public."EquipmentConfig" USING btree ("tenantId", "isActive");
+
+
+--
+-- Name: EquipmentImportLog_equipmentId_importDate_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "EquipmentImportLog_equipmentId_importDate_idx" ON public."EquipmentImportLog" USING btree ("equipmentId", "importDate");
+
+
+--
+-- Name: EquipmentImportLog_examinationId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "EquipmentImportLog_examinationId_idx" ON public."EquipmentImportLog" USING btree ("examinationId");
+
+
+--
+-- Name: EquipmentImportLog_tenantId_importDate_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "EquipmentImportLog_tenantId_importDate_idx" ON public."EquipmentImportLog" USING btree ("tenantId", "importDate");
+
+
+--
+-- Name: ExamTemplate_tenantId_isActive_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ExamTemplate_tenantId_isActive_idx" ON public."ExamTemplate" USING btree ("tenantId", "isActive");
+
+
+--
+-- Name: ExamTemplate_tenantId_isDefault_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ExamTemplate_tenantId_isDefault_idx" ON public."ExamTemplate" USING btree ("tenantId", "isDefault");
+
+
+--
+-- Name: ExamTemplate_tenantId_templateType_isActive_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ExamTemplate_tenantId_templateType_isActive_idx" ON public."ExamTemplate" USING btree ("tenantId", "templateType", "isActive");
 
 
 --
@@ -5521,6 +13889,20 @@ CREATE INDEX "ExaminationOverview_tenantId_idx" ON public."ExaminationOverview" 
 
 
 --
+-- Name: Examination_protocolId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Examination_protocolId_idx" ON public."Examination" USING btree ("protocolId");
+
+
+--
+-- Name: Examination_templateId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Examination_templateId_idx" ON public."Examination" USING btree ("templateId");
+
+
+--
 -- Name: Examination_tenantId_customerId_examDate_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -5528,10 +13910,24 @@ CREATE INDEX "Examination_tenantId_customerId_examDate_idx" ON public."Examinati
 
 
 --
+-- Name: Examination_tenantId_deletedAt_examDate_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Examination_tenantId_deletedAt_examDate_idx" ON public."Examination" USING btree ("tenantId", "deletedAt", "examDate");
+
+
+--
 -- Name: Examination_tenantId_doctorId_examDate_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX "Examination_tenantId_doctorId_examDate_idx" ON public."Examination" USING btree ("tenantId", "doctorId", "examDate");
+
+
+--
+-- Name: Examination_tenantId_examType_examDate_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Examination_tenantId_examType_examDate_idx" ON public."Examination" USING btree ("tenantId", "examType", "examDate");
 
 
 --
@@ -5556,6 +13952,20 @@ CREATE INDEX "Expense_tenantId_status_idx" ON public."Expense" USING btree ("ten
 
 
 --
+-- Name: Eye_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Eye_branchId_idx" ON public."Eye" USING btree ("branchId");
+
+
+--
+-- Name: Eye_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Eye_tenantId_idx" ON public."Eye" USING btree ("tenantId");
+
+
+--
 -- Name: FRPLine_frpId_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -5567,6 +13977,48 @@ CREATE INDEX "FRPLine_frpId_idx" ON public."FRPLine" USING btree ("frpId");
 --
 
 CREATE INDEX "FRPLine_lineDate_idx" ON public."FRPLine" USING btree ("lineDate");
+
+
+--
+-- Name: FamilyRelationship_tenantId_customerId_relatedCustomerId_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "FamilyRelationship_tenantId_customerId_relatedCustomerId_key" ON public."FamilyRelationship" USING btree ("tenantId", "customerId", "relatedCustomerId");
+
+
+--
+-- Name: FaxCommunication_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "FaxCommunication_branchId_idx" ON public."FaxCommunication" USING btree ("branchId");
+
+
+--
+-- Name: FaxCommunication_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "FaxCommunication_tenantId_idx" ON public."FaxCommunication" USING btree ("tenantId");
+
+
+--
+-- Name: FollowUpReminder_customerId_status_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "FollowUpReminder_customerId_status_idx" ON public."FollowUpReminder" USING btree ("customerId", status);
+
+
+--
+-- Name: FollowUpReminder_tenantId_reminderType_dueDate_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "FollowUpReminder_tenantId_reminderType_dueDate_idx" ON public."FollowUpReminder" USING btree ("tenantId", "reminderType", "dueDate");
+
+
+--
+-- Name: FollowUpReminder_tenantId_status_dueDate_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "FollowUpReminder_tenantId_status_dueDate_idx" ON public."FollowUpReminder" USING btree ("tenantId", status, "dueDate");
 
 
 --
@@ -5616,6 +14068,48 @@ CREATE INDEX "FrameCatalog_tenantId_brand_model_idx" ON public."FrameCatalog" US
 --
 
 CREATE INDEX "FrameCatalog_tenantId_catalogNumber_idx" ON public."FrameCatalog" USING btree ("tenantId", "catalogNumber");
+
+
+--
+-- Name: FrameData_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "FrameData_branchId_idx" ON public."FrameData" USING btree ("branchId");
+
+
+--
+-- Name: FrameData_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "FrameData_tenantId_idx" ON public."FrameData" USING btree ("tenantId");
+
+
+--
+-- Name: FrameTrial_checkDate_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "FrameTrial_checkDate_idx" ON public."FrameTrial" USING btree ("checkDate");
+
+
+--
+-- Name: FrameTrial_customerId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "FrameTrial_customerId_idx" ON public."FrameTrial" USING btree ("customerId");
+
+
+--
+-- Name: FrameTrial_tenantId_customerId_checkDate_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "FrameTrial_tenantId_customerId_checkDate_idx" ON public."FrameTrial" USING btree ("tenantId", "customerId", "checkDate");
+
+
+--
+-- Name: FrameTrial_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "FrameTrial_tenantId_idx" ON public."FrameTrial" USING btree ("tenantId");
 
 
 --
@@ -5885,6 +14379,314 @@ CREATE UNIQUE INDEX "GlassUse_useId_key" ON public."GlassUse" USING btree ("useI
 
 
 --
+-- Name: Household_tenantId_householdHash_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "Household_tenantId_householdHash_key" ON public."Household" USING btree ("tenantId", "householdHash");
+
+
+--
+-- Name: IDX_POSAuditLog_tenant_action_date; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSAuditLog_tenant_action_date" ON public."POSAuditLog" USING btree ("tenantId", action, "createdAt");
+
+
+--
+-- Name: IDX_POSAuditLog_tenant_date; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSAuditLog_tenant_date" ON public."POSAuditLog" USING btree ("tenantId", "createdAt");
+
+
+--
+-- Name: IDX_POSAuditLog_tenant_entity; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSAuditLog_tenant_entity" ON public."POSAuditLog" USING btree ("tenantId", "entityType", "entityId");
+
+
+--
+-- Name: IDX_POSAuditLog_tenant_user_date; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSAuditLog_tenant_user_date" ON public."POSAuditLog" USING btree ("tenantId", "userId", "createdAt");
+
+
+--
+-- Name: IDX_POSCashDrop_tenant_date; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSCashDrop_tenant_date" ON public."POSCashDrop" USING btree ("tenantId", "createdAt");
+
+
+--
+-- Name: IDX_POSCashDrop_tenant_shift; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSCashDrop_tenant_shift" ON public."POSCashDrop" USING btree ("tenantId", "shiftId");
+
+
+--
+-- Name: IDX_POSCashPickup_tenant_shift; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSCashPickup_tenant_shift" ON public."POSCashPickup" USING btree ("tenantId", "shiftId");
+
+
+--
+-- Name: IDX_POSInventoryMovement_tenant_branch_date; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSInventoryMovement_tenant_branch_date" ON public."POSInventoryMovement" USING btree ("tenantId", "branchId", "createdAt");
+
+
+--
+-- Name: IDX_POSInventoryMovement_tenant_product; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSInventoryMovement_tenant_product" ON public."POSInventoryMovement" USING btree ("tenantId", "productId");
+
+
+--
+-- Name: IDX_POSInventoryMovement_transaction; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSInventoryMovement_transaction" ON public."POSInventoryMovement" USING btree ("transactionId");
+
+
+--
+-- Name: IDX_POSPaymentRefund_payment; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSPaymentRefund_payment" ON public."POSPaymentRefund" USING btree ("paymentId");
+
+
+--
+-- Name: IDX_POSPayment_tenant_method_date; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSPayment_tenant_method_date" ON public."POSPayment" USING btree ("tenantId", "paymentMethod", "createdAt");
+
+
+--
+-- Name: IDX_POSPayment_tenant_status; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSPayment_tenant_status" ON public."POSPayment" USING btree ("tenantId", status);
+
+
+--
+-- Name: IDX_POSPayment_tenant_transaction; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSPayment_tenant_transaction" ON public."POSPayment" USING btree ("tenantId", "transactionId");
+
+
+--
+-- Name: IDX_POSPriceListItem_priceList; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSPriceListItem_priceList" ON public."POSPriceListItem" USING btree ("priceListId");
+
+
+--
+-- Name: IDX_POSPriceListItem_product; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSPriceListItem_product" ON public."POSPriceListItem" USING btree ("productId");
+
+
+--
+-- Name: IDX_POSPriceList_tenant_active; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSPriceList_tenant_active" ON public."POSPriceList" USING btree ("tenantId", "isActive");
+
+
+--
+-- Name: IDX_POSReceipt_tenant_branch_date; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSReceipt_tenant_branch_date" ON public."POSReceipt" USING btree ("tenantId", "branchId", "createdAt");
+
+
+--
+-- Name: IDX_POSReceipt_tenant_customer; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSReceipt_tenant_customer" ON public."POSReceipt" USING btree ("tenantId", "customerId");
+
+
+--
+-- Name: IDX_POSReceipt_tenant_date; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSReceipt_tenant_date" ON public."POSReceipt" USING btree ("tenantId", "createdAt");
+
+
+--
+-- Name: IDX_POSReportSnapshot_tenant_branch_date; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSReportSnapshot_tenant_branch_date" ON public."POSReportSnapshot" USING btree ("tenantId", "branchId", "createdAt");
+
+
+--
+-- Name: IDX_POSReportSnapshot_tenant_type_date; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSReportSnapshot_tenant_type_date" ON public."POSReportSnapshot" USING btree ("tenantId", "reportType", "createdAt");
+
+
+--
+-- Name: IDX_POSSession_tenant_terminal_status; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSSession_tenant_terminal_status" ON public."POSSession" USING btree ("tenantId", "terminalId", status);
+
+
+--
+-- Name: IDX_POSSession_tenant_user_start; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSSession_tenant_user_start" ON public."POSSession" USING btree ("tenantId", "userId", "startTime");
+
+
+--
+-- Name: IDX_POSSyncQueue_status_priority; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSSyncQueue_status_priority" ON public."POSSyncQueue" USING btree (status, priority, "createdAt");
+
+
+--
+-- Name: IDX_POSSyncQueue_tenant_terminal_status; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSSyncQueue_tenant_terminal_status" ON public."POSSyncQueue" USING btree ("tenantId", "terminalId", status);
+
+
+--
+-- Name: IDX_POSTerminal_tenant_branch_status; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSTerminal_tenant_branch_status" ON public."POSTerminal" USING btree ("tenantId", "branchId", status);
+
+
+--
+-- Name: IDX_POSTerminal_tenant_online; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSTerminal_tenant_online" ON public."POSTerminal" USING btree ("tenantId", status, "isOnline");
+
+
+--
+-- Name: IDX_POSTransactionDiscount_transaction; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSTransactionDiscount_transaction" ON public."POSTransactionDiscount" USING btree ("transactionId");
+
+
+--
+-- Name: IDX_POSTransactionEvent_transaction; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSTransactionEvent_transaction" ON public."POSTransactionEvent" USING btree ("transactionId");
+
+
+--
+-- Name: IDX_POSTransactionItem_product; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSTransactionItem_product" ON public."POSTransactionItem" USING btree ("productId");
+
+
+--
+-- Name: IDX_POSTransactionItem_transaction; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSTransactionItem_transaction" ON public."POSTransactionItem" USING btree ("transactionId");
+
+
+--
+-- Name: IDX_POSTransactionTax_transaction; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSTransactionTax_transaction" ON public."POSTransactionTax" USING btree ("transactionId");
+
+
+--
+-- Name: IDX_POSTransaction_tenant_branch_date; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSTransaction_tenant_branch_date" ON public."POSTransaction" USING btree ("tenantId", "branchId", "transactionDate");
+
+
+--
+-- Name: IDX_POSTransaction_tenant_cashier_date; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSTransaction_tenant_cashier_date" ON public."POSTransaction" USING btree ("tenantId", "cashierId", "transactionDate");
+
+
+--
+-- Name: IDX_POSTransaction_tenant_customer; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSTransaction_tenant_customer" ON public."POSTransaction" USING btree ("tenantId", "customerId");
+
+
+--
+-- Name: IDX_POSTransaction_tenant_date; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSTransaction_tenant_date" ON public."POSTransaction" USING btree ("tenantId", "transactionDate");
+
+
+--
+-- Name: IDX_POSTransaction_tenant_session; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSTransaction_tenant_session" ON public."POSTransaction" USING btree ("tenantId", "sessionId");
+
+
+--
+-- Name: IDX_POSTransaction_tenant_shift; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSTransaction_tenant_shift" ON public."POSTransaction" USING btree ("tenantId", "shiftId");
+
+
+--
+-- Name: IDX_POSTransaction_tenant_status; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSTransaction_tenant_status" ON public."POSTransaction" USING btree ("tenantId", status);
+
+
+--
+-- Name: IDX_POSTransaction_tenant_terminal_date; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_POSTransaction_tenant_terminal_date" ON public."POSTransaction" USING btree ("tenantId", "terminalId", "transactionDate");
+
+
+--
+-- Name: InvMoveType_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "InvMoveType_branchId_idx" ON public."InvMoveType" USING btree ("branchId");
+
+
+--
+-- Name: InvMoveType_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "InvMoveType_tenantId_idx" ON public."InvMoveType" USING btree ("tenantId");
+
+
+--
 -- Name: InventoryAdjustmentItem_adjustmentId_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -5896,6 +14698,13 @@ CREATE INDEX "InventoryAdjustmentItem_adjustmentId_idx" ON public."InventoryAdju
 --
 
 CREATE INDEX "InventoryAdjustmentItem_productId_idx" ON public."InventoryAdjustmentItem" USING btree ("productId");
+
+
+--
+-- Name: InventoryAdjustmentItem_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "InventoryAdjustmentItem_tenantId_idx" ON public."InventoryAdjustmentItem" USING btree ("tenantId");
 
 
 --
@@ -5913,6 +14722,20 @@ CREATE INDEX "InventoryAdjustment_tenantId_adjustmentDate_idx" ON public."Invent
 
 
 --
+-- Name: InventoryReference_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "InventoryReference_branchId_idx" ON public."InventoryReference" USING btree ("branchId");
+
+
+--
+-- Name: InventoryReference_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "InventoryReference_tenantId_idx" ON public."InventoryReference" USING btree ("tenantId");
+
+
+--
 -- Name: InvoiceCredit_invoiceId_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -5924,6 +14747,41 @@ CREATE INDEX "InvoiceCredit_invoiceId_idx" ON public."InvoiceCredit" USING btree
 --
 
 CREATE INDEX "InvoicePayment_invoiceId_idx" ON public."InvoicePayment" USING btree ("invoiceId");
+
+
+--
+-- Name: InvoicePayment_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "InvoicePayment_tenantId_idx" ON public."InvoicePayment" USING btree ("tenantId");
+
+
+--
+-- Name: InvoiceType_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "InvoiceType_branchId_idx" ON public."InvoiceType" USING btree ("branchId");
+
+
+--
+-- Name: InvoiceType_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "InvoiceType_tenantId_idx" ON public."InvoiceType" USING btree ("tenantId");
+
+
+--
+-- Name: InvoiceVerification_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "InvoiceVerification_branchId_idx" ON public."InvoiceVerification" USING btree ("branchId");
+
+
+--
+-- Name: InvoiceVerification_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "InvoiceVerification_tenantId_idx" ON public."InvoiceVerification" USING btree ("tenantId");
 
 
 --
@@ -5945,6 +14803,41 @@ CREATE UNIQUE INDEX "Invoice_invoiceId_key" ON public."Invoice" USING btree ("in
 --
 
 CREATE INDEX "Invoice_supplierId_idx" ON public."Invoice" USING btree ("supplierId");
+
+
+--
+-- Name: ItemCountsYear_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ItemCountsYear_branchId_idx" ON public."ItemCountsYear" USING btree ("branchId");
+
+
+--
+-- Name: ItemCountsYear_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ItemCountsYear_tenantId_idx" ON public."ItemCountsYear" USING btree ("tenantId");
+
+
+--
+-- Name: ItemStatus_tenantId_productId_year_month_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ItemStatus_tenantId_productId_year_month_idx" ON public."ItemStatus" USING btree ("tenantId", "productId", year, month);
+
+
+--
+-- Name: ItemStatus_tenantId_productId_year_month_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "ItemStatus_tenantId_productId_year_month_key" ON public."ItemStatus" USING btree ("tenantId", "productId", year, month);
+
+
+--
+-- Name: ItemStatus_tenantId_year_month_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ItemStatus_tenantId_year_month_idx" ON public."ItemStatus" USING btree ("tenantId", year, month);
 
 
 --
@@ -5980,6 +14873,20 @@ CREATE INDEX "LabelTemplate_tenantId_category_isActive_idx" ON public."LabelTemp
 --
 
 CREATE UNIQUE INDEX "LabelTemplate_tenantId_name_key" ON public."LabelTemplate" USING btree ("tenantId", name);
+
+
+--
+-- Name: Lang_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Lang_branchId_idx" ON public."Lang" USING btree ("branchId");
+
+
+--
+-- Name: Lang_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Lang_tenantId_idx" ON public."Lang" USING btree ("tenantId");
 
 
 --
@@ -6046,6 +14953,20 @@ CREATE INDEX "LensMaterial_tenantId_idx" ON public."LensMaterial" USING btree ("
 
 
 --
+-- Name: LensSolution_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "LensSolution_branchId_idx" ON public."LensSolution" USING btree ("branchId");
+
+
+--
+-- Name: LensSolution_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "LensSolution_tenantId_idx" ON public."LensSolution" USING btree ("tenantId");
+
+
+--
 -- Name: LensTreatmentCharacteristic_lensTypeId_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -6071,6 +14992,20 @@ CREATE INDEX "LensTreatmentCharacteristic_tenantId_idx" ON public."LensTreatment
 --
 
 CREATE UNIQUE INDEX "LensTreatmentCharacteristic_treatmentCharId_key" ON public."LensTreatmentCharacteristic" USING btree ("treatmentCharId");
+
+
+--
+-- Name: LensTreatment_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "LensTreatment_branchId_idx" ON public."LensTreatment" USING btree ("branchId");
+
+
+--
+-- Name: LensTreatment_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "LensTreatment_tenantId_idx" ON public."LensTreatment" USING btree ("tenantId");
 
 
 --
@@ -6207,10 +15142,206 @@ CREATE INDEX "LowVisionManufacturer_tenantId_idx" ON public."LowVisionManufactur
 
 
 --
+-- Name: MessageAttachment_messageId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "MessageAttachment_messageId_idx" ON public."MessageAttachment" USING btree ("messageId");
+
+
+--
+-- Name: MessageAttachment_uploaderId_uploaderType_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "MessageAttachment_uploaderId_uploaderType_idx" ON public."MessageAttachment" USING btree ("uploaderId", "uploaderType");
+
+
+--
 -- Name: MessageTemplate_tenantId_name_language_type_key; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE UNIQUE INDEX "MessageTemplate_tenantId_name_language_type_key" ON public."MessageTemplate" USING btree ("tenantId", name, language, type);
+
+
+--
+-- Name: Message_conversationId_createdAt_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Message_conversationId_createdAt_idx" ON public."Message" USING btree ("conversationId", "createdAt");
+
+
+--
+-- Name: Message_readAt_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Message_readAt_idx" ON public."Message" USING btree ("readAt");
+
+
+--
+-- Name: Message_senderId_senderType_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Message_senderId_senderType_idx" ON public."Message" USING btree ("senderId", "senderType");
+
+
+--
+-- Name: MigrationLog_level_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "MigrationLog_level_idx" ON public."MigrationLog" USING btree (level);
+
+
+--
+-- Name: MigrationLog_migrationId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "MigrationLog_migrationId_idx" ON public."MigrationLog" USING btree ("migrationId");
+
+
+--
+-- Name: MigrationLog_timestamp_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "MigrationLog_timestamp_idx" ON public."MigrationLog" USING btree ("timestamp" DESC);
+
+
+--
+-- Name: MigrationRun_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "MigrationRun_branchId_idx" ON public."MigrationRun" USING btree ("branchId");
+
+
+--
+-- Name: MigrationRun_createdBy_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "MigrationRun_createdBy_idx" ON public."MigrationRun" USING btree ("createdBy");
+
+
+--
+-- Name: MigrationRun_startedAt_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "MigrationRun_startedAt_idx" ON public."MigrationRun" USING btree ("startedAt" DESC);
+
+
+--
+-- Name: MigrationRun_status_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "MigrationRun_status_idx" ON public."MigrationRun" USING btree (status);
+
+
+--
+-- Name: MigrationRun_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "MigrationRun_tenantId_idx" ON public."MigrationRun" USING btree ("tenantId");
+
+
+--
+-- Name: MigrationTableResult_migrationId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "MigrationTableResult_migrationId_idx" ON public."MigrationTableResult" USING btree ("migrationId");
+
+
+--
+-- Name: MigrationTableResult_status_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "MigrationTableResult_status_idx" ON public."MigrationTableResult" USING btree (status);
+
+
+--
+-- Name: MigrationTableResult_tableName_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "MigrationTableResult_tableName_idx" ON public."MigrationTableResult" USING btree ("tableName");
+
+
+--
+-- Name: MovementProperty_movementPropertyId_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "MovementProperty_movementPropertyId_key" ON public."MovementProperty" USING btree ("movementPropertyId");
+
+
+--
+-- Name: MovementProperty_tenantId_isActive_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "MovementProperty_tenantId_isActive_idx" ON public."MovementProperty" USING btree ("tenantId", "isActive");
+
+
+--
+-- Name: MovementProperty_tenantId_movementPropertyId_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "MovementProperty_tenantId_movementPropertyId_key" ON public."MovementProperty" USING btree ("tenantId", "movementPropertyId");
+
+
+--
+-- Name: MovementType_movementTypeId_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "MovementType_movementTypeId_key" ON public."MovementType" USING btree ("movementTypeId");
+
+
+--
+-- Name: MovementType_tenantId_category_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "MovementType_tenantId_category_idx" ON public."MovementType" USING btree ("tenantId", category);
+
+
+--
+-- Name: MovementType_tenantId_isActive_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "MovementType_tenantId_isActive_idx" ON public."MovementType" USING btree ("tenantId", "isActive");
+
+
+--
+-- Name: MovementType_tenantId_movementTypeId_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "MovementType_tenantId_movementTypeId_key" ON public."MovementType" USING btree ("tenantId", "movementTypeId");
+
+
+--
+-- Name: NewProduct_displayFrom_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "NewProduct_displayFrom_idx" ON public."NewProduct" USING btree ("displayFrom");
+
+
+--
+-- Name: NewProduct_isActive_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "NewProduct_isActive_idx" ON public."NewProduct" USING btree ("isActive");
+
+
+--
+-- Name: NewProduct_productId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "NewProduct_productId_idx" ON public."NewProduct" USING btree ("productId");
+
+
+--
+-- Name: NewProduct_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "NewProduct_tenantId_idx" ON public."NewProduct" USING btree ("tenantId");
+
+
+--
+-- Name: NewProduct_tenantId_isActive_displayFrom_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "NewProduct_tenantId_isActive_displayFrom_idx" ON public."NewProduct" USING btree ("tenantId", "isActive", "displayFrom");
 
 
 --
@@ -6232,6 +15363,13 @@ CREATE INDEX "OpticalBase_tenantId_idx" ON public."OpticalBase" USING btree ("te
 --
 
 CREATE INDEX "OrderItem_orderId_idx" ON public."OrderItem" USING btree ("orderId");
+
+
+--
+-- Name: OrderItem_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "OrderItem_tenantId_idx" ON public."OrderItem" USING btree ("tenantId");
 
 
 --
@@ -6288,6 +15426,76 @@ CREATE INDEX "OrthokeratologyTreatment_tenantId_idx" ON public."OrthokeratologyT
 --
 
 CREATE INDEX "Orthokeratology_customerId_idx" ON public."Orthokeratology" USING btree ("customerId");
+
+
+--
+-- Name: POSCashDrop_dropNumber_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "POSCashDrop_dropNumber_key" ON public."POSCashDrop" USING btree ("dropNumber");
+
+
+--
+-- Name: POSCashPickup_pickupNumber_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "POSCashPickup_pickupNumber_key" ON public."POSCashPickup" USING btree ("pickupNumber");
+
+
+--
+-- Name: POSPaymentRefund_refundNumber_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "POSPaymentRefund_refundNumber_key" ON public."POSPaymentRefund" USING btree ("refundNumber");
+
+
+--
+-- Name: POSPayment_paymentNumber_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "POSPayment_paymentNumber_key" ON public."POSPayment" USING btree ("paymentNumber");
+
+
+--
+-- Name: POSReceipt_receiptNumber_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "POSReceipt_receiptNumber_key" ON public."POSReceipt" USING btree ("receiptNumber");
+
+
+--
+-- Name: POSReportSnapshot_reportNumber_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "POSReportSnapshot_reportNumber_key" ON public."POSReportSnapshot" USING btree ("reportNumber");
+
+
+--
+-- Name: POSSession_sessionNumber_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "POSSession_sessionNumber_key" ON public."POSSession" USING btree ("sessionNumber");
+
+
+--
+-- Name: POSTransaction_transactionNumber_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "POSTransaction_transactionNumber_key" ON public."POSTransaction" USING btree ("transactionNumber");
+
+
+--
+-- Name: PayType_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "PayType_branchId_idx" ON public."PayType" USING btree ("branchId");
+
+
+--
+-- Name: PayType_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "PayType_tenantId_idx" ON public."PayType" USING btree ("tenantId");
 
 
 --
@@ -6417,6 +15625,90 @@ CREATE INDEX "PriceUpdate_tenantId_status_idx" ON public."PriceUpdate" USING btr
 
 
 --
+-- Name: PrintLabel_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "PrintLabel_branchId_idx" ON public."PrintLabel" USING btree ("branchId");
+
+
+--
+-- Name: PrintLabel_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "PrintLabel_tenantId_idx" ON public."PrintLabel" USING btree ("tenantId");
+
+
+--
+-- Name: PrlType_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "PrlType_branchId_idx" ON public."PrlType" USING btree ("branchId");
+
+
+--
+-- Name: PrlType_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "PrlType_tenantId_idx" ON public."PrlType" USING btree ("tenantId");
+
+
+--
+-- Name: ProductProperty_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ProductProperty_branchId_idx" ON public."ProductProperty" USING btree ("branchId");
+
+
+--
+-- Name: ProductProperty_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ProductProperty_tenantId_idx" ON public."ProductProperty" USING btree ("tenantId");
+
+
+--
+-- Name: ProductReview_createdAt_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ProductReview_createdAt_idx" ON public."ProductReview" USING btree ("createdAt");
+
+
+--
+-- Name: ProductReview_itemType_itemId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ProductReview_itemType_itemId_idx" ON public."ProductReview" USING btree ("itemType", "itemId");
+
+
+--
+-- Name: ProductReview_rating_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ProductReview_rating_idx" ON public."ProductReview" USING btree (rating);
+
+
+--
+-- Name: ProductReview_status_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ProductReview_status_idx" ON public."ProductReview" USING btree (status);
+
+
+--
+-- Name: ProductReview_supplierId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ProductReview_supplierId_idx" ON public."ProductReview" USING btree ("supplierId");
+
+
+--
+-- Name: ProductReview_tenantId_userId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ProductReview_tenantId_userId_idx" ON public."ProductReview" USING btree ("tenantId", "userId");
+
+
+--
 -- Name: ProductSerial_saleItemId_key; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -6445,13 +15737,6 @@ CREATE INDEX "ProductSerial_tenantId_status_idx" ON public."ProductSerial" USING
 
 
 --
--- Name: Product_productId_key; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE UNIQUE INDEX "Product_productId_key" ON public."Product" USING btree ("productId");
-
-
---
 -- Name: Product_tenantId_barcode_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -6466,10 +15751,38 @@ CREATE INDEX "Product_tenantId_category_idx" ON public."Product" USING btree ("t
 
 
 --
+-- Name: Product_tenantId_isActive_category_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Product_tenantId_isActive_category_idx" ON public."Product" USING btree ("tenantId", "isActive", category);
+
+
+--
 -- Name: Product_tenantId_isActive_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX "Product_tenantId_isActive_idx" ON public."Product" USING btree ("tenantId", "isActive");
+
+
+--
+-- Name: Product_tenantId_isActive_quantity_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Product_tenantId_isActive_quantity_idx" ON public."Product" USING btree ("tenantId", "isActive", quantity);
+
+
+--
+-- Name: Product_tenantId_name_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Product_tenantId_name_idx" ON public."Product" USING btree ("tenantId", name);
+
+
+--
+-- Name: Product_tenantId_productId_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "Product_tenantId_productId_key" ON public."Product" USING btree ("tenantId", "productId");
 
 
 --
@@ -6487,6 +15800,27 @@ CREATE UNIQUE INDEX "Product_tenantId_sku_key" ON public."Product" USING btree (
 
 
 --
+-- Name: Product_tenantId_trackQuantity_quantity_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Product_tenantId_trackQuantity_quantity_idx" ON public."Product" USING btree ("tenantId", "trackQuantity", quantity);
+
+
+--
+-- Name: Profile_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Profile_branchId_idx" ON public."Profile" USING btree ("branchId");
+
+
+--
+-- Name: Profile_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Profile_tenantId_idx" ON public."Profile" USING btree ("tenantId");
+
+
+--
 -- Name: PurchaseCheck_purchaseId_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -6494,10 +15828,24 @@ CREATE INDEX "PurchaseCheck_purchaseId_idx" ON public."PurchaseCheck" USING btre
 
 
 --
+-- Name: PurchaseCheck_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "PurchaseCheck_tenantId_idx" ON public."PurchaseCheck" USING btree ("tenantId");
+
+
+--
 -- Name: PurchasePayment_purchaseId_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX "PurchasePayment_purchaseId_idx" ON public."PurchasePayment" USING btree ("purchaseId");
+
+
+--
+-- Name: PurchasePayment_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "PurchasePayment_tenantId_idx" ON public."PurchasePayment" USING btree ("tenantId");
 
 
 --
@@ -6519,6 +15867,20 @@ CREATE INDEX "Purchase_purchaseDate_idx" ON public."Purchase" USING btree ("purc
 --
 
 CREATE UNIQUE INDEX "Purchase_purchaseId_key" ON public."Purchase" USING btree ("purchaseId");
+
+
+--
+-- Name: ReferralSource_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ReferralSource_branchId_idx" ON public."ReferralSource" USING btree ("branchId");
+
+
+--
+-- Name: ReferralSource_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ReferralSource_tenantId_idx" ON public."ReferralSource" USING btree ("tenantId");
 
 
 --
@@ -6554,6 +15916,62 @@ CREATE UNIQUE INDEX "RetinoscopyType_retTypeId_key" ON public."RetinoscopyType" 
 --
 
 CREATE INDEX "RetinoscopyType_tenantId_idx" ON public."RetinoscopyType" USING btree ("tenantId");
+
+
+--
+-- Name: ReviewHelpful_reviewId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ReviewHelpful_reviewId_idx" ON public."ReviewHelpful" USING btree ("reviewId");
+
+
+--
+-- Name: ReviewHelpful_reviewId_userId_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "ReviewHelpful_reviewId_userId_key" ON public."ReviewHelpful" USING btree ("reviewId", "userId");
+
+
+--
+-- Name: ReviewHelpful_userId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ReviewHelpful_userId_idx" ON public."ReviewHelpful" USING btree ("userId");
+
+
+--
+-- Name: ReviewReport_reportedBy_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ReviewReport_reportedBy_idx" ON public."ReviewReport" USING btree ("reportedBy");
+
+
+--
+-- Name: ReviewReport_reviewId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ReviewReport_reviewId_idx" ON public."ReviewReport" USING btree ("reviewId");
+
+
+--
+-- Name: ReviewReport_status_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ReviewReport_status_idx" ON public."ReviewReport" USING btree (status);
+
+
+--
+-- Name: SMSLen_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SMSLen_branchId_idx" ON public."SMSLen" USING btree ("branchId");
+
+
+--
+-- Name: SMSLen_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SMSLen_tenantId_idx" ON public."SMSLen" USING btree ("tenantId");
 
 
 --
@@ -6599,6 +16017,27 @@ CREATE INDEX "SaleItem_saleId_idx" ON public."SaleItem" USING btree ("saleId");
 
 
 --
+-- Name: SaleItem_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SaleItem_tenantId_idx" ON public."SaleItem" USING btree ("tenantId");
+
+
+--
+-- Name: SaleItem_tenantId_saleId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SaleItem_tenantId_saleId_idx" ON public."SaleItem" USING btree ("tenantId", "saleId");
+
+
+--
+-- Name: Sale_deletedAt_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Sale_deletedAt_tenantId_idx" ON public."Sale" USING btree ("deletedAt", "tenantId");
+
+
+--
 -- Name: Sale_saleId_key; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -6620,6 +16059,27 @@ CREATE INDEX "Sale_tenantId_customerId_idx" ON public."Sale" USING btree ("tenan
 
 
 --
+-- Name: Sale_tenantId_invoiceType_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Sale_tenantId_invoiceType_idx" ON public."Sale" USING btree ("tenantId", "invoiceType");
+
+
+--
+-- Name: Sale_tenantId_paymentStatus_saleDate_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Sale_tenantId_paymentStatus_saleDate_idx" ON public."Sale" USING btree ("tenantId", "paymentStatus", "saleDate");
+
+
+--
+-- Name: Sale_tenantId_receiptNumber_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Sale_tenantId_receiptNumber_idx" ON public."Sale" USING btree ("tenantId", "receiptNumber");
+
+
+--
 -- Name: Sale_tenantId_saleDate_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -6631,6 +16091,104 @@ CREATE INDEX "Sale_tenantId_saleDate_idx" ON public."Sale" USING btree ("tenantI
 --
 
 CREATE INDEX "Sale_tenantId_sellerId_idx" ON public."Sale" USING btree ("tenantId", "sellerId");
+
+
+--
+-- Name: Sale_tenantId_sellerId_status_saleDate_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Sale_tenantId_sellerId_status_saleDate_idx" ON public."Sale" USING btree ("tenantId", "sellerId", status, "saleDate");
+
+
+--
+-- Name: Sale_tenantId_status_saleDate_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Sale_tenantId_status_saleDate_idx" ON public."Sale" USING btree ("tenantId", status, "saleDate");
+
+
+--
+-- Name: SapakComment_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SapakComment_branchId_idx" ON public."SapakComment" USING btree ("branchId");
+
+
+--
+-- Name: SapakComment_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SapakComment_tenantId_idx" ON public."SapakComment" USING btree ("tenantId");
+
+
+--
+-- Name: SapakDest_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SapakDest_branchId_idx" ON public."SapakDest" USING btree ("branchId");
+
+
+--
+-- Name: SapakDest_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SapakDest_tenantId_idx" ON public."SapakDest" USING btree ("tenantId");
+
+
+--
+-- Name: SapakPerComment_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SapakPerComment_branchId_idx" ON public."SapakPerComment" USING btree ("branchId");
+
+
+--
+-- Name: SapakPerComment_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SapakPerComment_tenantId_idx" ON public."SapakPerComment" USING btree ("tenantId");
+
+
+--
+-- Name: SearchOrder_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SearchOrder_branchId_idx" ON public."SearchOrder" USING btree ("branchId");
+
+
+--
+-- Name: SearchOrder_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SearchOrder_tenantId_idx" ON public."SearchOrder" USING btree ("tenantId");
+
+
+--
+-- Name: ServiceType_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ServiceType_branchId_idx" ON public."ServiceType" USING btree ("branchId");
+
+
+--
+-- Name: ServiceType_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ServiceType_tenantId_idx" ON public."ServiceType" USING btree ("tenantId");
+
+
+--
+-- Name: ShortCut_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ShortCut_branchId_idx" ON public."ShortCut" USING btree ("branchId");
+
+
+--
+-- Name: ShortCut_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ShortCut_tenantId_idx" ON public."ShortCut" USING btree ("tenantId");
 
 
 --
@@ -6648,6 +16206,83 @@ CREATE INDEX "SlitLampExam_examDate_idx" ON public."SlitLampExam" USING btree ("
 
 
 --
+-- Name: SpecialName_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SpecialName_branchId_idx" ON public."SpecialName" USING btree ("branchId");
+
+
+--
+-- Name: SpecialName_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SpecialName_tenantId_idx" ON public."SpecialName" USING btree ("tenantId");
+
+
+--
+-- Name: Special_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Special_branchId_idx" ON public."Special" USING btree ("branchId");
+
+
+--
+-- Name: Special_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Special_tenantId_idx" ON public."Special" USING btree ("tenantId");
+
+
+--
+-- Name: StaffSchedule_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "StaffSchedule_tenantId_idx" ON public."StaffSchedule" USING btree ("tenantId");
+
+
+--
+-- Name: StaffSchedule_tenantId_workDate_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "StaffSchedule_tenantId_workDate_idx" ON public."StaffSchedule" USING btree ("tenantId", "workDate");
+
+
+--
+-- Name: StaffSchedule_userId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "StaffSchedule_userId_idx" ON public."StaffSchedule" USING btree ("userId");
+
+
+--
+-- Name: StaffSchedule_workDate_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "StaffSchedule_workDate_idx" ON public."StaffSchedule" USING btree ("workDate");
+
+
+--
+-- Name: StockMovement_tenantId_exCatNum_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "StockMovement_tenantId_exCatNum_idx" ON public."StockMovement" USING btree ("tenantId", "exCatNum");
+
+
+--
+-- Name: StockMovement_tenantId_invoiceId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "StockMovement_tenantId_invoiceId_idx" ON public."StockMovement" USING btree ("tenantId", "invoiceId");
+
+
+--
+-- Name: StockMovement_tenantId_movementTypeId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "StockMovement_tenantId_movementTypeId_idx" ON public."StockMovement" USING btree ("tenantId", "movementTypeId");
+
+
+--
 -- Name: StockMovement_tenantId_productId_createdAt_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -6662,6 +16297,195 @@ CREATE INDEX "StockMovement_tenantId_type_createdAt_idx" ON public."StockMovemen
 
 
 --
+-- Name: SupplierAccountTransaction_accountId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierAccountTransaction_accountId_idx" ON public."SupplierAccountTransaction" USING btree ("accountId");
+
+
+--
+-- Name: SupplierAccountTransaction_orderId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierAccountTransaction_orderId_idx" ON public."SupplierAccountTransaction" USING btree ("orderId");
+
+
+--
+-- Name: SupplierAccountTransaction_transactionDate_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierAccountTransaction_transactionDate_idx" ON public."SupplierAccountTransaction" USING btree ("transactionDate");
+
+
+--
+-- Name: SupplierAnalytics_supplierId_periodType_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierAnalytics_supplierId_periodType_idx" ON public."SupplierAnalytics" USING btree ("supplierId", "periodType");
+
+
+--
+-- Name: SupplierAnalytics_supplierId_periodType_periodStart_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "SupplierAnalytics_supplierId_periodType_periodStart_key" ON public."SupplierAnalytics" USING btree ("supplierId", "periodType", "periodStart");
+
+
+--
+-- Name: SupplierCatalogCategory_supplierId_isActive_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierCatalogCategory_supplierId_isActive_idx" ON public."SupplierCatalogCategory" USING btree ("supplierId", "isActive");
+
+
+--
+-- Name: SupplierCatalogCategory_supplierId_parentId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierCatalogCategory_supplierId_parentId_idx" ON public."SupplierCatalogCategory" USING btree ("supplierId", "parentId");
+
+
+--
+-- Name: SupplierCatalogItem_barcode_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierCatalogItem_barcode_idx" ON public."SupplierCatalogItem" USING btree (barcode);
+
+
+--
+-- Name: SupplierCatalogItem_sku_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierCatalogItem_sku_idx" ON public."SupplierCatalogItem" USING btree (sku);
+
+
+--
+-- Name: SupplierCatalogItem_supplierId_categoryId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierCatalogItem_supplierId_categoryId_idx" ON public."SupplierCatalogItem" USING btree ("supplierId", "categoryId");
+
+
+--
+-- Name: SupplierCatalogItem_supplierId_sku_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "SupplierCatalogItem_supplierId_sku_key" ON public."SupplierCatalogItem" USING btree ("supplierId", sku);
+
+
+--
+-- Name: SupplierCatalogItem_supplierId_type_isActive_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierCatalogItem_supplierId_type_isActive_idx" ON public."SupplierCatalogItem" USING btree ("supplierId", type, "isActive");
+
+
+--
+-- Name: SupplierCatalogVariant_itemId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierCatalogVariant_itemId_idx" ON public."SupplierCatalogVariant" USING btree ("itemId");
+
+
+--
+-- Name: SupplierCatalogVariant_itemId_sku_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "SupplierCatalogVariant_itemId_sku_key" ON public."SupplierCatalogVariant" USING btree ("itemId", sku);
+
+
+--
+-- Name: SupplierCollectionVisibility_collectionId_tenantId_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "SupplierCollectionVisibility_collectionId_tenantId_key" ON public."SupplierCollectionVisibility" USING btree ("collectionId", "tenantId");
+
+
+--
+-- Name: SupplierCollectionVisibility_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierCollectionVisibility_tenantId_idx" ON public."SupplierCollectionVisibility" USING btree ("tenantId");
+
+
+--
+-- Name: SupplierCollection_supplierId_name_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierCollection_supplierId_name_idx" ON public."SupplierCollection" USING btree ("supplierId", name);
+
+
+--
+-- Name: SupplierCollection_supplierId_published_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierCollection_supplierId_published_idx" ON public."SupplierCollection" USING btree ("supplierId", published);
+
+
+--
+-- Name: SupplierDiscountUsage_discountId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierDiscountUsage_discountId_idx" ON public."SupplierDiscountUsage" USING btree ("discountId");
+
+
+--
+-- Name: SupplierDiscountUsage_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierDiscountUsage_tenantId_idx" ON public."SupplierDiscountUsage" USING btree ("tenantId");
+
+
+--
+-- Name: SupplierDiscount_code_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierDiscount_code_idx" ON public."SupplierDiscount" USING btree (code);
+
+
+--
+-- Name: SupplierDiscount_code_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "SupplierDiscount_code_key" ON public."SupplierDiscount" USING btree (code);
+
+
+--
+-- Name: SupplierDiscount_supplierId_isActive_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierDiscount_supplierId_isActive_idx" ON public."SupplierDiscount" USING btree ("supplierId", "isActive");
+
+
+--
+-- Name: SupplierDiscount_supplierId_startDate_endDate_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierDiscount_supplierId_startDate_endDate_idx" ON public."SupplierDiscount" USING btree ("supplierId", "startDate", "endDate");
+
+
+--
+-- Name: SupplierInventoryLog_createdAt_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierInventoryLog_createdAt_idx" ON public."SupplierInventoryLog" USING btree ("createdAt");
+
+
+--
+-- Name: SupplierInventoryLog_itemId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierInventoryLog_itemId_idx" ON public."SupplierInventoryLog" USING btree ("itemId");
+
+
+--
+-- Name: SupplierInventoryLog_type_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierInventoryLog_type_idx" ON public."SupplierInventoryLog" USING btree (type);
+
+
+--
 -- Name: SupplierOrderItem_orderId_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -6669,17 +16493,17 @@ CREATE INDEX "SupplierOrderItem_orderId_idx" ON public."SupplierOrderItem" USING
 
 
 --
+-- Name: SupplierOrder_accountId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierOrder_accountId_idx" ON public."SupplierOrder" USING btree ("accountId");
+
+
+--
 -- Name: SupplierOrder_orderDate_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX "SupplierOrder_orderDate_idx" ON public."SupplierOrder" USING btree ("orderDate");
-
-
---
--- Name: SupplierOrder_orderNumber_key; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE UNIQUE INDEX "SupplierOrder_orderNumber_key" ON public."SupplierOrder" USING btree ("orderNumber");
 
 
 --
@@ -6704,6 +16528,272 @@ CREATE INDEX "SupplierOrder_tenantId_idx" ON public."SupplierOrder" USING btree 
 
 
 --
+-- Name: SupplierOrder_tenantId_orderNumber_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "SupplierOrder_tenantId_orderNumber_key" ON public."SupplierOrder" USING btree ("tenantId", "orderNumber");
+
+
+--
+-- Name: SupplierPriceAlert_frameCatalogId_isActive_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierPriceAlert_frameCatalogId_isActive_idx" ON public."SupplierPriceAlert" USING btree ("frameCatalogId", "isActive");
+
+
+--
+-- Name: SupplierPriceAlert_lensCatalogId_isActive_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierPriceAlert_lensCatalogId_isActive_idx" ON public."SupplierPriceAlert" USING btree ("lensCatalogId", "isActive");
+
+
+--
+-- Name: SupplierPriceAlert_tenantId_isActive_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierPriceAlert_tenantId_isActive_idx" ON public."SupplierPriceAlert" USING btree ("tenantId", "isActive");
+
+
+--
+-- Name: SupplierPriceAlert_userId_isActive_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierPriceAlert_userId_isActive_idx" ON public."SupplierPriceAlert" USING btree ("userId", "isActive");
+
+
+--
+-- Name: SupplierPriceCache_expiresAt_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierPriceCache_expiresAt_idx" ON public."SupplierPriceCache" USING btree ("expiresAt");
+
+
+--
+-- Name: SupplierPriceCache_frameCatalogId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierPriceCache_frameCatalogId_idx" ON public."SupplierPriceCache" USING btree ("frameCatalogId");
+
+
+--
+-- Name: SupplierPriceCache_frameCatalogId_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "SupplierPriceCache_frameCatalogId_key" ON public."SupplierPriceCache" USING btree ("frameCatalogId");
+
+
+--
+-- Name: SupplierPriceCache_lensCatalogId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierPriceCache_lensCatalogId_idx" ON public."SupplierPriceCache" USING btree ("lensCatalogId");
+
+
+--
+-- Name: SupplierPriceCache_lensCatalogId_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "SupplierPriceCache_lensCatalogId_key" ON public."SupplierPriceCache" USING btree ("lensCatalogId");
+
+
+--
+-- Name: SupplierPriceHistory_frameCatalogId_validFrom_isActive_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierPriceHistory_frameCatalogId_validFrom_isActive_idx" ON public."SupplierPriceHistory" USING btree ("frameCatalogId", "validFrom", "isActive");
+
+
+--
+-- Name: SupplierPriceHistory_isActive_validFrom_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierPriceHistory_isActive_validFrom_idx" ON public."SupplierPriceHistory" USING btree ("isActive", "validFrom");
+
+
+--
+-- Name: SupplierPriceHistory_itemType_validFrom_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierPriceHistory_itemType_validFrom_idx" ON public."SupplierPriceHistory" USING btree ("itemType", "validFrom");
+
+
+--
+-- Name: SupplierPriceHistory_lensCatalogId_validFrom_isActive_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierPriceHistory_lensCatalogId_validFrom_isActive_idx" ON public."SupplierPriceHistory" USING btree ("lensCatalogId", "validFrom", "isActive");
+
+
+--
+-- Name: SupplierPriceHistory_supplierId_validFrom_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierPriceHistory_supplierId_validFrom_idx" ON public."SupplierPriceHistory" USING btree ("supplierId", "validFrom");
+
+
+--
+-- Name: SupplierPriceListItem_itemId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierPriceListItem_itemId_idx" ON public."SupplierPriceListItem" USING btree ("itemId");
+
+
+--
+-- Name: SupplierPriceListItem_priceListId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierPriceListItem_priceListId_idx" ON public."SupplierPriceListItem" USING btree ("priceListId");
+
+
+--
+-- Name: SupplierPriceListItem_priceListId_itemId_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "SupplierPriceListItem_priceListId_itemId_key" ON public."SupplierPriceListItem" USING btree ("priceListId", "itemId");
+
+
+--
+-- Name: SupplierPriceList_supplierId_isActive_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierPriceList_supplierId_isActive_idx" ON public."SupplierPriceList" USING btree ("supplierId", "isActive");
+
+
+--
+-- Name: SupplierRFQItem_frameCatalogId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierRFQItem_frameCatalogId_idx" ON public."SupplierRFQItem" USING btree ("frameCatalogId");
+
+
+--
+-- Name: SupplierRFQItem_lensCatalogId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierRFQItem_lensCatalogId_idx" ON public."SupplierRFQItem" USING btree ("lensCatalogId");
+
+
+--
+-- Name: SupplierRFQItem_rfqId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierRFQItem_rfqId_idx" ON public."SupplierRFQItem" USING btree ("rfqId");
+
+
+--
+-- Name: SupplierRFQ_supplierId_status_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierRFQ_supplierId_status_idx" ON public."SupplierRFQ" USING btree ("supplierId", status);
+
+
+--
+-- Name: SupplierRFQ_tenantId_status_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierRFQ_tenantId_status_idx" ON public."SupplierRFQ" USING btree ("tenantId", status);
+
+
+--
+-- Name: SupplierShipment_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierShipment_branchId_idx" ON public."SupplierShipment" USING btree ("branchId");
+
+
+--
+-- Name: SupplierShipment_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierShipment_tenantId_idx" ON public."SupplierShipment" USING btree ("tenantId");
+
+
+--
+-- Name: SupplierStockAlert_itemId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierStockAlert_itemId_idx" ON public."SupplierStockAlert" USING btree ("itemId");
+
+
+--
+-- Name: SupplierStockAlert_supplierId_isResolved_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierStockAlert_supplierId_isResolved_idx" ON public."SupplierStockAlert" USING btree ("supplierId", "isResolved");
+
+
+--
+-- Name: SupplierTenantAccount_accountNumber_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierTenantAccount_accountNumber_idx" ON public."SupplierTenantAccount" USING btree ("accountNumber");
+
+
+--
+-- Name: SupplierTenantAccount_accountNumber_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "SupplierTenantAccount_accountNumber_key" ON public."SupplierTenantAccount" USING btree ("accountNumber");
+
+
+--
+-- Name: SupplierTenantAccount_supplierId_accountStatus_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierTenantAccount_supplierId_accountStatus_idx" ON public."SupplierTenantAccount" USING btree ("supplierId", "accountStatus");
+
+
+--
+-- Name: SupplierTenantAccount_supplierId_tenantId_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "SupplierTenantAccount_supplierId_tenantId_key" ON public."SupplierTenantAccount" USING btree ("supplierId", "tenantId");
+
+
+--
+-- Name: SupplierTenantActivity_createdAt_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierTenantActivity_createdAt_idx" ON public."SupplierTenantActivity" USING btree ("createdAt");
+
+
+--
+-- Name: SupplierTenantActivity_supplierId_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierTenantActivity_supplierId_tenantId_idx" ON public."SupplierTenantActivity" USING btree ("supplierId", "tenantId");
+
+
+--
+-- Name: SupplierTenantNote_createdBy_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierTenantNote_createdBy_idx" ON public."SupplierTenantNote" USING btree ("createdBy");
+
+
+--
+-- Name: SupplierTenantNote_supplierId_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierTenantNote_supplierId_tenantId_idx" ON public."SupplierTenantNote" USING btree ("supplierId", "tenantId");
+
+
+--
+-- Name: SupplierUser_email_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "SupplierUser_email_key" ON public."SupplierUser" USING btree (email);
+
+
+--
+-- Name: SupplierUser_supplierId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SupplierUser_supplierId_idx" ON public."SupplierUser" USING btree ("supplierId");
+
+
+--
 -- Name: Supplier_name_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -6718,6 +16808,20 @@ CREATE UNIQUE INDEX "Supplier_supplierId_key" ON public."Supplier" USING btree (
 
 
 --
+-- Name: SysLevel_branchId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SysLevel_branchId_idx" ON public."SysLevel" USING btree ("branchId");
+
+
+--
+-- Name: SysLevel_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SysLevel_tenantId_idx" ON public."SysLevel" USING btree ("tenantId");
+
+
+--
 -- Name: TaskAttachment_taskId_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -6725,10 +16829,24 @@ CREATE INDEX "TaskAttachment_taskId_idx" ON public."TaskAttachment" USING btree 
 
 
 --
+-- Name: TaskAttachment_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "TaskAttachment_tenantId_idx" ON public."TaskAttachment" USING btree ("tenantId");
+
+
+--
 -- Name: TaskComment_taskId_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX "TaskComment_taskId_idx" ON public."TaskComment" USING btree ("taskId");
+
+
+--
+-- Name: TaskComment_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "TaskComment_tenantId_idx" ON public."TaskComment" USING btree ("tenantId");
 
 
 --
@@ -6781,6 +16899,20 @@ CREATE UNIQUE INDEX "Tenant_subdomain_key" ON public."Tenant" USING btree (subdo
 
 
 --
+-- Name: UQ_POSTerminal_terminalNumber; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "UQ_POSTerminal_terminalNumber" ON public."POSTerminal" USING btree ("tenantId", "terminalNumber");
+
+
+--
+-- Name: UserSettings_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "UserSettings_tenantId_idx" ON public."UserSettings" USING btree ("tenantId");
+
+
+--
 -- Name: UserSettings_userId_key; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -6802,6 +16934,20 @@ CREATE INDEX "User_tenantId_idx" ON public."User" USING btree ("tenantId");
 
 
 --
+-- Name: VATRate_tenantId_effectiveFrom_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "VATRate_tenantId_effectiveFrom_idx" ON public."VATRate" USING btree ("tenantId", "effectiveFrom");
+
+
+--
+-- Name: VATRate_tenantId_isActive_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "VATRate_tenantId_isActive_idx" ON public."VATRate" USING btree ("tenantId", "isActive");
+
+
+--
 -- Name: VisionTest_customerId_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -6813,6 +16959,76 @@ CREATE INDEX "VisionTest_customerId_idx" ON public."VisionTest" USING btree ("cu
 --
 
 CREATE INDEX "VisionTest_testDate_idx" ON public."VisionTest" USING btree ("testDate");
+
+
+--
+-- Name: WishlistItem_itemType_itemId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "WishlistItem_itemType_itemId_idx" ON public."WishlistItem" USING btree ("itemType", "itemId");
+
+
+--
+-- Name: WishlistItem_supplierId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "WishlistItem_supplierId_idx" ON public."WishlistItem" USING btree ("supplierId");
+
+
+--
+-- Name: WishlistItem_wishlistId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "WishlistItem_wishlistId_idx" ON public."WishlistItem" USING btree ("wishlistId");
+
+
+--
+-- Name: WishlistItem_wishlistId_itemType_itemId_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "WishlistItem_wishlistId_itemType_itemId_key" ON public."WishlistItem" USING btree ("wishlistId", "itemType", "itemId");
+
+
+--
+-- Name: WishlistShare_sharedWith_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "WishlistShare_sharedWith_idx" ON public."WishlistShare" USING btree ("sharedWith");
+
+
+--
+-- Name: WishlistShare_wishlistId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "WishlistShare_wishlistId_idx" ON public."WishlistShare" USING btree ("wishlistId");
+
+
+--
+-- Name: Wishlist_shareToken_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Wishlist_shareToken_idx" ON public."Wishlist" USING btree ("shareToken");
+
+
+--
+-- Name: Wishlist_shareToken_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "Wishlist_shareToken_key" ON public."Wishlist" USING btree ("shareToken");
+
+
+--
+-- Name: Wishlist_tenantId_userId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Wishlist_tenantId_userId_idx" ON public."Wishlist" USING btree ("tenantId", "userId");
+
+
+--
+-- Name: Wishlist_userId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Wishlist_userId_idx" ON public."Wishlist" USING btree ("userId");
 
 
 --
@@ -6848,6 +17064,13 @@ CREATE INDEX "WorkLabel_supplierId_idx" ON public."WorkLabel" USING btree ("supp
 --
 
 CREATE INDEX "WorkLabel_tenantId_idx" ON public."WorkLabel" USING btree ("tenantId");
+
+
+--
+-- Name: WorkOrderStatus_tenantId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "WorkOrderStatus_tenantId_idx" ON public."WorkOrderStatus" USING btree ("tenantId");
 
 
 --
@@ -6956,6 +17179,199 @@ CREATE UNIQUE INDEX "ZipCode_zipCode_key" ON public."ZipCode" USING btree ("zipC
 
 
 --
+-- Name: _DiscountToItems_B_index; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "_DiscountToItems_B_index" ON public."_DiscountToItems" USING btree ("B");
+
+
+--
+-- Name: appointment_tenant_apt_ux; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX appointment_tenant_apt_ux ON public."Appointment" USING btree ("tenantId", id);
+
+
+--
+-- Name: checktype_tenant_checkid_ux; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX checktype_tenant_checkid_ux ON public."CheckType" USING btree ("tenantId", "checkId");
+
+
+--
+-- Name: city_tenant_cityid_ux; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX city_tenant_cityid_ux ON public."City" USING btree ("tenantId", "cityId");
+
+
+--
+-- Name: contactagent_natkey_ux; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX contactagent_natkey_ux ON public."ContactAgent" USING btree ("tenantId", "customerId", "firstName", "lastName");
+
+
+--
+-- Name: customer_tenant_customerid_ux; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX customer_tenant_customerid_ux ON public."Customer" USING btree ("tenantId", "customerId");
+
+
+--
+-- Name: idx_audit_customer; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_audit_customer ON public."FamilyAuditLog" USING btree ("tenantId", "customerId");
+
+
+--
+-- Name: idx_audit_date; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_audit_date ON public."FamilyAuditLog" USING btree ("tenantId", "createdAt");
+
+
+--
+-- Name: idx_audit_relationship; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_audit_relationship ON public."FamilyAuditLog" USING btree ("relationshipId");
+
+
+--
+-- Name: idx_audit_user; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_audit_user ON public."FamilyAuditLog" USING btree ("userId");
+
+
+--
+-- Name: idx_family_confidence; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_family_confidence ON public."FamilyRelationship" USING btree ("confidenceScore");
+
+
+--
+-- Name: idx_family_customer; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_family_customer ON public."FamilyRelationship" USING btree ("tenantId", "customerId");
+
+
+--
+-- Name: idx_family_deleted; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_family_deleted ON public."FamilyRelationship" USING btree ("deletedAt");
+
+
+--
+-- Name: idx_family_related; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_family_related ON public."FamilyRelationship" USING btree ("tenantId", "relatedCustomerId");
+
+
+--
+-- Name: idx_family_verified; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_family_verified ON public."FamilyRelationship" USING btree ("tenantId", verified);
+
+
+--
+-- Name: idx_household_activity; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_household_activity ON public."Household" USING btree ("tenantId", "lastActivityDate");
+
+
+--
+-- Name: idx_household_tenant; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_household_tenant ON public."Household" USING btree ("tenantId");
+
+
+--
+-- Name: idx_household_value; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_household_value ON public."Household" USING btree ("tenantId", "lifetimeValue");
+
+
+--
+-- Name: invoicecredit_natkey_ux; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX invoicecredit_natkey_ux ON public."InvoiceCredit" USING btree ("invoiceId", "creditDate", amount);
+
+
+--
+-- Name: prescription_tenant_customer_prev_ux; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX prescription_tenant_customer_prev_ux ON public."Prescription" USING btree ("tenantId", id);
+
+
+--
+-- Name: staffschedule_user_date_ux; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX staffschedule_user_date_ux ON public."StaffSchedule" USING btree ("tenantId", "userId", "workDate");
+
+
+--
+-- Name: user_tenant_email_ux; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX user_tenant_email_ux ON public."User" USING btree ("tenantId", email);
+
+
+--
+-- Name: worklab_tenant_labid_ux; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX worklab_tenant_labid_ux ON public."WorkLab" USING btree ("tenantId", "labId");
+
+
+--
+-- Name: AISuggestion AISuggestion_examinationId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."AISuggestion"
+    ADD CONSTRAINT "AISuggestion_examinationId_fkey" FOREIGN KEY ("examinationId") REFERENCES public."Examination"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: AISuggestion AISuggestion_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."AISuggestion"
+    ADD CONSTRAINT "AISuggestion_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: AddressLookup AddressLookup_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."AddressLookup"
+    ADD CONSTRAINT "AddressLookup_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: AddressLookup AddressLookup_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."AddressLookup"
+    ADD CONSTRAINT "AddressLookup_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
 -- Name: AdvancedExamination AdvancedExamination_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -6996,6 +17412,22 @@ ALTER TABLE ONLY public."AdvancedExamination"
 
 
 --
+-- Name: ApplicationSetting ApplicationSetting_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ApplicationSetting"
+    ADD CONSTRAINT "ApplicationSetting_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: ApplicationSetting ApplicationSetting_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ApplicationSetting"
+    ADD CONSTRAINT "ApplicationSetting_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
 -- Name: Appointment Appointment_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -7028,6 +17460,30 @@ ALTER TABLE ONLY public."Appointment"
 
 
 --
+-- Name: AuditLog AuditLog_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."AuditLog"
+    ADD CONSTRAINT "AuditLog_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: AuditLog AuditLog_userId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."AuditLog"
+    ADD CONSTRAINT "AuditLog_userId_fkey" FOREIGN KEY ("userId") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: BarcodeManagement BarcodeManagement_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."BarcodeManagement"
+    ADD CONSTRAINT "BarcodeManagement_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
 -- Name: BarcodeManagement BarcodeManagement_productId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -7041,6 +17497,38 @@ ALTER TABLE ONLY public."BarcodeManagement"
 
 ALTER TABLE ONLY public."BarcodeManagement"
     ADD CONSTRAINT "BarcodeManagement_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: Base Base_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Base"
+    ADD CONSTRAINT "Base_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: Base Base_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Base"
+    ADD CONSTRAINT "Base_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: BisData BisData_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."BisData"
+    ADD CONSTRAINT "BisData_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: BisData BisData_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."BisData"
+    ADD CONSTRAINT "BisData_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
@@ -7065,6 +17553,22 @@ ALTER TABLE ONLY public."Branch"
 
 ALTER TABLE ONLY public."Brand"
     ADD CONSTRAINT "Brand_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: BusinessContact BusinessContact_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."BusinessContact"
+    ADD CONSTRAINT "BusinessContact_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: BusinessContact BusinessContact_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."BusinessContact"
+    ADD CONSTRAINT "BusinessContact_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
@@ -7148,6 +17652,222 @@ ALTER TABLE ONLY public."CashierShift"
 
 
 --
+-- Name: ChatChannelMember ChatChannelMember_channelId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatChannelMember"
+    ADD CONSTRAINT "ChatChannelMember_channelId_fkey" FOREIGN KEY ("channelId") REFERENCES public."ChatChannel"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: ChatChannelMember ChatChannelMember_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatChannelMember"
+    ADD CONSTRAINT "ChatChannelMember_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: ChatChannelMember ChatChannelMember_userId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatChannelMember"
+    ADD CONSTRAINT "ChatChannelMember_userId_fkey" FOREIGN KEY ("userId") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: ChatChannel ChatChannel_patientId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatChannel"
+    ADD CONSTRAINT "ChatChannel_patientId_fkey" FOREIGN KEY ("patientId") REFERENCES public."Customer"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: ChatChannel ChatChannel_roomId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatChannel"
+    ADD CONSTRAINT "ChatChannel_roomId_fkey" FOREIGN KEY ("roomId") REFERENCES public."ChatRoom"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: ChatChannel ChatChannel_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatChannel"
+    ADD CONSTRAINT "ChatChannel_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: ChatChannel ChatChannel_visitId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatChannel"
+    ADD CONSTRAINT "ChatChannel_visitId_fkey" FOREIGN KEY ("visitId") REFERENCES public."Appointment"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: ChatMessageTemplate ChatMessageTemplate_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatMessageTemplate"
+    ADD CONSTRAINT "ChatMessageTemplate_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: ChatMessage ChatMessage_channelId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatMessage"
+    ADD CONSTRAINT "ChatMessage_channelId_fkey" FOREIGN KEY ("channelId") REFERENCES public."ChatChannel"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: ChatMessage ChatMessage_replyToId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatMessage"
+    ADD CONSTRAINT "ChatMessage_replyToId_fkey" FOREIGN KEY ("replyToId") REFERENCES public."ChatMessage"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: ChatMessage ChatMessage_senderId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatMessage"
+    ADD CONSTRAINT "ChatMessage_senderId_fkey" FOREIGN KEY ("senderId") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: ChatMessage ChatMessage_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatMessage"
+    ADD CONSTRAINT "ChatMessage_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: ChatNotification ChatNotification_channelId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatNotification"
+    ADD CONSTRAINT "ChatNotification_channelId_fkey" FOREIGN KEY ("channelId") REFERENCES public."ChatChannel"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: ChatNotification ChatNotification_messageId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatNotification"
+    ADD CONSTRAINT "ChatNotification_messageId_fkey" FOREIGN KEY ("messageId") REFERENCES public."ChatMessage"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: ChatNotification ChatNotification_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatNotification"
+    ADD CONSTRAINT "ChatNotification_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: ChatNotification ChatNotification_userId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatNotification"
+    ADD CONSTRAINT "ChatNotification_userId_fkey" FOREIGN KEY ("userId") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: ChatRoomMember ChatRoomMember_roomId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatRoomMember"
+    ADD CONSTRAINT "ChatRoomMember_roomId_fkey" FOREIGN KEY ("roomId") REFERENCES public."ChatRoom"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: ChatRoomMember ChatRoomMember_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatRoomMember"
+    ADD CONSTRAINT "ChatRoomMember_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: ChatRoomMember ChatRoomMember_userId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatRoomMember"
+    ADD CONSTRAINT "ChatRoomMember_userId_fkey" FOREIGN KEY ("userId") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: ChatRoom ChatRoom_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatRoom"
+    ADD CONSTRAINT "ChatRoom_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: ChatRoom ChatRoom_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatRoom"
+    ADD CONSTRAINT "ChatRoom_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: ChatSearch ChatSearch_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatSearch"
+    ADD CONSTRAINT "ChatSearch_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: ChatSearch ChatSearch_userId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatSearch"
+    ADD CONSTRAINT "ChatSearch_userId_fkey" FOREIGN KEY ("userId") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: ChatTyping ChatTyping_channelId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatTyping"
+    ADD CONSTRAINT "ChatTyping_channelId_fkey" FOREIGN KEY ("channelId") REFERENCES public."ChatChannel"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: ChatTyping ChatTyping_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatTyping"
+    ADD CONSTRAINT "ChatTyping_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: ChatTyping ChatTyping_userId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ChatTyping"
+    ADD CONSTRAINT "ChatTyping_userId_fkey" FOREIGN KEY ("userId") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: CheckType CheckType_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CheckType"
+    ADD CONSTRAINT "CheckType_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
 -- Name: CheckType CheckType_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -7161,6 +17881,22 @@ ALTER TABLE ONLY public."CheckType"
 
 ALTER TABLE ONLY public."City"
     ADD CONSTRAINT "City_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: ClinicalData ClinicalData_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClinicalData"
+    ADD CONSTRAINT "ClinicalData_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: ClinicalData ClinicalData_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClinicalData"
+    ADD CONSTRAINT "ClinicalData_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
@@ -7225,6 +17961,206 @@ ALTER TABLE ONLY public."ClinicalExamination"
 
 ALTER TABLE ONLY public."ClinicalExamination"
     ADD CONSTRAINT "ClinicalExamination_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: ClinicalImage ClinicalImage_customerId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClinicalImage"
+    ADD CONSTRAINT "ClinicalImage_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES public."Customer"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: ClinicalImage ClinicalImage_examinationId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClinicalImage"
+    ADD CONSTRAINT "ClinicalImage_examinationId_fkey" FOREIGN KEY ("examinationId") REFERENCES public."Examination"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: ClinicalImage ClinicalImage_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClinicalImage"
+    ADD CONSTRAINT "ClinicalImage_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: ClinicalImage ClinicalImage_uploadedBy_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClinicalImage"
+    ADD CONSTRAINT "ClinicalImage_uploadedBy_fkey" FOREIGN KEY ("uploadedBy") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: ClinicalProtocol ClinicalProtocol_createdBy_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClinicalProtocol"
+    ADD CONSTRAINT "ClinicalProtocol_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: ClinicalProtocol ClinicalProtocol_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClinicalProtocol"
+    ADD CONSTRAINT "ClinicalProtocol_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: ClinicalReferral ClinicalReferral_createdBy_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClinicalReferral"
+    ADD CONSTRAINT "ClinicalReferral_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: ClinicalReferral ClinicalReferral_customerId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClinicalReferral"
+    ADD CONSTRAINT "ClinicalReferral_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES public."Customer"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: ClinicalReferral ClinicalReferral_examinationId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClinicalReferral"
+    ADD CONSTRAINT "ClinicalReferral_examinationId_fkey" FOREIGN KEY ("examinationId") REFERENCES public."Examination"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: ClinicalReferral ClinicalReferral_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClinicalReferral"
+    ADD CONSTRAINT "ClinicalReferral_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: ClinicalRuleTrigger ClinicalRuleTrigger_customerId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClinicalRuleTrigger"
+    ADD CONSTRAINT "ClinicalRuleTrigger_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES public."Customer"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: ClinicalRuleTrigger ClinicalRuleTrigger_examinationId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClinicalRuleTrigger"
+    ADD CONSTRAINT "ClinicalRuleTrigger_examinationId_fkey" FOREIGN KEY ("examinationId") REFERENCES public."Examination"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: ClinicalRuleTrigger ClinicalRuleTrigger_ruleId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClinicalRuleTrigger"
+    ADD CONSTRAINT "ClinicalRuleTrigger_ruleId_fkey" FOREIGN KEY ("ruleId") REFERENCES public."ClinicalRule"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: ClinicalRuleTrigger ClinicalRuleTrigger_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClinicalRuleTrigger"
+    ADD CONSTRAINT "ClinicalRuleTrigger_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: ClinicalRule ClinicalRule_createdBy_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClinicalRule"
+    ADD CONSTRAINT "ClinicalRule_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: ClinicalRule ClinicalRule_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClinicalRule"
+    ADD CONSTRAINT "ClinicalRule_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: ClndrSal ClndrSal_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClndrSal"
+    ADD CONSTRAINT "ClndrSal_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: ClndrSal ClndrSal_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClndrSal"
+    ADD CONSTRAINT "ClndrSal_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: ClndrTasksPriority ClndrTasksPriority_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClndrTasksPriority"
+    ADD CONSTRAINT "ClndrTasksPriority_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: ClndrTasksPriority ClndrTasksPriority_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClndrTasksPriority"
+    ADD CONSTRAINT "ClndrTasksPriority_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: ClndrWrk ClndrWrk_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClndrWrk"
+    ADD CONSTRAINT "ClndrWrk_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: ClndrWrk ClndrWrk_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ClndrWrk"
+    ADD CONSTRAINT "ClndrWrk_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: CollectionItem CollectionItem_collectionId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CollectionItem"
+    ADD CONSTRAINT "CollectionItem_collectionId_fkey" FOREIGN KEY ("collectionId") REFERENCES public."SupplierCollection"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: CollectionItem CollectionItem_frameCatalogId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CollectionItem"
+    ADD CONSTRAINT "CollectionItem_frameCatalogId_fkey" FOREIGN KEY ("frameCatalogId") REFERENCES public."FrameCatalog"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: CollectionItem CollectionItem_lensCatalogId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CollectionItem"
+    ADD CONSTRAINT "CollectionItem_lensCatalogId_fkey" FOREIGN KEY ("lensCatalogId") REFERENCES public."LensCatalog"(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
 
 --
@@ -7540,6 +18476,22 @@ ALTER TABLE ONLY public."ContactLensPrescription"
 
 
 --
+-- Name: ContactLensPricing ContactLensPricing_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ContactLensPricing"
+    ADD CONSTRAINT "ContactLensPricing_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: ContactLensPricing ContactLensPricing_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ContactLensPricing"
+    ADD CONSTRAINT "ContactLensPricing_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
 -- Name: ContactLensRinsingSolution ContactLensRinsingSolution_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -7561,6 +18513,294 @@ ALTER TABLE ONLY public."ContactLensTint"
 
 ALTER TABLE ONLY public."ContactLensType"
     ADD CONSTRAINT "ContactLensType_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: Conversation Conversation_supplierId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Conversation"
+    ADD CONSTRAINT "Conversation_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES public."Supplier"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: Conversation Conversation_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Conversation"
+    ADD CONSTRAINT "Conversation_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: CrdBuysWorkLab CrdBuysWorkLab_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdBuysWorkLab"
+    ADD CONSTRAINT "CrdBuysWorkLab_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: CrdBuysWorkLab CrdBuysWorkLab_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdBuysWorkLab"
+    ADD CONSTRAINT "CrdBuysWorkLab_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: CrdBuysWorkSapak CrdBuysWorkSapak_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdBuysWorkSapak"
+    ADD CONSTRAINT "CrdBuysWorkSapak_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: CrdBuysWorkSapak CrdBuysWorkSapak_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdBuysWorkSapak"
+    ADD CONSTRAINT "CrdBuysWorkSapak_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: CrdBuysWorkStat CrdBuysWorkStat_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdBuysWorkStat"
+    ADD CONSTRAINT "CrdBuysWorkStat_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: CrdBuysWorkStat CrdBuysWorkStat_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdBuysWorkStat"
+    ADD CONSTRAINT "CrdBuysWorkStat_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: CrdBuysWorkSupply CrdBuysWorkSupply_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdBuysWorkSupply"
+    ADD CONSTRAINT "CrdBuysWorkSupply_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: CrdBuysWorkSupply CrdBuysWorkSupply_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdBuysWorkSupply"
+    ADD CONSTRAINT "CrdBuysWorkSupply_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: CrdBuysWorkType CrdBuysWorkType_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdBuysWorkType"
+    ADD CONSTRAINT "CrdBuysWorkType_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: CrdBuysWorkType CrdBuysWorkType_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdBuysWorkType"
+    ADD CONSTRAINT "CrdBuysWorkType_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: CrdClensChecksMater CrdClensChecksMater_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdClensChecksMater"
+    ADD CONSTRAINT "CrdClensChecksMater_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: CrdClensChecksMater CrdClensChecksMater_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdClensChecksMater"
+    ADD CONSTRAINT "CrdClensChecksMater_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: CrdClensChecksPr CrdClensChecksPr_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdClensChecksPr"
+    ADD CONSTRAINT "CrdClensChecksPr_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: CrdClensChecksPr CrdClensChecksPr_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdClensChecksPr"
+    ADD CONSTRAINT "CrdClensChecksPr_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: CrdClensChecksTint CrdClensChecksTint_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdClensChecksTint"
+    ADD CONSTRAINT "CrdClensChecksTint_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: CrdClensChecksTint CrdClensChecksTint_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdClensChecksTint"
+    ADD CONSTRAINT "CrdClensChecksTint_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: CrdClensManuf CrdClensManuf_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdClensManuf"
+    ADD CONSTRAINT "CrdClensManuf_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: CrdClensManuf CrdClensManuf_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdClensManuf"
+    ADD CONSTRAINT "CrdClensManuf_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: CrdClensSolClean CrdClensSolClean_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdClensSolClean"
+    ADD CONSTRAINT "CrdClensSolClean_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: CrdClensSolClean CrdClensSolClean_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdClensSolClean"
+    ADD CONSTRAINT "CrdClensSolClean_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: CrdClensSolDisinfect CrdClensSolDisinfect_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdClensSolDisinfect"
+    ADD CONSTRAINT "CrdClensSolDisinfect_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: CrdClensSolDisinfect CrdClensSolDisinfect_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdClensSolDisinfect"
+    ADD CONSTRAINT "CrdClensSolDisinfect_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: CrdClensSolRinse CrdClensSolRinse_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdClensSolRinse"
+    ADD CONSTRAINT "CrdClensSolRinse_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: CrdClensSolRinse CrdClensSolRinse_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdClensSolRinse"
+    ADD CONSTRAINT "CrdClensSolRinse_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: CrdClensType CrdClensType_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdClensType"
+    ADD CONSTRAINT "CrdClensType_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: CrdClensType CrdClensType_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdClensType"
+    ADD CONSTRAINT "CrdClensType_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: CrdGlassIOPInst CrdGlassIOPInst_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdGlassIOPInst"
+    ADD CONSTRAINT "CrdGlassIOPInst_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: CrdGlassIOPInst CrdGlassIOPInst_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdGlassIOPInst"
+    ADD CONSTRAINT "CrdGlassIOPInst_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: CrdGlassRetDist CrdGlassRetDist_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdGlassRetDist"
+    ADD CONSTRAINT "CrdGlassRetDist_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: CrdGlassRetDist CrdGlassRetDist_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdGlassRetDist"
+    ADD CONSTRAINT "CrdGlassRetDist_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: CrdGlassRetType CrdGlassRetType_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdGlassRetType"
+    ADD CONSTRAINT "CrdGlassRetType_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: CrdGlassRetType CrdGlassRetType_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdGlassRetType"
+    ADD CONSTRAINT "CrdGlassRetType_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: CrdGlassUse CrdGlassUse_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdGlassUse"
+    ADD CONSTRAINT "CrdGlassUse_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: CrdGlassUse CrdGlassUse_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CrdGlassUse"
+    ADD CONSTRAINT "CrdGlassUse_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
@@ -7596,11 +18836,91 @@ ALTER TABLE ONLY public."CreditCardTransaction"
 
 
 --
+-- Name: CreditCard CreditCard_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CreditCard"
+    ADD CONSTRAINT "CreditCard_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: CreditCard CreditCard_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CreditCard"
+    ADD CONSTRAINT "CreditCard_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: CreditType CreditType_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CreditType"
+    ADD CONSTRAINT "CreditType_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: CreditType CreditType_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CreditType"
+    ADD CONSTRAINT "CreditType_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: CustomReport CustomReport_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CustomReport"
+    ADD CONSTRAINT "CustomReport_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: CustomReport CustomReport_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CustomReport"
+    ADD CONSTRAINT "CustomReport_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
 -- Name: CustomerGroup CustomerGroup_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public."CustomerGroup"
     ADD CONSTRAINT "CustomerGroup_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: CustomerLastVisit CustomerLastVisit_customerId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CustomerLastVisit"
+    ADD CONSTRAINT "CustomerLastVisit_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES public."Customer"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: CustomerLastVisit CustomerLastVisit_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CustomerLastVisit"
+    ADD CONSTRAINT "CustomerLastVisit_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: CustomerOrder CustomerOrder_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CustomerOrder"
+    ADD CONSTRAINT "CustomerOrder_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: CustomerOrder CustomerOrder_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CustomerOrder"
+    ADD CONSTRAINT "CustomerOrder_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
@@ -7641,6 +18961,30 @@ ALTER TABLE ONLY public."Customer"
 
 ALTER TABLE ONLY public."Customer"
     ADD CONSTRAINT "Customer_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: DataMigrationError DataMigrationError_migrationId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."DataMigrationError"
+    ADD CONSTRAINT "DataMigrationError_migrationId_fkey" FOREIGN KEY ("migrationId") REFERENCES public."DataMigrationRun"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: DataMigrationRun DataMigrationRun_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."DataMigrationRun"
+    ADD CONSTRAINT "DataMigrationRun_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: DataMigrationRun DataMigrationRun_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."DataMigrationRun"
+    ADD CONSTRAINT "DataMigrationRun_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
@@ -7721,6 +19065,22 @@ ALTER TABLE ONLY public."DiagnosticProtocol"
 
 ALTER TABLE ONLY public."Discount"
     ADD CONSTRAINT "Discount_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: DiseaseDiagnosis DiseaseDiagnosis_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."DiseaseDiagnosis"
+    ADD CONSTRAINT "DiseaseDiagnosis_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: DiseaseDiagnosis DiseaseDiagnosis_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."DiseaseDiagnosis"
+    ADD CONSTRAINT "DiseaseDiagnosis_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
@@ -7812,6 +19172,22 @@ ALTER TABLE ONLY public."Document"
 
 
 --
+-- Name: Dummy Dummy_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Dummy"
+    ADD CONSTRAINT "Dummy_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: Dummy Dummy_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Dummy"
+    ADD CONSTRAINT "Dummy_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
 -- Name: EmployeeCommissionRule EmployeeCommissionRule_employeeId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -7833,6 +19209,78 @@ ALTER TABLE ONLY public."EmployeeCommissionRule"
 
 ALTER TABLE ONLY public."EmployeeCommissionRule"
     ADD CONSTRAINT "EmployeeCommissionRule_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: EquipmentConfig EquipmentConfig_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."EquipmentConfig"
+    ADD CONSTRAINT "EquipmentConfig_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: EquipmentConfig EquipmentConfig_createdBy_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."EquipmentConfig"
+    ADD CONSTRAINT "EquipmentConfig_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: EquipmentConfig EquipmentConfig_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."EquipmentConfig"
+    ADD CONSTRAINT "EquipmentConfig_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: EquipmentImportLog EquipmentImportLog_equipmentId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."EquipmentImportLog"
+    ADD CONSTRAINT "EquipmentImportLog_equipmentId_fkey" FOREIGN KEY ("equipmentId") REFERENCES public."EquipmentConfig"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: EquipmentImportLog EquipmentImportLog_examinationId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."EquipmentImportLog"
+    ADD CONSTRAINT "EquipmentImportLog_examinationId_fkey" FOREIGN KEY ("examinationId") REFERENCES public."Examination"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: EquipmentImportLog EquipmentImportLog_importedBy_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."EquipmentImportLog"
+    ADD CONSTRAINT "EquipmentImportLog_importedBy_fkey" FOREIGN KEY ("importedBy") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: EquipmentImportLog EquipmentImportLog_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."EquipmentImportLog"
+    ADD CONSTRAINT "EquipmentImportLog_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: ExamTemplate ExamTemplate_createdBy_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ExamTemplate"
+    ADD CONSTRAINT "ExamTemplate_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: ExamTemplate ExamTemplate_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ExamTemplate"
+    ADD CONSTRAINT "ExamTemplate_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
@@ -7892,6 +19340,22 @@ ALTER TABLE ONLY public."Examination"
 
 
 --
+-- Name: Examination Examination_protocolId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Examination"
+    ADD CONSTRAINT "Examination_protocolId_fkey" FOREIGN KEY ("protocolId") REFERENCES public."ClinicalProtocol"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: Examination Examination_templateId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Examination"
+    ADD CONSTRAINT "Examination_templateId_fkey" FOREIGN KEY ("templateId") REFERENCES public."ExamTemplate"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
 -- Name: Examination Examination_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -7924,6 +19388,22 @@ ALTER TABLE ONLY public."Expense"
 
 
 --
+-- Name: Eye Eye_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Eye"
+    ADD CONSTRAINT "Eye_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: Eye Eye_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Eye"
+    ADD CONSTRAINT "Eye_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
 -- Name: FRPLine FRPLine_frpId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -7937,6 +19417,126 @@ ALTER TABLE ONLY public."FRPLine"
 
 ALTER TABLE ONLY public."FRPLine"
     ADD CONSTRAINT "FRPLine_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: FamilyAuditLog FamilyAuditLog_customerId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."FamilyAuditLog"
+    ADD CONSTRAINT "FamilyAuditLog_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES public."Customer"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: FamilyAuditLog FamilyAuditLog_relationshipId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."FamilyAuditLog"
+    ADD CONSTRAINT "FamilyAuditLog_relationshipId_fkey" FOREIGN KEY ("relationshipId") REFERENCES public."FamilyRelationship"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: FamilyAuditLog FamilyAuditLog_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."FamilyAuditLog"
+    ADD CONSTRAINT "FamilyAuditLog_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: FamilyAuditLog FamilyAuditLog_userId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."FamilyAuditLog"
+    ADD CONSTRAINT "FamilyAuditLog_userId_fkey" FOREIGN KEY ("userId") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: FamilyRelationship FamilyRelationship_createdBy_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."FamilyRelationship"
+    ADD CONSTRAINT "FamilyRelationship_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: FamilyRelationship FamilyRelationship_customerId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."FamilyRelationship"
+    ADD CONSTRAINT "FamilyRelationship_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES public."Customer"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: FamilyRelationship FamilyRelationship_relatedCustomerId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."FamilyRelationship"
+    ADD CONSTRAINT "FamilyRelationship_relatedCustomerId_fkey" FOREIGN KEY ("relatedCustomerId") REFERENCES public."Customer"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: FamilyRelationship FamilyRelationship_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."FamilyRelationship"
+    ADD CONSTRAINT "FamilyRelationship_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: FamilyRelationship FamilyRelationship_verifiedBy_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."FamilyRelationship"
+    ADD CONSTRAINT "FamilyRelationship_verifiedBy_fkey" FOREIGN KEY ("verifiedBy") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: FaxCommunication FaxCommunication_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."FaxCommunication"
+    ADD CONSTRAINT "FaxCommunication_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: FaxCommunication FaxCommunication_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."FaxCommunication"
+    ADD CONSTRAINT "FaxCommunication_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: FollowUpReminder FollowUpReminder_createdBy_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."FollowUpReminder"
+    ADD CONSTRAINT "FollowUpReminder_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: FollowUpReminder FollowUpReminder_customerId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."FollowUpReminder"
+    ADD CONSTRAINT "FollowUpReminder_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES public."Customer"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: FollowUpReminder FollowUpReminder_examinationId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."FollowUpReminder"
+    ADD CONSTRAINT "FollowUpReminder_examinationId_fkey" FOREIGN KEY ("examinationId") REFERENCES public."Examination"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: FollowUpReminder FollowUpReminder_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."FollowUpReminder"
+    ADD CONSTRAINT "FollowUpReminder_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
@@ -7977,6 +19577,46 @@ ALTER TABLE ONLY public."FrameCatalog"
 
 ALTER TABLE ONLY public."FrameCatalog"
     ADD CONSTRAINT "FrameCatalog_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: FrameData FrameData_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."FrameData"
+    ADD CONSTRAINT "FrameData_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: FrameData FrameData_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."FrameData"
+    ADD CONSTRAINT "FrameData_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: FrameTrial FrameTrial_createdBy_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."FrameTrial"
+    ADD CONSTRAINT "FrameTrial_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: FrameTrial FrameTrial_customerId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."FrameTrial"
+    ADD CONSTRAINT "FrameTrial_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES public."Customer"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: FrameTrial FrameTrial_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."FrameTrial"
+    ADD CONSTRAINT "FrameTrial_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
@@ -8164,6 +19804,38 @@ ALTER TABLE ONLY public."GlassUse"
 
 
 --
+-- Name: Household Household_primaryContactId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Household"
+    ADD CONSTRAINT "Household_primaryContactId_fkey" FOREIGN KEY ("primaryContactId") REFERENCES public."Customer"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: Household Household_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Household"
+    ADD CONSTRAINT "Household_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: InvMoveType InvMoveType_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."InvMoveType"
+    ADD CONSTRAINT "InvMoveType_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: InvMoveType InvMoveType_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."InvMoveType"
+    ADD CONSTRAINT "InvMoveType_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
 -- Name: InventoryAdjustmentItem InventoryAdjustmentItem_adjustmentId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -8196,6 +19868,22 @@ ALTER TABLE ONLY public."InventoryAdjustment"
 
 
 --
+-- Name: InventoryReference InventoryReference_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."InventoryReference"
+    ADD CONSTRAINT "InventoryReference_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: InventoryReference InventoryReference_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."InventoryReference"
+    ADD CONSTRAINT "InventoryReference_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
 -- Name: InvoiceCredit InvoiceCredit_invoiceId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -8212,6 +19900,38 @@ ALTER TABLE ONLY public."InvoicePayment"
 
 
 --
+-- Name: InvoiceType InvoiceType_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."InvoiceType"
+    ADD CONSTRAINT "InvoiceType_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: InvoiceType InvoiceType_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."InvoiceType"
+    ADD CONSTRAINT "InvoiceType_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: InvoiceVerification InvoiceVerification_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."InvoiceVerification"
+    ADD CONSTRAINT "InvoiceVerification_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: InvoiceVerification InvoiceVerification_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."InvoiceVerification"
+    ADD CONSTRAINT "InvoiceVerification_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
 -- Name: Invoice Invoice_supplierId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -8225,6 +19945,30 @@ ALTER TABLE ONLY public."Invoice"
 
 ALTER TABLE ONLY public."Invoice"
     ADD CONSTRAINT "Invoice_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: ItemCountsYear ItemCountsYear_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ItemCountsYear"
+    ADD CONSTRAINT "ItemCountsYear_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: ItemCountsYear ItemCountsYear_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ItemCountsYear"
+    ADD CONSTRAINT "ItemCountsYear_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: ItemStatus ItemStatus_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ItemStatus"
+    ADD CONSTRAINT "ItemStatus_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
@@ -8276,6 +20020,22 @@ ALTER TABLE ONLY public."LabelTemplate"
 
 
 --
+-- Name: Lang Lang_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Lang"
+    ADD CONSTRAINT "Lang_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: Lang Lang_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Lang"
+    ADD CONSTRAINT "Lang_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
 -- Name: LensCatalog LensCatalog_supplierId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -8308,11 +20068,43 @@ ALTER TABLE ONLY public."LensMaterial"
 
 
 --
+-- Name: LensSolution LensSolution_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."LensSolution"
+    ADD CONSTRAINT "LensSolution_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: LensSolution LensSolution_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."LensSolution"
+    ADD CONSTRAINT "LensSolution_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
 -- Name: LensTreatmentCharacteristic LensTreatmentCharacteristic_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public."LensTreatmentCharacteristic"
     ADD CONSTRAINT "LensTreatmentCharacteristic_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: LensTreatment LensTreatment_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."LensTreatment"
+    ADD CONSTRAINT "LensTreatment_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: LensTreatment LensTreatment_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."LensTreatment"
+    ADD CONSTRAINT "LensTreatment_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
@@ -8433,6 +20225,94 @@ ALTER TABLE ONLY public."LowVisionManufacturer"
 
 ALTER TABLE ONLY public."MessageTemplate"
     ADD CONSTRAINT "MessageTemplate_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: Message Message_conversationId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Message"
+    ADD CONSTRAINT "Message_conversationId_fkey" FOREIGN KEY ("conversationId") REFERENCES public."Conversation"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: MigrationLog MigrationLog_migrationId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."MigrationLog"
+    ADD CONSTRAINT "MigrationLog_migrationId_fkey" FOREIGN KEY ("migrationId") REFERENCES public."MigrationRun"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: MigrationRun MigrationRun_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."MigrationRun"
+    ADD CONSTRAINT "MigrationRun_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: MigrationRun MigrationRun_createdBy_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."MigrationRun"
+    ADD CONSTRAINT "MigrationRun_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: MigrationRun MigrationRun_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."MigrationRun"
+    ADD CONSTRAINT "MigrationRun_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: MigrationTableResult MigrationTableResult_migrationId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."MigrationTableResult"
+    ADD CONSTRAINT "MigrationTableResult_migrationId_fkey" FOREIGN KEY ("migrationId") REFERENCES public."MigrationRun"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: MovementProperty MovementProperty_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."MovementProperty"
+    ADD CONSTRAINT "MovementProperty_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: MovementType MovementType_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."MovementType"
+    ADD CONSTRAINT "MovementType_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: NewProduct NewProduct_createdBy_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."NewProduct"
+    ADD CONSTRAINT "NewProduct_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: NewProduct NewProduct_productId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."NewProduct"
+    ADD CONSTRAINT "NewProduct_productId_fkey" FOREIGN KEY ("productId") REFERENCES public."Product"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: NewProduct NewProduct_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."NewProduct"
+    ADD CONSTRAINT "NewProduct_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
@@ -8561,6 +20441,22 @@ ALTER TABLE ONLY public."Orthokeratology"
 
 ALTER TABLE ONLY public."Orthokeratology"
     ADD CONSTRAINT "Orthokeratology_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: PayType PayType_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."PayType"
+    ADD CONSTRAINT "PayType_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: PayType PayType_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."PayType"
+    ADD CONSTRAINT "PayType_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
@@ -8788,6 +20684,78 @@ ALTER TABLE ONLY public."PriceUpdate"
 
 
 --
+-- Name: PrintLabel PrintLabel_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."PrintLabel"
+    ADD CONSTRAINT "PrintLabel_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: PrintLabel PrintLabel_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."PrintLabel"
+    ADD CONSTRAINT "PrintLabel_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: PrlType PrlType_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."PrlType"
+    ADD CONSTRAINT "PrlType_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: PrlType PrlType_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."PrlType"
+    ADD CONSTRAINT "PrlType_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: ProductProperty ProductProperty_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ProductProperty"
+    ADD CONSTRAINT "ProductProperty_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: ProductProperty ProductProperty_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ProductProperty"
+    ADD CONSTRAINT "ProductProperty_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: ProductReview ProductReview_supplierId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ProductReview"
+    ADD CONSTRAINT "ProductReview_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES public."Supplier"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: ProductReview ProductReview_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ProductReview"
+    ADD CONSTRAINT "ProductReview_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: ProductReview ProductReview_userId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ProductReview"
+    ADD CONSTRAINT "ProductReview_userId_fkey" FOREIGN KEY ("userId") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
 -- Name: ProductSerial ProductSerial_productId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -8833,6 +20801,22 @@ ALTER TABLE ONLY public."Product"
 
 ALTER TABLE ONLY public."Product"
     ADD CONSTRAINT "Product_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: Profile Profile_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Profile"
+    ADD CONSTRAINT "Profile_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: Profile Profile_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Profile"
+    ADD CONSTRAINT "Profile_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
@@ -8884,6 +20868,22 @@ ALTER TABLE ONLY public."Purchase"
 
 
 --
+-- Name: ReferralSource ReferralSource_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ReferralSource"
+    ADD CONSTRAINT "ReferralSource_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: ReferralSource ReferralSource_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ReferralSource"
+    ADD CONSTRAINT "ReferralSource_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
 -- Name: RefractionProtocol RefractionProtocol_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -8905,6 +20905,22 @@ ALTER TABLE ONLY public."RetinoscopyDistance"
 
 ALTER TABLE ONLY public."RetinoscopyType"
     ADD CONSTRAINT "RetinoscopyType_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: SMSLen SMSLen_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SMSLen"
+    ADD CONSTRAINT "SMSLen_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: SMSLen SMSLen_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SMSLen"
+    ADD CONSTRAINT "SMSLen_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
@@ -8956,6 +20972,14 @@ ALTER TABLE ONLY public."SaleItem"
 
 
 --
+-- Name: SaleItem SaleItem_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SaleItem"
+    ADD CONSTRAINT "SaleItem_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
 -- Name: Sale Sale_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -8996,6 +21020,102 @@ ALTER TABLE ONLY public."Sale"
 
 
 --
+-- Name: SapakComment SapakComment_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SapakComment"
+    ADD CONSTRAINT "SapakComment_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: SapakComment SapakComment_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SapakComment"
+    ADD CONSTRAINT "SapakComment_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: SapakDest SapakDest_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SapakDest"
+    ADD CONSTRAINT "SapakDest_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: SapakDest SapakDest_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SapakDest"
+    ADD CONSTRAINT "SapakDest_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: SapakPerComment SapakPerComment_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SapakPerComment"
+    ADD CONSTRAINT "SapakPerComment_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: SapakPerComment SapakPerComment_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SapakPerComment"
+    ADD CONSTRAINT "SapakPerComment_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: SearchOrder SearchOrder_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SearchOrder"
+    ADD CONSTRAINT "SearchOrder_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: SearchOrder SearchOrder_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SearchOrder"
+    ADD CONSTRAINT "SearchOrder_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: ServiceType ServiceType_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ServiceType"
+    ADD CONSTRAINT "ServiceType_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: ServiceType ServiceType_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ServiceType"
+    ADD CONSTRAINT "ServiceType_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: ShortCut ShortCut_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ShortCut"
+    ADD CONSTRAINT "ShortCut_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: ShortCut ShortCut_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ShortCut"
+    ADD CONSTRAINT "ShortCut_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
 -- Name: SlitLampExam SlitLampExam_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -9028,11 +21148,91 @@ ALTER TABLE ONLY public."SlitLampExam"
 
 
 --
+-- Name: SpecialName SpecialName_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SpecialName"
+    ADD CONSTRAINT "SpecialName_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: SpecialName SpecialName_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SpecialName"
+    ADD CONSTRAINT "SpecialName_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: Special Special_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Special"
+    ADD CONSTRAINT "Special_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: Special Special_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Special"
+    ADD CONSTRAINT "Special_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: StaffSchedule StaffSchedule_createdBy_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."StaffSchedule"
+    ADD CONSTRAINT "StaffSchedule_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: StaffSchedule StaffSchedule_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."StaffSchedule"
+    ADD CONSTRAINT "StaffSchedule_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: StaffSchedule StaffSchedule_userId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."StaffSchedule"
+    ADD CONSTRAINT "StaffSchedule_userId_fkey" FOREIGN KEY ("userId") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
 -- Name: StockMovement StockMovement_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public."StockMovement"
     ADD CONSTRAINT "StockMovement_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: StockMovement StockMovement_invoiceId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."StockMovement"
+    ADD CONSTRAINT "StockMovement_invoiceId_fkey" FOREIGN KEY ("invoiceId") REFERENCES public."Invoice"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: StockMovement StockMovement_movementPropertyId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."StockMovement"
+    ADD CONSTRAINT "StockMovement_movementPropertyId_fkey" FOREIGN KEY ("movementPropertyId") REFERENCES public."MovementProperty"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: StockMovement StockMovement_movementTypeId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."StockMovement"
+    ADD CONSTRAINT "StockMovement_movementTypeId_fkey" FOREIGN KEY ("movementTypeId") REFERENCES public."MovementType"(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
 
 --
@@ -9052,6 +21252,110 @@ ALTER TABLE ONLY public."StockMovement"
 
 
 --
+-- Name: SupplierAccountTransaction SupplierAccountTransaction_accountId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierAccountTransaction"
+    ADD CONSTRAINT "SupplierAccountTransaction_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES public."SupplierTenantAccount"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: SupplierAnalytics SupplierAnalytics_supplierId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierAnalytics"
+    ADD CONSTRAINT "SupplierAnalytics_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES public."Supplier"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: SupplierCatalogCategory SupplierCatalogCategory_parentId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierCatalogCategory"
+    ADD CONSTRAINT "SupplierCatalogCategory_parentId_fkey" FOREIGN KEY ("parentId") REFERENCES public."SupplierCatalogCategory"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: SupplierCatalogCategory SupplierCatalogCategory_supplierId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierCatalogCategory"
+    ADD CONSTRAINT "SupplierCatalogCategory_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES public."Supplier"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: SupplierCatalogItem SupplierCatalogItem_categoryId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierCatalogItem"
+    ADD CONSTRAINT "SupplierCatalogItem_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES public."SupplierCatalogCategory"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: SupplierCatalogItem SupplierCatalogItem_supplierId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierCatalogItem"
+    ADD CONSTRAINT "SupplierCatalogItem_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES public."Supplier"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: SupplierCatalogVariant SupplierCatalogVariant_itemId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierCatalogVariant"
+    ADD CONSTRAINT "SupplierCatalogVariant_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES public."SupplierCatalogItem"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: SupplierCollectionVisibility SupplierCollectionVisibility_collectionId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierCollectionVisibility"
+    ADD CONSTRAINT "SupplierCollectionVisibility_collectionId_fkey" FOREIGN KEY ("collectionId") REFERENCES public."SupplierCollection"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: SupplierCollectionVisibility SupplierCollectionVisibility_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierCollectionVisibility"
+    ADD CONSTRAINT "SupplierCollectionVisibility_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: SupplierCollection SupplierCollection_supplierId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierCollection"
+    ADD CONSTRAINT "SupplierCollection_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES public."Supplier"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: SupplierDiscountUsage SupplierDiscountUsage_discountId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierDiscountUsage"
+    ADD CONSTRAINT "SupplierDiscountUsage_discountId_fkey" FOREIGN KEY ("discountId") REFERENCES public."SupplierDiscount"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: SupplierDiscount SupplierDiscount_supplierId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierDiscount"
+    ADD CONSTRAINT "SupplierDiscount_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES public."Supplier"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: SupplierInventoryLog SupplierInventoryLog_itemId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierInventoryLog"
+    ADD CONSTRAINT "SupplierInventoryLog_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES public."SupplierCatalogItem"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
 -- Name: SupplierOrderItem SupplierOrderItem_orderId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -9065,6 +21369,14 @@ ALTER TABLE ONLY public."SupplierOrderItem"
 
 ALTER TABLE ONLY public."SupplierOrderItem"
     ADD CONSTRAINT "SupplierOrderItem_productId_fkey" FOREIGN KEY ("productId") REFERENCES public."Product"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: SupplierOrder SupplierOrder_accountId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierOrder"
+    ADD CONSTRAINT "SupplierOrder_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES public."SupplierTenantAccount"(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
 
 --
@@ -9092,11 +21404,195 @@ ALTER TABLE ONLY public."SupplierOrder"
 
 
 --
+-- Name: SupplierPriceAlert SupplierPriceAlert_frameCatalogId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierPriceAlert"
+    ADD CONSTRAINT "SupplierPriceAlert_frameCatalogId_fkey" FOREIGN KEY ("frameCatalogId") REFERENCES public."FrameCatalog"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: SupplierPriceAlert SupplierPriceAlert_lensCatalogId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierPriceAlert"
+    ADD CONSTRAINT "SupplierPriceAlert_lensCatalogId_fkey" FOREIGN KEY ("lensCatalogId") REFERENCES public."LensCatalog"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: SupplierPriceAlert SupplierPriceAlert_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierPriceAlert"
+    ADD CONSTRAINT "SupplierPriceAlert_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: SupplierPriceAlert SupplierPriceAlert_userId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierPriceAlert"
+    ADD CONSTRAINT "SupplierPriceAlert_userId_fkey" FOREIGN KEY ("userId") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: SupplierPriceHistory SupplierPriceHistory_frameCatalogId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierPriceHistory"
+    ADD CONSTRAINT "SupplierPriceHistory_frameCatalogId_fkey" FOREIGN KEY ("frameCatalogId") REFERENCES public."FrameCatalog"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: SupplierPriceHistory SupplierPriceHistory_lensCatalogId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierPriceHistory"
+    ADD CONSTRAINT "SupplierPriceHistory_lensCatalogId_fkey" FOREIGN KEY ("lensCatalogId") REFERENCES public."LensCatalog"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: SupplierPriceHistory SupplierPriceHistory_supplierId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierPriceHistory"
+    ADD CONSTRAINT "SupplierPriceHistory_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES public."Supplier"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: SupplierPriceListItem SupplierPriceListItem_priceListId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierPriceListItem"
+    ADD CONSTRAINT "SupplierPriceListItem_priceListId_fkey" FOREIGN KEY ("priceListId") REFERENCES public."SupplierPriceList"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: SupplierPriceList SupplierPriceList_supplierId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierPriceList"
+    ADD CONSTRAINT "SupplierPriceList_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES public."Supplier"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: SupplierRFQItem SupplierRFQItem_frameCatalogId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierRFQItem"
+    ADD CONSTRAINT "SupplierRFQItem_frameCatalogId_fkey" FOREIGN KEY ("frameCatalogId") REFERENCES public."FrameCatalog"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: SupplierRFQItem SupplierRFQItem_lensCatalogId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierRFQItem"
+    ADD CONSTRAINT "SupplierRFQItem_lensCatalogId_fkey" FOREIGN KEY ("lensCatalogId") REFERENCES public."LensCatalog"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: SupplierRFQItem SupplierRFQItem_rfqId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierRFQItem"
+    ADD CONSTRAINT "SupplierRFQItem_rfqId_fkey" FOREIGN KEY ("rfqId") REFERENCES public."SupplierRFQ"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: SupplierRFQ SupplierRFQ_supplierId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierRFQ"
+    ADD CONSTRAINT "SupplierRFQ_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES public."Supplier"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: SupplierRFQ SupplierRFQ_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierRFQ"
+    ADD CONSTRAINT "SupplierRFQ_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: SupplierShipment SupplierShipment_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierShipment"
+    ADD CONSTRAINT "SupplierShipment_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: SupplierShipment SupplierShipment_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierShipment"
+    ADD CONSTRAINT "SupplierShipment_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: SupplierStockAlert SupplierStockAlert_supplierId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierStockAlert"
+    ADD CONSTRAINT "SupplierStockAlert_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES public."Supplier"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: SupplierTenantAccount SupplierTenantAccount_supplierId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierTenantAccount"
+    ADD CONSTRAINT "SupplierTenantAccount_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES public."Supplier"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: SupplierTenantActivity SupplierTenantActivity_supplierId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierTenantActivity"
+    ADD CONSTRAINT "SupplierTenantActivity_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES public."Supplier"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: SupplierTenantNote SupplierTenantNote_supplierId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierTenantNote"
+    ADD CONSTRAINT "SupplierTenantNote_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES public."Supplier"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: SupplierUser SupplierUser_supplierId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SupplierUser"
+    ADD CONSTRAINT "SupplierUser_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES public."Supplier"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
 -- Name: Supplier Supplier_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public."Supplier"
     ADD CONSTRAINT "Supplier_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: SysLevel SysLevel_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SysLevel"
+    ADD CONSTRAINT "SysLevel_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES public."Branch"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: SysLevel SysLevel_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SysLevel"
+    ADD CONSTRAINT "SysLevel_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
@@ -9220,6 +21716,14 @@ ALTER TABLE ONLY public."User"
 
 
 --
+-- Name: VATRate VATRate_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."VATRate"
+    ADD CONSTRAINT "VATRate_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
 -- Name: VisionTest VisionTest_branchId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -9249,6 +21753,38 @@ ALTER TABLE ONLY public."VisionTest"
 
 ALTER TABLE ONLY public."VisionTest"
     ADD CONSTRAINT "VisionTest_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: WishlistItem WishlistItem_supplierId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."WishlistItem"
+    ADD CONSTRAINT "WishlistItem_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES public."Supplier"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: WishlistItem WishlistItem_wishlistId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."WishlistItem"
+    ADD CONSTRAINT "WishlistItem_wishlistId_fkey" FOREIGN KEY ("wishlistId") REFERENCES public."Wishlist"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: Wishlist Wishlist_tenantId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Wishlist"
+    ADD CONSTRAINT "Wishlist_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES public."Tenant"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: Wishlist Wishlist_userId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Wishlist"
+    ADD CONSTRAINT "Wishlist_userId_fkey" FOREIGN KEY ("userId") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
@@ -9404,6 +21940,24 @@ ALTER TABLE ONLY public."WorkSupplyType"
 
 
 --
+-- Name: _DiscountToItems _DiscountToItems_A_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."_DiscountToItems"
+    ADD CONSTRAINT "_DiscountToItems_A_fkey" FOREIGN KEY ("A") REFERENCES public."SupplierCatalogItem"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: _DiscountToItems _DiscountToItems_B_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."_DiscountToItems"
+    ADD CONSTRAINT "_DiscountToItems_B_fkey" FOREIGN KEY ("B") REFERENCES public."SupplierDiscount"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
 -- PostgreSQL database dump complete
 --
+
+\unrestrict tPbKurbEkXtAsm80P1AaBOhAgXflwtN8H4EGlioUgIhSXT5Oc5ld6yeAkNZmHiH
 

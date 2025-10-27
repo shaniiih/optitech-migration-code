@@ -1,3 +1,4 @@
+const { v4: uuidv4 } = require("uuid");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 
 const WINDOW_SIZE = 5000;
@@ -265,7 +266,7 @@ async function migrateDetailedWorkOrder(tenantId = "tenant_1") {
           );
 
           params.push(
-            `${tenantId}-detailed-work-${workId}`,
+            uuidv4(),
             tenantId,
             branchId,
             workId,

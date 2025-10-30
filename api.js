@@ -45,6 +45,7 @@ app.get("/health", (_req, res) => {
 
 app.post("/import-schema", upload.single("xns_file"), async (req, res) => {
   const tenantId = sanitizeTenantId(req.body.tenant_id || req.body.tenantId);
+  const branchId = sanitizeTenantId(req.body.branch_id || req.body.branchId);
   const databaseName = sanitizeDatabaseName(req.body.database || req.body.databaseName || tenantId);
   const uploadedFile = req.file;
 
@@ -97,7 +98,7 @@ app.post("/import-schema", upload.single("xns_file"), async (req, res) => {
       }
     }
 
-    const migrationResult = await runMigration(tenantId, databaseName);
+    const migrationResult = await runMigration(tenantId, branchId, databaseName);
     if (migrationResult.stdout.trim()) {
       logStep("migrate-stdout", migrationResult.stdout.trim());
     }
@@ -107,6 +108,7 @@ app.post("/import-schema", upload.single("xns_file"), async (req, res) => {
 
     res.json({
       tenantId,
+      branchId,
       database: databaseName,
       schemaPath: exportResult.schemaNoFkPath,
       dataPath: exportResult.dataSqlPath,
@@ -206,10 +208,11 @@ async function importData(dataPath, databaseName) {
   return runCommand("mysql", args, { stdinFilePath: dataPath });
 }
 
-async function runMigration(tenantId, databaseName) {
-  console.log(`[${new Date().toISOString()}] runMigration: executing main.js for tenant ${tenantId} using MySQL database ${databaseName}`);
+async function runMigration(tenantId, branchId, databaseName) {
+  console.log(`[${new Date().toISOString()}] runMigration: executing main.js for tenant ${tenantId} and branch ${branchId} using MySQL database ${databaseName}`);
   const migrationEnv = {
     TENANT_ID: tenantId,
+    BRANCH_ID: branchId,
     MYSQL_DATABASE: databaseName,
   };
   return runCommand("node", [path.join(projectRoot, "main.js")], { env: migrationEnv });

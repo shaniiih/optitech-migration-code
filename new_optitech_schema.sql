@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict tPbKurbEkXtAsm80P1AaBOhAgXflwtN8H4EGlioUgIhSXT5Oc5ld6yeAkNZmHiH
+\restrict ApOtFFJEBBr3YigQMF2pAKnMKxJJvIP5nzTpjbtsMrNSWXQyxDEzYv2LCw1aq6G
 
 -- Dumped from database version 16.10 (Ubuntu 16.10-0ubuntu0.24.04.1)
 -- Dumped by pg_dump version 16.10 (Ubuntu 16.10-0ubuntu0.24.04.1)
@@ -2429,7 +2429,17 @@ CREATE TABLE public."CustomerGroup" (
     discount double precision DEFAULT 0,
     "isActive" boolean DEFAULT true NOT NULL,
     "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    "updatedAt" timestamp(3) without time zone NOT NULL
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    address text,
+    "branchId" text,
+    "cityId" text,
+    comment text,
+    "discountId" text,
+    email text,
+    fax text,
+    "groupId" text NOT NULL,
+    phone text,
+    "zipCode" text
 );
 
 
@@ -2677,7 +2687,22 @@ CREATE TABLE public."Discount" (
     "requiresApproval" boolean DEFAULT false NOT NULL,
     notes text,
     "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    "updatedAt" timestamp(3) without time zone NOT NULL
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "discountId" text,
+    "prlCheck" numeric(2,2) NOT NULL,
+    "prlClens" numeric(2,2) NOT NULL,
+    "prlFrame" numeric(2,2) NOT NULL,
+    "prlGlass" numeric(2,2) NOT NULL,
+    "prlGlassBif" numeric(2,2) NOT NULL,
+    "prlGlassMul" numeric(2,2) NOT NULL,
+    "prlGlassOneP" numeric(2,2) NOT NULL,
+    "prlGlassOneS" numeric(2,2) NOT NULL,
+    "prlMisc" numeric(2,2) NOT NULL,
+    "prlProp" numeric(2,2) NOT NULL,
+    "prlService" numeric(2,2) NOT NULL,
+    "prlSolution" numeric(2,2) NOT NULL,
+    "prlSunGlass" numeric(2,2) NOT NULL,
+    "prlTreat" numeric(2,2) NOT NULL
 );
 
 
@@ -7634,7 +7659,6 @@ COPY public."BisData" (id, "tenantId", "branchId", "bisId", "bisNum", "bisName",
 --
 
 COPY public."Branch" (id, "tenantId", name, "nameHe", code, "isMain", address, city, "zipCode", phone, fax, email, active, "managerId", "operatingHours", "shareInventory", "shareCustomers", "createdAt", "updatedAt") FROM stdin;
-cmh8y34z00001czwwamgq5guk	default-tenant	סניף ראשי	סניף ראשי	MAIN	t	רחוב הרצל 123, תל אביב	תל אביב	67000	03-1234567	\N	main@default-optics.com	t	cmh8y351z0007czwwu5j7wupg	\N	f	t	2025-10-27 09:38:12.588	2025-10-27 09:38:12.698
 \.
 
 
@@ -7971,27 +7995,6 @@ COPY public."ContactLensManufacturer" (id, "tenantId", "manufacturerId", name, d
 --
 
 COPY public."ContactLensMaterial" (id, "tenantId", "materialId", name, description, "isActive", "createdAt", "updatedAt") FROM stdin;
-TNT-LOCAL1-001-contact-lens-material-0	TNT-LOCAL1-001	0	[ללא]	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
-TNT-LOCAL1-001-contact-lens-material-1	TNT-LOCAL1-001	1	b4	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
-TNT-LOCAL1-001-contact-lens-material-2	TNT-LOCAL1-001	2	b7	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
-TNT-LOCAL1-001-contact-lens-material-3	TNT-LOCAL1-001	3	f\\t	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
-TNT-LOCAL1-001-contact-lens-material-4	TNT-LOCAL1-001	4	f5	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
-TNT-LOCAL1-001-contact-lens-material-5	TNT-LOCAL1-001	5	f7	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
-TNT-LOCAL1-001-contact-lens-material-6	TNT-LOCAL1-001	6	fl	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
-TNT-LOCAL1-001-contact-lens-material-7	TNT-LOCAL1-001	7	HD	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
-TNT-LOCAL1-001-contact-lens-material-8	TNT-LOCAL1-001	8	pcl 5	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
-TNT-LOCAL1-001-contact-lens-material-9	TNT-LOCAL1-001	9	pmm	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
-TNT-LOCAL1-001-contact-lens-material-10	TNT-LOCAL1-001	10	s4	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
-TNT-LOCAL1-001-contact-lens-material-11	TNT-LOCAL1-001	11	GM3	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
-TNT-LOCAL1-001-contact-lens-material-12	TNT-LOCAL1-001	12	BIO	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
-TNT-LOCAL1-001-contact-lens-material-13	TNT-LOCAL1-001	13	H35	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
-TNT-LOCAL1-001-contact-lens-material-14	TNT-LOCAL1-001	14	New Mater	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
-TNT-LOCAL1-001-contact-lens-material-15	TNT-LOCAL1-001	15	H100	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
-TNT-LOCAL1-001-contact-lens-material-16	TNT-LOCAL1-001	16	VP+MMA	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
-TNT-LOCAL1-001-contact-lens-material-17	TNT-LOCAL1-001	17	CLE 60	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
-TNT-LOCAL1-001-contact-lens-material-18	TNT-LOCAL1-001	18	BENZ 73	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
-TNT-LOCAL1-001-contact-lens-material-19	TNT-LOCAL1-001	19	BENZ 55	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
-TNT-LOCAL1-001-contact-lens-material-20	TNT-LOCAL1-001	20	H60	\N	t	2025-10-27 15:36:02.992	2025-10-27 15:36:02.992
 \.
 
 
@@ -8032,39 +8035,6 @@ COPY public."ContactLensTint" (id, "tenantId", "tintId", name, description, "isA
 --
 
 COPY public."ContactLensType" (id, "tenantId", "lensTypeId", name, description, "isActive", "createdAt", "updatedAt") FROM stdin;
-TNT-LOCAL1-001-contact-lens-type-0	TNT-LOCAL1-001	0	[ללא]	\N	t	2025-10-27 16:36:59.961	2025-10-27 16:36:59.961
-TNT-LOCAL1-001-contact-lens-type-1	TNT-LOCAL1-001	1	FRP	\N	t	2025-10-27 16:36:59.961	2025-10-27 16:36:59.961
-TNT-LOCAL1-001-contact-lens-type-2	TNT-LOCAL1-001	2	GP	\N	t	2025-10-27 16:36:59.961	2025-10-27 16:36:59.961
-TNT-LOCAL1-001-contact-lens-type-3	TNT-LOCAL1-001	3	pmm	\N	t	2025-10-27 16:36:59.961	2025-10-27 16:36:59.961
-TNT-LOCAL1-001-contact-lens-type-4	TNT-LOCAL1-001	4	SF	\N	t	2025-10-27 16:36:59.961	2025-10-27 16:36:59.961
-TNT-LOCAL1-001-contact-lens-type-10	TNT-LOCAL1-001	10	Contact Lens Type 10	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
-TNT-LOCAL1-001-contact-lens-type-1001	TNT-LOCAL1-001	1001	רכות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
-TNT-LOCAL1-001-contact-lens-type-1002	TNT-LOCAL1-001	1002	טוריות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
-TNT-LOCAL1-001-contact-lens-type-1003	TNT-LOCAL1-001	1003	מיוחדות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
-TNT-LOCAL1-001-contact-lens-type-1004	TNT-LOCAL1-001	1004	קוסמטיות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
-TNT-LOCAL1-001-contact-lens-type-1005	TNT-LOCAL1-001	1005	רב מוקדיות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
-TNT-LOCAL1-001-contact-lens-type-1006	TNT-LOCAL1-001	1006	חד פעמיות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
-TNT-LOCAL1-001-contact-lens-type-1007	TNT-LOCAL1-001	1007	גמיש נושם	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
-TNT-LOCAL1-001-contact-lens-type-1008	TNT-LOCAL1-001	1008	פלנו	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
-TNT-LOCAL1-001-contact-lens-type-1009	TNT-LOCAL1-001	1009	Visitint	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
-TNT-LOCAL1-001-contact-lens-type-1010	TNT-LOCAL1-001	1010	יומיות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
-TNT-LOCAL1-001-contact-lens-type-1011	TNT-LOCAL1-001	1011	חודשיות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
-TNT-LOCAL1-001-contact-lens-type-1012	TNT-LOCAL1-001	1012	צבעוניות זמניות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
-TNT-LOCAL1-001-contact-lens-type-1013	TNT-LOCAL1-001	1013	רכות קבועות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
-TNT-LOCAL1-001-contact-lens-type-1014	TNT-LOCAL1-001	1014	רכות קצובות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
-TNT-LOCAL1-001-contact-lens-type-1015	TNT-LOCAL1-001	1015	רכות יומיות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
-TNT-LOCAL1-001-contact-lens-type-1016	TNT-LOCAL1-001	1016	קשות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
-TNT-LOCAL1-001-contact-lens-type-1017	TNT-LOCAL1-001	1017	רכות סיליקון הידרוג'ל	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
-TNT-LOCAL1-001-contact-lens-type-1018	TNT-LOCAL1-001	1018	רכות ספריות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
-TNT-LOCAL1-001-contact-lens-type-1019	TNT-LOCAL1-001	1019	זמניות ספריות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
-TNT-LOCAL1-001-contact-lens-type-1020	TNT-LOCAL1-001	1020	רב מוקדיות-זמניות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
-TNT-LOCAL1-001-contact-lens-type-1021	TNT-LOCAL1-001	1021	טוריות-זמניות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
-TNT-LOCAL1-001-contact-lens-type-1022	TNT-LOCAL1-001	1022	טוריות יומיות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
-TNT-LOCAL1-001-contact-lens-type-1023	TNT-LOCAL1-001	1023	אורטוקרטולוגיה	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
-TNT-LOCAL1-001-contact-lens-type-1024	TNT-LOCAL1-001	1024	מיוחדות לקרניות מעוותות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
-TNT-LOCAL1-001-contact-lens-type-1025	TNT-LOCAL1-001	1025	סקלריות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
-TNT-LOCAL1-001-contact-lens-type-1026	TNT-LOCAL1-001	1026	Rose K	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
-TNT-LOCAL1-001-contact-lens-type-1027	TNT-LOCAL1-001	1027	תוספות	\N	t	2025-10-27 16:36:59.964	2025-10-27 16:36:59.964
 \.
 
 
@@ -8272,10 +8242,7 @@ COPY public."Customer" (id, "tenantId", "customerId", "firstName", "lastName", "
 -- Data for Name: CustomerGroup; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public."CustomerGroup" (id, "tenantId", "groupCode", name, "nameHe", discount, "isActive", "createdAt", "updatedAt") FROM stdin;
-cmh8y352a000dczwweh1yq8cy	default-tenant	DEFAULT	Default Group	קבוצה ברירת מחדל	0	t	2025-10-27 09:38:12.706	2025-10-27 09:38:12.706
-cmh8y352c000fczwwb3opoai4	default-tenant	VIP	VIP Customers	לקוחות VIP	15	t	2025-10-27 09:38:12.709	2025-10-27 09:38:12.709
-cmh8y352e000hczwwyvfnvmwe	default-tenant	INSURANCE	Insurance Customers	לקוחות ביטוח	10	t	2025-10-27 09:38:12.71	2025-10-27 09:38:12.71
+COPY public."CustomerGroup" (id, "tenantId", "groupCode", name, "nameHe", discount, "isActive", "createdAt", "updatedAt", address, "branchId", "cityId", comment, "discountId", email, fax, "groupId", phone, "zipCode") FROM stdin;
 \.
 
 
@@ -8347,7 +8314,7 @@ COPY public."DiagnosticProtocol" (id, "tenantId", name, category, description, "
 -- Data for Name: Discount; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public."Discount" (id, "tenantId", name, code, type, value, "appliesTo", "productIds", "minimumPurchase", "maximumDiscount", "customerGroupIds", "customerIds", "validFrom", "validTo", "usageLimit", "usageCount", "perCustomerLimit", combinable, priority, active, "requiresApproval", notes, "createdAt", "updatedAt") FROM stdin;
+COPY public."Discount" (id, "tenantId", name, code, type, value, "appliesTo", "productIds", "minimumPurchase", "maximumDiscount", "customerGroupIds", "customerIds", "validFrom", "validTo", "usageLimit", "usageCount", "perCustomerLimit", combinable, priority, active, "requiresApproval", notes, "createdAt", "updatedAt", "discountId", "prlCheck", "prlClens", "prlFrame", "prlGlass", "prlGlassBif", "prlGlassMul", "prlGlassOneP", "prlGlassOneS", "prlMisc", "prlProp", "prlService", "prlSolution", "prlSunGlass", "prlTreat") FROM stdin;
 \.
 
 
@@ -8892,7 +8859,6 @@ COPY public."MessageAttachment" (id, "messageId", "fileName", "fileUrl", "fileSi
 --
 
 COPY public."MessageTemplate" (id, "tenantId", name, type, language, subject, content, active, "isSystem", variables, "createdAt", "updatedAt") FROM stdin;
-cmh8y352f000jczwwjgf4hzku	default-tenant	appointment_reminder	SMS	he	\N	שלום {{customerName}}, זוהי תזכורת לתור שלך מחר בשעה {{appointmentTime}}. להסרה השב "הסר".	t	t	{"customerName": "שם הלקוח", "appointmentDate": "תאריך התור", "appointmentTime": "שעת התור"}	2025-10-27 09:38:12.712	2025-10-27 09:38:12.712
 \.
 
 
@@ -9229,8 +9195,6 @@ COPY public."PrlType" (id, "tenantId", "branchId", "prlType", "prlName", "create
 --
 
 COPY public."Product" (id, "tenantId", "productId", name, description, sku, barcode, category, subcategory, brand, model, "costPrice", "sellPrice", "wholeSalePrice", quantity, "minQuantity", unit, location, supplier, "supplierProductCode", "isActive", "trackQuantity", tags, notes, "lensType", material, coating, "sphereMin", "sphereMax", "cylinderMin", "cylinderMax", "frameSize", "frameColor", "frameShape", "frameMaterial", prescription, "createdAt", "updatedAt", "deletedAt", "branchId", "supplierId", "requiresSerial") FROM stdin;
-cmh8y352j000lczwwtvd7cfp5	default-tenant	FRAME001	מסגרת Ray-Ban Aviator	\N	RB3025-001	8053672416077	מסגרות	משקפי שמש	Ray-Ban	Aviator Classic	250	650	\N	15	5	יחידה	\N	\N	\N	t	t	\N	\N	\N	\N	\N	\N	\N	\N	\N	58-14-135	זהב	AVIATOR	METAL	f	2025-10-27 09:38:12.715	2025-10-27 09:38:12.715	\N	cmh8y34z00001czwwamgq5guk	\N	f
-cmh8y352m000nczwwrrwuc4yw	default-tenant	LENS001	עדשה חד מוקדית 1.67	\N	LENS-167-AR	\N	עדשות	חד מוקדית	Essilor	\N	150	400	\N	50	20	זוג	\N	\N	\N	t	t	\N	\N	SINGLE_VISION	HIGH_INDEX	ANTI_REFLECTIVE	-10	10	-6	6	\N	\N	\N	\N	t	2025-10-27 09:38:12.718	2025-10-27 09:38:12.718	\N	cmh8y34z00001czwwamgq5guk	\N	f
 \.
 
 
@@ -9463,9 +9427,6 @@ COPY public."StockMovement" (id, "tenantId", "productId", "userId", type, quanti
 --
 
 COPY public."Supplier" (id, "tenantId", "supplierId", name, "contactPerson", phone, email, address, website, "taxId", "paymentTerms", "creditLimit", "accountNumber", "suppliesFrames", "suppliesLenses", "suppliesContactLenses", "suppliesAccessories", "isActive", notes, "createdAt", "updatedAt", "bankDetails", city, country, "creditTerms", fax, "leadTimeDays", "minimumOrderAmount", "nameHe", "specialInstructions", "supplierType", "vatNumber", "zipCode") FROM stdin;
-cmh8y352p000pczww33flg5tx	default-tenant	SUP001	Luxottica Group	John Smith	03-9876543	orders@luxottica.com	Industrial Park 1	\N	\N	NET30	50000	\N	t	f	f	t	t	Main frames supplier - Ray-Ban, Oakley, Vogue	2025-10-27 09:38:12.721	2025-10-27 09:38:12.721	\N	\N	\N	30	\N	7	0	\N	\N	OTHER	\N	\N
-cmh8y352t000rczwwic8z2601	default-tenant	SUP002	Essilor Israel	Sarah Cohen	03-1234567	orders@essilor.co.il	Herzl 200, Tel Aviv	\N	\N	NET60	75000	\N	f	t	f	f	t	Premium lens supplier - Varilux, Crizal	2025-10-27 09:38:12.725	2025-10-27 09:38:12.725	\N	\N	\N	30	\N	7	0	\N	\N	OTHER	\N	\N
-cmh8y352w000tczwwhlk1rn7b	default-tenant	SUP003	Johnson & Johnson Vision	Michael Green	09-8765432	contact@jnj-vision.com	Science Park, Rehovot	\N	\N	NET30	30000	\N	f	f	t	f	t	Contact lenses - Acuvue brand	2025-10-27 09:38:12.728	2025-10-27 09:38:12.728	\N	\N	\N	30	\N	7	0	\N	\N	OTHER	\N	\N
 \.
 
 
@@ -9714,8 +9675,6 @@ COPY public."TaxRate" (id, "tenantId", name, code, rate, "appliesTo", region, "e
 --
 
 COPY public."Tenant" (id, name, "nameHe", subdomain, plan, active, "primaryLanguage", timezone, "createdAt", "updatedAt", "ownerId") FROM stdin;
-default-tenant	Default Optical Store	חנות אופטיקה ברירת מחדל	default	professional	t	he	Asia/Jerusalem	2025-10-27 09:38:12.583	2025-10-27 09:38:12.583	\N
-TNT-LOCAL1-001	Default Tenant	\N	TNT-LOCAL1-001.example.com	professional	t	he	Asia/Jerusalem	2025-10-27 15:36:02.966	2025-10-27 15:36:02.966	\N
 \.
 
 
@@ -9724,7 +9683,6 @@ TNT-LOCAL1-001	Default Tenant	\N	TNT-LOCAL1-001.example.com	professional	t	he	As
 --
 
 COPY public."TenantSettings" (id, "tenantId", "businessAddress", "businessPhone", "businessEmail", "businessLicense", "vatNumber", "defaultTaxRate", currency, "enableSmsReminders", "enableEmailReminders", "reminderHoursBefore", "defaultAppointmentDuration", "workingHoursStart", "workingHoursEnd", "workingDays", "enableOnlineBooking", "receiptTemplate", "prescriptionTemplate", "createdAt", "updatedAt", "communicationCredits", "emailCostPerMessage", "monthlyEmailBudget", "monthlySmsBudget", "smsCostPerMessage", "businessTaxId") FROM stdin;
-cmh8y3527000bczwwehcckdgs	default-tenant	רחוב הרצל 123, תל אביב	03-1234567	info@default-optics.com	\N	\N	17	ILS	t	t	24	30	09:00	18:00	{sunday,monday,tuesday,wednesday,thursday}	f	\N	\N	2025-10-27 09:38:12.703	2025-10-27 09:38:12.703	0	0.01	\N	\N	0.1	\N
 \.
 
 
@@ -9733,10 +9691,6 @@ cmh8y3527000bczwwehcckdgs	default-tenant	רחוב הרצל 123, תל אביב	03
 --
 
 COPY public."User" (id, "tenantId", email, password, "firstName", "lastName", "firstNameHe", "lastNameHe", role, active, "createdAt", "updatedAt", "lastLoginAt", "branchId") FROM stdin;
-cmh8y289c0000czdcibcs3pbx	\N	admin@optitech.com	$2b$10$LuXZQqhJrEiX059Ccbsz6ukCv8oQkLVkXJqv3.4.LrTj8hg2Bh7Ia	System	Admin	מנהל	מערכת	SUPER_ADMIN	t	2025-10-27 09:37:30.192	2025-10-27 09:37:30.192	\N	\N
-cmh8y351w0005czwwvoxzantm	default-tenant	razgoldenberg123@gmail.com	$2b$10$SuI9TNYe0sxfq9xy6adYau.tacW91rQhcRNQ9pAIZ2q8bXCRsZsym	Raz	Goldenberg	\N	\N	SUPER_ADMIN	t	2025-10-27 09:38:12.693	2025-10-27 09:38:12.693	\N	cmh8y34z00001czwwamgq5guk
-cmh8y351z0007czwwu5j7wupg	default-tenant	manager@default.com	$2b$10$pFIfnRvrnMl58Cr4KhJ2YOIDWWjkTy2SoW/U7uL00AI81niENP06q	Store	Manager	מנהל	חנות	TENANT_ADMIN	t	2025-10-27 09:38:12.695	2025-10-27 09:38:12.695	\N	cmh8y34z00001czwwamgq5guk
-cmh8y35240009czwwt2eehgz9	default-tenant	doctor@default.com	$2b$10$pFIfnRvrnMl58Cr4KhJ2YOIDWWjkTy2SoW/U7uL00AI81niENP06q	Dr. David	Cohen	ד"ר דוד	כהן	DOCTOR	t	2025-10-27 09:38:12.7	2025-10-27 09:38:12.7	\N	cmh8y34z00001czwwamgq5guk
 \.
 
 
@@ -9865,15 +9819,17 @@ COPY public."_DiscountToItems" ("A", "B") FROM stdin;
 --
 
 COPY public._prisma_migrations (id, checksum, finished_at, migration_name, logs, rolled_back_at, started_at, applied_steps_count) FROM stdin;
-37cfff6c-4851-4281-966a-e27b320b4d06	1cf22414bda7f121d26ce6e06e2781f0d3891df7b4dec4e451fdf61520bfedd8	2025-10-27 15:07:08.942045+05:30	20251007092122_new_optitech_dev	\N	\N	2025-10-27 15:07:08.40351+05:30	1
-f0696203-0157-4cf0-8d36-0fb3bfe35032	a4ae0dec75453db35ad5455f22c0bd3431a82e3ce9fce5f9b591491aec35b024	2025-10-27 15:07:08.944336+05:30	20251013094912_dev1	\N	\N	2025-10-27 15:07:08.942546+05:30	1
-4d0ca6ce-d165-49db-9170-faf6d1673f13	63fea5c9c8c28d224c628d23292ac7f29611b0a32991a8d8662f1cd74be4cca9	2025-10-27 15:07:08.946982+05:30	20251013102810_dev3	\N	\N	2025-10-27 15:07:08.944809+05:30	1
-f17ffdd9-1c03-4b28-9bff-6959e23e1639	0a0d3f46598f4ca41fb30f044050b25f87bd5dd8b7b742d73a05f4fa24dbf758	2025-10-27 15:07:09.059961+05:30	20251015054111_dev2	\N	\N	2025-10-27 15:07:08.947752+05:30	1
-bd3e113b-72bd-4712-9a6b-4bb0c428524b	ff03d8d18d705df8baa75523c024b38a5b4d3a92d7c6d251ca25dac2faec5938	2025-10-27 15:07:09.062444+05:30	20251015054232_dev2	\N	\N	2025-10-27 15:07:09.060447+05:30	1
-b5ccd212-0dcc-4b02-8448-866ecb023615	aaa994fa7254572c4332621c5b68fd3edfacc59bc2c4868b86ccf8b2af35d77a	2025-10-27 15:07:09.06518+05:30	20251015064316_dev2	\N	\N	2025-10-27 15:07:09.063022+05:30	1
-f6b6ba10-ccc3-4556-b2b6-2c81f53ca606	d2e432029ee8d89d8c00e2c13b5cc2ce5f97803b559fd5d7469785312ba77368	2025-10-27 15:07:09.547081+05:30	20251016070738_dev2	\N	\N	2025-10-27 15:07:09.066443+05:30	1
-98ed2511-682e-4d7c-8da5-86e6f764ceac	d788f8596ffbec4a3722e163552e224e9bea7cd346e91e66728b4f4a71635bc3	2025-10-27 15:07:09.600508+05:30	20251027074717_dev4	\N	\N	2025-10-27 15:07:09.547711+05:30	1
-5fc44309-1c9a-47c7-9e9d-88eb9534ddd0	6b77e9230bf52b231bfef720839ced0de8e34073b37481a437a2bce18b43b846	2025-10-27 15:07:16.933653+05:30	20251027093716_dev1	\N	\N	2025-10-27 15:07:16.929464+05:30	1
+354fd889-6fb4-4c41-bd21-05a529feb642	1cf22414bda7f121d26ce6e06e2781f0d3891df7b4dec4e451fdf61520bfedd8	2025-10-30 16:20:40.256368+05:30	20251007092122_new_optitech_dev	\N	\N	2025-10-30 16:20:39.579708+05:30	1
+7b4b1c34-d927-4b3f-a176-738aaf71dc46	a4ae0dec75453db35ad5455f22c0bd3431a82e3ce9fce5f9b591491aec35b024	2025-10-30 16:20:40.259855+05:30	20251013094912_dev1	\N	\N	2025-10-30 16:20:40.257212+05:30	1
+64f9f1e6-cc42-47d7-a48b-ed16e379bb84	63fea5c9c8c28d224c628d23292ac7f29611b0a32991a8d8662f1cd74be4cca9	2025-10-30 16:20:40.263412+05:30	20251013102810_dev3	\N	\N	2025-10-30 16:20:40.26046+05:30	1
+51760d62-e4fe-494f-9075-8eb4700b7006	0a0d3f46598f4ca41fb30f044050b25f87bd5dd8b7b742d73a05f4fa24dbf758	2025-10-30 16:20:40.411142+05:30	20251015054111_dev2	\N	\N	2025-10-30 16:20:40.264101+05:30	1
+4df89315-97aa-4e2d-9221-32d17165c99a	ff03d8d18d705df8baa75523c024b38a5b4d3a92d7c6d251ca25dac2faec5938	2025-10-30 16:20:40.416485+05:30	20251015054232_dev2	\N	\N	2025-10-30 16:20:40.41186+05:30	1
+8d581f40-a6c6-499b-8ffa-fa7972e42d02	aaa994fa7254572c4332621c5b68fd3edfacc59bc2c4868b86ccf8b2af35d77a	2025-10-30 16:20:40.420964+05:30	20251015064316_dev2	\N	\N	2025-10-30 16:20:40.417419+05:30	1
+632515f8-87bd-42ec-bf7a-873403237d5e	d2e432029ee8d89d8c00e2c13b5cc2ce5f97803b559fd5d7469785312ba77368	2025-10-30 16:20:41.008987+05:30	20251016070738_dev2	\N	\N	2025-10-30 16:20:40.423936+05:30	1
+d593ab93-e2d2-4901-ab3f-19bb8fbabab6	d788f8596ffbec4a3722e163552e224e9bea7cd346e91e66728b4f4a71635bc3	2025-10-30 16:20:41.068999+05:30	20251027074717_dev4	\N	\N	2025-10-30 16:20:41.009958+05:30	1
+5ebd5bae-961c-4b50-add9-9a4b2968c9e2	6b77e9230bf52b231bfef720839ced0de8e34073b37481a437a2bce18b43b846	2025-10-30 16:20:41.071065+05:30	20251027093716_dev1	\N	\N	2025-10-30 16:20:41.069473+05:30	1
+06a4beb9-14b5-4ba1-83b2-55c7cd8d4869	48f87fe353797c24c506d62fb7de54fb0656d4bb225204c5f52e2b9ba1a4a8d8	2025-10-30 16:20:41.073782+05:30	20251030055314_dev5	\N	\N	2025-10-30 16:20:41.071597+05:30	1
+270a3464-a223-4e88-abc4-088651f7a6a6	e4b0a3baf8438ae291341cd7ca21ab20b87d6d9f3958ee5eb3079df3a5eb3cb8	2025-10-30 16:20:46.804841+05:30	20251030105046_dev6	\N	\N	2025-10-30 16:20:46.802783+05:30	1
 \.
 
 
@@ -21959,5 +21915,4 @@ ALTER TABLE ONLY public."_DiscountToItems"
 -- PostgreSQL database dump complete
 --
 
-\unrestrict tPbKurbEkXtAsm80P1AaBOhAgXflwtN8H4EGlioUgIhSXT5Oc5ld6yeAkNZmHiH
-
+\unrestrict ApOtFFJEBBr3YigQMF2pAKnMKxJJvIP5nzTpjbtsMrNSWXQyxDEzYv2LCw1aq6G

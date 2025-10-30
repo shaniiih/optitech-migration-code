@@ -4,7 +4,7 @@ const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 const BATCH_SIZE = 1000;
 const WINDOW_SIZE = 5000;
 
-async function migrateMovementType(tenantId = "tenant_1") {
+async function migrateMovementType(tenantId = "tenant_1", branchId = "branch_1") {
   const mysql = await getMySQLConnection();
   const pg = await getPostgresConnection();
 
@@ -31,7 +31,7 @@ async function migrateMovementType(tenantId = "tenant_1") {
         const params = [];
 
         chunk.forEach((r) => {
-          values.push(`($${params.length + 1}, $${params.length + 2}, $${params.length + 3}, $${params.length + 4}, $${params.length + 5}, $${params.length + 6}, $${params.length + 7}, $${params.length + 8}, $${params.length + 9}, $${params.length + 10})`);
+          values.push(`($${params.length + 1}, $${params.length + 2}, $${params.length + 3}, $${params.length + 4}, $${params.length + 5}, $${params.length + 6}, $${params.length + 7}, $${params.length + 8}, $${params.length + 9}, $${params.length + 10}, $${params.length + 11})`);
           const name = r.InvMoveTypeName || `Movement Type ${r.InvMoveTypeId}`;
           params.push(
             uuidv4(),                       // id
@@ -43,7 +43,8 @@ async function migrateMovementType(tenantId = "tenant_1") {
             "PURCHASE",                      // category (no source; set default)
             false,                          // requiresInvoice
             false,                          // requiresReason
-            now                             // updatedAt
+            now,                             // updatedAt
+            branchId  // branchId
           );
         });
 
@@ -51,7 +52,7 @@ async function migrateMovementType(tenantId = "tenant_1") {
         try {
           const sql = `
             INSERT INTO "MovementType" (
-              id, "tenantId", "movementTypeId", name, "nameHe", action, category, "requiresInvoice", "requiresReason", "updatedAt"
+              id, "tenantId", "movementTypeId", name, "nameHe", action, category, "requiresInvoice", "requiresReason", "updatedAt", "branchId"
             )
             VALUES ${values.join(",")}
             ON CONFLICT ("tenantId", "movementTypeId")
@@ -62,7 +63,8 @@ async function migrateMovementType(tenantId = "tenant_1") {
               category = EXCLUDED.category,
               "requiresInvoice" = EXCLUDED."requiresInvoice",
               "requiresReason" = EXCLUDED."requiresReason",
-              "updatedAt" = NOW()
+              "updatedAt" = NOW(),
+              "branchId" = EXCLUDED."branchId"
           `;
           await pg.query(sql, params);
           await pg.query("COMMIT");

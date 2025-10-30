@@ -4,7 +4,7 @@ const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 const BATCH_SIZE = 1000;
 const WINDOW_SIZE = 5000;
 
-async function migrateMovementProperty(tenantId = "tenant_1") {
+async function migrateMovementProperty(tenantId = "tenant_1", branchId = null) {
   const mysql = await getMySQLConnection();
   const pg = await getPostgresConnection();
 
@@ -31,34 +31,33 @@ async function migrateMovementProperty(tenantId = "tenant_1") {
         const params = [];
 
         chunk.forEach((r) => {
-          values.push(`($${params.length + 1}, $${params.length + 2}, $${params.length + 3}, $${params.length + 4}, $${params.length + 5}, $${params.length + 6})`);
+          values.push(
+            `($${params.length + 1}, $${params.length + 2}, $${params.length + 3}, $${params.length + 4}, $${params.length + 5}, $${params.length + 6}, $${params.length + 7})`
+          );
           params.push(
             uuidv4(),                // id
             tenantId,                // tenantId
             Number(r.InvMovePropId), // movementPropertyId
             r.InvMovePropName || `Movement Property ${r.InvMovePropId}`, // name
             r.InvMovePropName || `Movement Property ${r.InvMovePropId}`, // nameHe
-            now  // updatedAt (createdAt set in DB default; we still pass createdAt for consistency)
+            now,                     // updatedAt
+            branchId                 // branchId
           );
         });
-
-        // We provide createdAt explicitly to keep timestamp parity
-        const createdAtPositions = [];
-        // But to keep code simple, reuse updatedAt value for createdAt in insert order
-        // So we will insert both createdAt and updatedAt from params by duplicating it in SQL
 
         await pg.query("BEGIN");
         try {
           const sql = `
             INSERT INTO "MovementProperty" (
-              id, "tenantId", "movementPropertyId", name, "nameHe", "updatedAt"
+              id, "tenantId", "movementPropertyId", name, "nameHe", "updatedAt", "branchId"
             )
             VALUES ${values.join(",")}
             ON CONFLICT ("tenantId", "movementPropertyId")
             DO UPDATE SET
               name = EXCLUDED.name,
               "nameHe" = EXCLUDED."nameHe",
-              "updatedAt" = EXCLUDED."updatedAt"
+              "updatedAt" = EXCLUDED."updatedAt",
+              "branchId" = EXCLUDED."branchId"
           `;
           await pg.query(sql, params);
           // Backfill createdAt for new rows where default wasn't set explicitly: not necessary; default applies.
@@ -83,4 +82,3 @@ async function migrateMovementProperty(tenantId = "tenant_1") {
 }
 
 module.exports = migrateMovementProperty;
-

@@ -8,9 +8,9 @@ const migrateZipCode = require("./migrateZipCode");
 const migrateContactAgents = require("./migrateContactAgents");
 const migrateCheckType = require("./migrateCheckType");
 const migrateUser = require("./migrateUser");
+const migrateCustomerGroup = require("./migrateCustomerGroup");
 const migrateCustomer = require("./migrateCustomer");
 const migrateDiscount = require("./migrateDiscount");
-const migrateCustomerGroup = require("./migrateCustomerGroup");
 const migrateCustomerPhoto = require("./migrateCustomerPhoto");
 const migrateExamination = require("./migrateExamination");
 const migrateAppointment = require("./migrateAppointment");
@@ -98,7 +98,15 @@ async function ensureTenant(tenantId) {
   try {
     const rawTenantId = process.env.TENANT_ID;
     const tenantId = ensureTenantId(rawTenantId);
-
+    const branchId =
+      process.env.BRANCH_ID && process.env.BRANCH_ID.trim()
+        ? process.env.BRANCH_ID.trim()
+        : null;
+    if (branchId) {
+      console.log(`[${now()}] Using BRANCH_ID: ${branchId}`);
+    } else {
+      console.log(`[${now()}] ⚠️ BRANCH_ID not provided; branch-scoped migrations will default to null`);
+    }
     if (rawTenantId && cleanTenantId(rawTenantId) !== rawTenantId) {
       console.log(
         `[${now()}] ℹ️ Normalized TENANT_ID from '${rawTenantId}' to '${tenantId}'`
@@ -116,8 +124,9 @@ async function ensureTenant(tenantId) {
     await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified
     await runStep("CheckType", () => migrateCheckType(tenantId)); // Verified
     await runStep("Supplier", () => migrateSupplier(tenantId)); // Verified
+    await runStep("Discount", () => migrateDiscount(tenantId, branchId)); // Verified
     await runStep("Users", () => migrateUser(tenantId)); // Verified
-    await runStep("CustomerGroup", () => migrateCustomerGroup(tenantId)); // Verified
+    await runStep("CustomerGroup", () => migrateCustomerGroup(tenantId, branchId)); // Verified
     await runStep("Customer", () => migrateCustomer(tenantId)); // Verified
     await runStep("ContactAgents", () => migrateContactAgents(tenantId)); // (Not found reference to tblContacts table in postgresql )
     //await runStep("Examination", () => migrateExamination(tenantId));
@@ -134,7 +143,6 @@ async function ensureTenant(tenantId) {
     //await runStep("FRPLine", () => migrateFRPLine(tenantId));
     //await runStep("LowVisionCheck", () => migrateLowVisionCheck(tenantId));
     //await runStep("Invoice", () => migrateInvoice(tenantId));
-    await runStep("Discount", () => migrateDiscount(tenantId)); // Verified
     await runStep("CustomerPhoto", () => migrateCustomerPhoto(tenantId)); // Verified
     await runStep("ExaminationOverview", () => migrateExaminationOverview(tenantId)); // Verified
     await runStep("GlassPrescriptionDetail", () => migrateGlassPrescriptionDetail(tenantId)); // Verified
@@ -165,8 +173,8 @@ async function ensureTenant(tenantId) {
     await runStep("LowVisionArea", () => migrateLowVisionArea(tenantId)); // Verified
     await runStep("GlassColor", () => migrateGlassColor(tenantId)); // Verified
     await runStep("GlassRole", () => migrateGlassRole(tenantId)); // Verified
-    await runStep("MovementType", () => migrateMovementType(tenantId)); // Verified
-    await runStep("MovementProperty", () => migrateMovementProperty(tenantId)); // Verified
+    await runStep("MovementType", () => migrateMovementType(tenantId, branchId)); // Verified
+    await runStep("MovementProperty", () => migrateMovementProperty(tenantId, branchId)); // Verified
     await runStep("GlassCoating", () => migrateGlassCoating(tenantId)); // Verified
     await runStep("GlassMaterial", () => migrateGlassMaterial(tenantId)); // Verified
     await runStep("Diagnosis", () => migrateDiagnosis(tenantId)); // Verified

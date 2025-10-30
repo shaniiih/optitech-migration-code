@@ -4,7 +4,7 @@ const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 const BATCH_SIZE = 1000;
 const WINDOW_SIZE = 5000;
 
-async function migrateDiscount(tenantId = "tenant_1") {
+async function migrateDiscount(tenantId = "tenant_1", branchId = null) {
   const mysql = await getMySQLConnection();
   const pg = await getPostgresConnection();
 
@@ -34,7 +34,7 @@ async function migrateDiscount(tenantId = "tenant_1") {
         const params = [];
 
         chunk.forEach((r) => {
-          // Build placeholders programmatically to guarantee 39 placeholders
+          // Build placeholders programmatically to guarantee 40 placeholders
           const placeholderStart = params.length + 1;
           const casts = {
             8: '::text[]',   // productIds
@@ -43,7 +43,7 @@ async function migrateDiscount(tenantId = "tenant_1") {
             13: '::timestamp', // validFrom
             14: '::timestamp', // validTo
           };
-          const tuple = Array.from({ length: 39 }, (_, idx) => {
+          const tuple = Array.from({ length: 40 }, (_, idx) => {
             const pos = placeholderStart + idx;
             const cast = casts[idx + 1] || '';
             return `$${pos}${cast}`;
@@ -94,7 +94,8 @@ async function migrateDiscount(tenantId = "tenant_1") {
             num(r.prlService),
             num(r.prlSolution),
             num(r.prlSunGlass),
-            num(r.prlTreat)
+            num(r.prlTreat),
+            branchId  // branchId
           );
         });
 
@@ -106,7 +107,7 @@ async function migrateDiscount(tenantId = "tenant_1") {
               "customerGroupIds", "customerIds", "validFrom", "validTo", "usageLimit", "usageCount", "perCustomerLimit",
               combinable, priority, active, "requiresApproval", notes, "createdAt", "updatedAt", "discountId",
               "prlCheck", "prlClens", "prlFrame", "prlGlass", "prlGlassBif", "prlGlassMul", "prlGlassOneP", "prlGlassOneS",
-              "prlMisc", "prlProp", "prlService", "prlSolution", "prlSunGlass", "prlTreat"
+              "prlMisc", "prlProp", "prlService", "prlSolution", "prlSunGlass", "prlTreat", "branchId"
             )
             VALUES ${values
               .map(v => v)
@@ -132,7 +133,8 @@ async function migrateDiscount(tenantId = "tenant_1") {
               "prlService" = EXCLUDED."prlService",
               "prlSolution" = EXCLUDED."prlSolution",
               "prlSunGlass" = EXCLUDED."prlSunGlass",
-              "prlTreat" = EXCLUDED."prlTreat"
+              "prlTreat" = EXCLUDED."prlTreat",
+              "branchId" = EXCLUDED."branchId"
           `;
           await pg.query(sql, params);
           await pg.query("COMMIT");

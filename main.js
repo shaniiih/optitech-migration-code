@@ -57,6 +57,7 @@ const migrateGlassCoating = require("./migrateGlassCoating");
 const migrateGlassColor = require("./migrateGlassColor");
 const migrateGlassRole = require("./migrateGlassRole");
 const migrateMovementProperty = require("./migrateMovementProperty");
+const migrateMovementType = require("./migrateMovementType");
 const { getPostgresConnection } = require("./dbConfig");
 const { ensureTenantId, cleanTenantId } = require("./tenantUtils");
 
@@ -164,6 +165,7 @@ async function ensureTenant(tenantId) {
     await runStep("LowVisionArea", () => migrateLowVisionArea(tenantId)); // Verified
     await runStep("GlassColor", () => migrateGlassColor(tenantId)); // Verified
     await runStep("GlassRole", () => migrateGlassRole(tenantId)); // Verified
+    await runStep("MovementType", () => migrateMovementType(tenantId));
     await runStep("MovementProperty", () => migrateMovementProperty(tenantId)); // Verified
     await runStep("GlassCoating", () => migrateGlassCoating(tenantId)); // Verified
     await runStep("GlassMaterial", () => migrateGlassMaterial(tenantId)); // Verified

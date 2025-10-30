@@ -11,7 +11,6 @@ const migrateUser = require("./migrateUser");
 const migrateCustomerGroup = require("./migrateCustomerGroup");
 const migrateCustomer = require("./migrateCustomer");
 const migrateDiscount = require("./migrateDiscount");
-const migrateCustomerPhoto = require("./migrateCustomerPhoto");
 const migrateExamination = require("./migrateExamination");
 const migrateAppointment = require("./migrateAppointment");
 const migrateClinicalExamination = require("./migrateClinicalExamination");
@@ -58,6 +57,7 @@ const migrateGlassColor = require("./migrateGlassColor");
 const migrateGlassRole = require("./migrateGlassRole");
 const migrateMovementProperty = require("./migrateMovementProperty");
 const migrateMovementType = require("./migrateMovementType");
+const migrateCustomerPhoto = require("./migrateCustomerPhoto");
 const { getPostgresConnection } = require("./dbConfig");
 const { ensureTenantId, cleanTenantId } = require("./tenantUtils");
 
@@ -143,7 +143,6 @@ async function ensureTenant(tenantId) {
     //await runStep("FRPLine", () => migrateFRPLine(tenantId));
     //await runStep("LowVisionCheck", () => migrateLowVisionCheck(tenantId));
     //await runStep("Invoice", () => migrateInvoice(tenantId));
-    await runStep("CustomerPhoto", () => migrateCustomerPhoto(tenantId)); // Verified
     await runStep("ExaminationOverview", () => migrateExaminationOverview(tenantId)); // Verified
     await runStep("GlassPrescriptionDetail", () => migrateGlassPrescriptionDetail(tenantId)); // Verified
     //await runStep("LensCharacteristic", () => migrateLensCharacteristic(tenantId));
@@ -179,6 +178,7 @@ async function ensureTenant(tenantId) {
     await runStep("GlassMaterial", () => migrateGlassMaterial(tenantId)); // Verified
     await runStep("Diagnosis", () => migrateDiagnosis(tenantId)); // Verified
     await runStep("OrthokeratologyTreatment", () => migrateOrthokeratologyTreatment(tenantId)); // Verified
+    await runStep("CustomerPhoto", () => migrateCustomerPhoto(tenantId, branchId)); // Verified
     console.log(`[${now()}] 🎉 All migrations completed successfully!`);
     process.exit(0);
   } catch (err) {

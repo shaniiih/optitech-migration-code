@@ -63,6 +63,7 @@ const migrateMovementProperty = require("./migrateMovementProperty");
 const migrateMovementType = require("./migrateMovementType");
 const migrateCustomerPhoto = require("./migrateCustomerPhoto");
 const migrateUserSettings = require("./migrateUserSettings");
+const migrateCreditCard = require("./migrateCreditCard");
 const migrateContact = require("./migrateContact");
 const migrateLetter = require("./migrateLetter");
 const { getPostgresConnection } = require("./dbConfig");
@@ -193,6 +194,7 @@ async function ensureTenant(tenantId) {
     await runStep("OrthokeratologyTreatment", () => migrateOrthokeratologyTreatment(tenantId)); // Verified
     await runStep("Letter", () => migrateLetter(tenantId, branchId)); // Verified
     await runStep("CustomerPhoto", () => migrateCustomerPhoto(tenantId, branchId)); // Verified
+    await runStep("CreditCard", () => migrateCreditCard(tenantId, branchId)); // New Migration Added
     console.log(`[${now()}] 🎉 All migrations completed successfully!`);
     process.exit(0);
   } catch (err) {

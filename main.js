@@ -9,6 +9,7 @@ const migrateContactAgents = require("./migrateContactAgents");
 const migrateCheckType = require("./migrateCheckType");
 const migrateCreditType = require("./migrateCreditType");
 const migrateEye = require("./migrateEye");
+const migratePrlType = require("./migratePrlType");
 const migrateUser = require("./migrateUser");
 const migrateCustomerGroup = require("./migrateCustomerGroup");
 const migrateCustomer = require("./migrateCustomer");
@@ -129,6 +130,7 @@ async function ensureTenant(tenantId) {
     await runStep("CheckType", () => migrateCheckType(tenantId)); // Verified
     await runStep("CreditType", () => migrateCreditType(tenantId, branchId)); // Verified
     await runStep("Eye", () => migrateEye(tenantId, branchId)); // Verified
+    await runStep("PrlType", () => migratePrlType(tenantId, branchId)); // Verified
     await runStep("Supplier", () => migrateSupplier(tenantId)); // Verified
     await runStep("Discount", () => migrateDiscount(tenantId, branchId)); // Verified
     await runStep("Users", () => migrateUser(tenantId)); // Verified

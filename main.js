@@ -58,6 +58,7 @@ const migrateGlassRole = require("./migrateGlassRole");
 const migrateMovementProperty = require("./migrateMovementProperty");
 const migrateMovementType = require("./migrateMovementType");
 const migrateCustomerPhoto = require("./migrateCustomerPhoto");
+const migrateLetter = require("./migrateLetter");
 const { getPostgresConnection } = require("./dbConfig");
 const { ensureTenantId, cleanTenantId } = require("./tenantUtils");
 
@@ -178,6 +179,7 @@ async function ensureTenant(tenantId) {
     await runStep("GlassMaterial", () => migrateGlassMaterial(tenantId)); // Verified
     await runStep("Diagnosis", () => migrateDiagnosis(tenantId)); // Verified
     await runStep("OrthokeratologyTreatment", () => migrateOrthokeratologyTreatment(tenantId)); // Verified
+    await runStep("Letter", () => migrateLetter(tenantId, branchId)); // Verified
     await runStep("CustomerPhoto", () => migrateCustomerPhoto(tenantId, branchId)); // Verified
     console.log(`[${now()}] 🎉 All migrations completed successfully!`);
     process.exit(0);

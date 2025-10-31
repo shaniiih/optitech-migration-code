@@ -63,6 +63,7 @@ const migrateMovementProperty = require("./migrateMovementProperty");
 const migrateMovementType = require("./migrateMovementType");
 const migrateCustomerPhoto = require("./migrateCustomerPhoto");
 const migrateUserSettings = require("./migrateUserSettings");
+const migrateContact = require("./migrateContact");
 const migrateLetter = require("./migrateLetter");
 const { getPostgresConnection } = require("./dbConfig");
 const { ensureTenantId, cleanTenantId } = require("./tenantUtils");
@@ -185,6 +186,7 @@ async function ensureTenant(tenantId) {
     await runStep("MovementType", () => migrateMovementType(tenantId, branchId)); // Verified
     await runStep("MovementProperty", () => migrateMovementProperty(tenantId, branchId)); // Verified
     await runStep("GlassCoating", () => migrateGlassCoating(tenantId)); // Verified
+    await runStep("Contact", () => migrateContact(tenantId, branchId));
     await runStep("UserSettings", () => migrateUserSettings(tenantId, branchId)); // Verified
     await runStep("GlassMaterial", () => migrateGlassMaterial(tenantId)); // Verified
     await runStep("Diagnosis", () => migrateDiagnosis(tenantId)); // Verified

@@ -49,6 +49,7 @@ const migrateContactLensManufacturer = require("./migrateContactLensManufacturer
 const migrateContactLensDisinfectingSolution = require("./migrateContactLensDisinfectingSolution");
 const migrateContactLensRinsingSolution = require("./migrateContactLensRinsingSolution");
 const migrateContactLensExamination = require("./migrateContactLensExamination");
+const migrateClndrWrk = require("./migrateClndrWrk");
 const migrateProduct = require("./migrateProduct");
 const migrateBarcodeManagement = require("./migrateBarcodeManagement");
 const migrateDetailedWorkOrder = require("./migrateDetailedWorkOrder");
@@ -154,6 +155,7 @@ async function ensureTenant(tenantId) {
     //await runStep("Invoice", () => migrateInvoice(tenantId));
     //await runStep("SMS", () => migrateSMS(tenantId));
     await runStep("Appointment", () => migrateAppointment(tenantId)); // Verified
+    await runStep("ClndrWrk", () => migrateClndrWrk(tenantId, branchId)); // Verified
     //await runStep("ClinicalExamination", () => migrateClinicalExamination(tenantId));
     //await runStep("ContactLensFittingDetail", () => migrateContactLensFittingDetail(tenantId));
     //await runStep("FRPLine", () => migrateFRPLine(tenantId));

@@ -47,6 +47,7 @@ const migrateCrdClensChecksPr = require("./migrateCrdClensChecksPr");
 const migrateContactLensManufacturer = require("./migrateContactLensManufacturer");
 const migrateContactLensDisinfectingSolution = require("./migrateContactLensDisinfectingSolution");
 const migrateContactLensRinsingSolution = require("./migrateContactLensRinsingSolution");
+const migrateContactLensExamination = require("./migrateContactLensExamination");
 const migrateProduct = require("./migrateProduct");
 const migrateBarcodeManagement = require("./migrateBarcodeManagement");
 const migrateDetailedWorkOrder = require("./migrateDetailedWorkOrder");
@@ -176,6 +177,7 @@ async function ensureTenant(tenantId) {
     await runStep("ContactLensDisinfectingSolution", () => migrateContactLensDisinfectingSolution(tenantId)); // Verified
     await runStep("ContactLensRinsingSolution", () => migrateContactLensRinsingSolution(tenantId));  // Verified
     await runStep("ContactLensType", () => migrateContactLensType(tenantId)); // Verified
+    await runStep("ContactLensExamination", () => migrateContactLensExamination(tenantId, branchId)); // Verified
     await runStep("DiagnosticProtocol", () => migrateDiagnosticProtocol(tenantId)); // Verified
     await runStep("Purchase", () => migratePurchase(tenantId)); // Verified
     await runStep("Product", () => migrateProduct(tenantId)); // Verified
@@ -191,8 +193,8 @@ async function ensureTenant(tenantId) {
     await runStep("MovementType", () => migrateMovementType(tenantId, branchId)); // Verified
     await runStep("MovementProperty", () => migrateMovementProperty(tenantId, branchId)); // Verified
     await runStep("GlassCoating", () => migrateGlassCoating(tenantId)); // Verified
-    await runStep("Contact", () => migrateContact(tenantId, branchId));
-    await runStep("ContactAgents", () => migrateContactAgents(tenantId, branchId));
+    await runStep("Contact", () => migrateContact(tenantId, branchId)); // Verified
+    await runStep("ContactAgents", () => migrateContactAgents(tenantId, branchId)); // Verified
     await runStep("UserSettings", () => migrateUserSettings(tenantId, branchId)); // Verified
     await runStep("GlassMaterial", () => migrateGlassMaterial(tenantId)); // Verified
     await runStep("Diagnosis", () => migrateDiagnosis(tenantId)); // Verified

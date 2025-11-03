@@ -72,6 +72,7 @@ const migrateDummy = require("./migrateDummy");
 const migrateContact = require("./migrateContact");
 const migrateContactAgents = require("./migrateContactAgents");
 const migrateLetter = require("./migrateLetter");
+const migrateCrdGlassIOPInst = require("./migrateCrdGlassIOPInst");
 const { getPostgresConnection } = require("./dbConfig");
 const { ensureTenantId, cleanTenantId } = require("./tenantUtils");
 
@@ -207,6 +208,7 @@ async function ensureTenant(tenantId) {
     await runStep("CustomerPhoto", () => migrateCustomerPhoto(tenantId, branchId)); // Verified
     await runStep("CreditCard", () => migrateCreditCard(tenantId, branchId)); // Verified
     await runStep("Dummy", () => migrateDummy(tenantId, branchId)); // Verified
+    await runStep("CrdGlassIOPInst", () => migrateCrdGlassIOPInst(tenantId, branchId)); // Verified
     console.log(`[${now()}] 🎉 All migrations completed successfully!`);
     process.exit(0);
   } catch (err) {

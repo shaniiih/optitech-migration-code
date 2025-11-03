@@ -33,6 +33,7 @@ const migrateWorkStatus = require("./migrateWorkStatus");
 const migrateCrdBuysWorkType = require("./migrateCrdBuysWorkType");
 const migrateBisData = require("./migrateBisData");
 const migrateWorkSupplier = require("./migrateWorkSupplier");
+const migrateCrdBuysWorkSupply = require("./migrateCrdBuysWorkSupply");
 const migrateFRPLine = require("./migrateFRPLine");
 const migrateLowVisionCheck = require("./migrateLowVisionCheck");
 const migrateLowVisionFrame = require("./migrateLowVisionFrame");
@@ -174,6 +175,7 @@ async function ensureTenant(tenantId) {
     await runStep("CrdBuysWorkType", () => migrateCrdBuysWorkType(tenantId, branchId));
     await runStep("BisData", () => migrateBisData(tenantId, branchId));
     await runStep("WorkSupplier", () => migrateWorkSupplier(tenantId)); // Verified
+    await runStep("CrdBuysWorkSupply", () => migrateCrdBuysWorkSupply(tenantId, branchId)); // Verified
     await runStep("ContactLensMaterial", () => migrateContactLensMaterial(tenantId)); // Verified
     await runStep("GlassModel", () => migrateGlassModel(tenantId)); // Verified
     await runStep("LensType", () => migrateLensType(tenantId)); // Verified

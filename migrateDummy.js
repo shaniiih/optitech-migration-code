@@ -26,16 +26,10 @@ async function migrateDummy(tenantId = "tenant_1", branchId = null) {
       END$$;
     `);
 
-    while (true) {
-      const [rows] = await mysql.query(
-        `SELECT Dummy
-         FROM tblDummy
-         ORDER BY Dummy
-         LIMIT ${WINDOW_SIZE}
-         OFFSET ${offset}`
-      );
-
-      if (!rows.length) break;
+    const [rows] = await mysql.query(
+      `SELECT DISTINCT Dummy
+       FROM tblDummy`
+    );
 
       for (let i = 0; i < rows.length; i += BATCH_SIZE) {
         const chunk = rows.slice(i, i + BATCH_SIZE);
@@ -83,15 +77,6 @@ async function migrateDummy(tenantId = "tenant_1", branchId = null) {
 
         total += chunk.length;
       }
-
-      offset += rows.length;
-      console.log(`Dummy rows migrated so far: ${total} (offset=${offset})`);
-
-      if (rows.length < WINDOW_SIZE) {
-        break;
-      }
-    }
-
     console.log(`✅ Dummy migration completed. Total: ${total}`);
   } finally {
     await mysql.end();

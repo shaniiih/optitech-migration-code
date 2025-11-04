@@ -41,6 +41,7 @@ const migrateLowVisionArea = require("./migrateLowVisionArea");
 const migrateLowVisionCap = require("./migrateLowVisionCap");
 const migrateLowVisionManufacturer = require("./migrateLowVisionManufacturer");
 const migrateSupplier = require("./migrateSupplier");
+const migrateSapakComment = require("./migrateSapakComment");
 const migrateInvoice = require("./migrateInvoice");
 const migrateSMS = require("./migrateSMS");
 const migrateOpticalBase = require("./migrateOpticalBase");
@@ -147,6 +148,7 @@ async function ensureTenant(tenantId) {
     await runStep("PrlType", () => migratePrlType(tenantId, branchId)); // Verified
     await runStep("SolutionName", () => migrateSolutionName(tenantId, branchId)); // Verified
     await runStep("Supplier", () => migrateSupplier(tenantId)); // Verified
+    await runStep("SapakComment", () => migrateSapakComment(tenantId, branchId));
     await runStep("Discount", () => migrateDiscount(tenantId, branchId)); // Verified
     await runStep("Users", () => migrateUser(tenantId)); // Verified
     await runStep("CustomerGroup", () => migrateCustomerGroup(tenantId, branchId)); // Verified

@@ -227,8 +227,8 @@ async function ensureTenant(tenantId) {
     await runStep("PayType", () => migratePayType(tenantId, branchId)); // Verified
     await runStep("ServiceType", () => migrateServiceType(tenantId, branchId)); // Verified
     await runStep("SearchOrder", () => migrateSearchOrder(tenantId, branchId)); // Verified
-    await runStep("ShortCut", () => migrateShortCut(tenantId, branchId));
-    await runStep("SMSLen", () => migrateSMSLen(tenantId, branchId));
+    await runStep("ShortCut", () => migrateShortCut(tenantId, branchId));  // Verified
+    await runStep("SMSLen", () => migrateSMSLen(tenantId, branchId));  // Verified
     await runStep("CustomerPhoto", () => migrateCustomerPhoto(tenantId, branchId)); // Verified
     await runStep("CreditCard", () => migrateCreditCard(tenantId, branchId)); // Verified
     await runStep("Dummy", () => migrateDummy(tenantId, branchId)); // Verified

@@ -81,6 +81,7 @@ const migrateServiceType = require("./migrateServiceType");
 const migrateInvoiceType = require("./migrateInvoiceType");
 const migratePayType = require("./migratePayType");
 const migrateSearchOrder = require("./migrateSearchOrder");
+const migrateShortCut = require("./migrateShortCut");
 const migrateCrdGlassIOPInst = require("./migrateCrdGlassIOPInst");
 const { getPostgresConnection } = require("./dbConfig");
 const { ensureTenantId, cleanTenantId } = require("./tenantUtils");
@@ -223,6 +224,7 @@ async function ensureTenant(tenantId) {
     await runStep("PayType", () => migratePayType(tenantId, branchId)); // Verified
     await runStep("ServiceType", () => migrateServiceType(tenantId, branchId)); // Verified
     await runStep("SearchOrder", () => migrateSearchOrder(tenantId, branchId)); // Verified
+    await runStep("ShortCut", () => migrateShortCut(tenantId, branchId));
     await runStep("CustomerPhoto", () => migrateCustomerPhoto(tenantId, branchId)); // Verified
     await runStep("CreditCard", () => migrateCreditCard(tenantId, branchId)); // Verified
     await runStep("Dummy", () => migrateDummy(tenantId, branchId)); // Verified

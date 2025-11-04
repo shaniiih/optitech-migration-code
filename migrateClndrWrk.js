@@ -100,19 +100,20 @@ async function migrateClndrWrk(tenantId = "tenant_1", rawDefaultBranchId = null)
   let skippedMissingDate = 0;
 
   try {
-    await pg.query(`
-      DO $$
-      BEGIN
-        IF NOT EXISTS (
-          SELECT 1
-          FROM pg_indexes
-          WHERE indexname = 'clndrwrk_tenant_wrkid_ux'
-        ) THEN
-          CREATE UNIQUE INDEX clndrwrk_tenant_wrkid_ux
-          ON "ClndrWrk" ("tenantId", "wrkId");
-        END IF;
-      END$$;
-    `);
+    // Unique index creation moved to Prisma schema/migrations. Leaving disabled to avoid conflicts.
+    // await pg.query(`
+    //   DO $$
+    //   BEGIN
+    //     IF NOT EXISTS (
+    //       SELECT 1
+    //       FROM pg_indexes
+    //       WHERE indexname = 'clndrwrk_tenant_wrkid_ux'
+    //     ) THEN
+    //       CREATE UNIQUE INDEX clndrwrk_tenant_wrkid_ux
+    //       ON "ClndrWrk" ("tenantId", "wrkId");
+    //     END IF;
+    //   END$$;
+    // `);
 
     const defaultBranchId = cleanText(rawDefaultBranchId);
 

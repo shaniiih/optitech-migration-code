@@ -28,18 +28,18 @@ async function migrateSMSLen(tenantId = "tenant_1", branchId = null) {
   let total = 0;
 
   try {
-    // Ensure unique index for upsert per tenant by (prefix, lang)
-    await pg.query(`
-      DO $$
-      BEGIN
-        IF NOT EXISTS (
-          SELECT 1 FROM pg_indexes WHERE indexname = 'smslen_tenant_prefix_lang_ux'
-        ) THEN
-          CREATE UNIQUE INDEX smslen_tenant_prefix_lang_ux
-          ON "SMSLen" ("tenantId", "sMSProviderPrefix", "sMSLang");
-        END IF;
-      END$$;
-    `);
+    // Unique index creation moved to Prisma schema/migrations. Leaving disabled to avoid conflicts.
+    // await pg.query(`
+    //   DO $$
+    //   BEGIN
+    //     IF NOT EXISTS (
+    //       SELECT 1 FROM pg_indexes WHERE indexname = 'smslen_tenant_prefix_lang_ux'
+    //     ) THEN
+    //       CREATE UNIQUE INDEX smslen_tenant_prefix_lang_ux
+    //       ON "SMSLen" ("tenantId", "sMSProviderPrefix", "sMSLang");
+    //     END IF;
+    //   END$$;
+    // `);
 
     // Window through the composite PK using tuple comparison
     /* MySQL supports row constructor comparisons: (a,b) > (?, ?) with ORDER BY a,b */

@@ -35,19 +35,20 @@ async function migrateSearchOrder(tenantId = "tenant_1", branchId = null) {
   let total = 0;
 
   try {
-    await pg.query(`
-      DO $$
-      BEGIN
-        IF NOT EXISTS (
-          SELECT 1
-          FROM pg_indexes
-          WHERE indexname = 'search_order_tenant_item_list_ux'
-        ) THEN
-          CREATE UNIQUE INDEX search_order_tenant_item_list_ux
-          ON "SearchOrder" ("tenantId", "itemData", "listIndex");
-        END IF;
-      END$$;
-    `);
+    // Unique index creation moved to Prisma schema/migrations. Leaving disabled to avoid conflicts.
+    // await pg.query(`
+    //   DO $$
+    //   BEGIN
+    //     IF NOT EXISTS (
+    //       SELECT 1
+    //       FROM pg_indexes
+    //       WHERE indexname = 'search_order_tenant_item_list_ux'
+    //     ) THEN
+    //       CREATE UNIQUE INDEX search_order_tenant_item_list_ux
+    //       ON "SearchOrder" ("tenantId", "itemData", "listIndex");
+    //     END IF;
+    //   END$$;
+    // `);
 
     while (true) {
       const [rows] = await mysql.query(

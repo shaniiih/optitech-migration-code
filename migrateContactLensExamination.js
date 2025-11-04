@@ -124,19 +124,20 @@ async function migrateContactLensExamination(tenantId = "tenant_1", branchId = n
   let missingExaminerCount = 0;
 
   try {
-    await pg.query(`
-      DO $$
-      BEGIN
-        IF NOT EXISTS (
-          SELECT 1
-          FROM pg_indexes
-          WHERE indexname = 'contactlens_exam_tenant_lensid_ux'
-        ) THEN
-          CREATE UNIQUE INDEX contactlens_exam_tenant_lensid_ux
-          ON "ContactLensExamination" ("tenantId", "lensId");
-        END IF;
-      END$$;
-    `);
+    // Unique index creation moved to Prisma schema/migrations. Leaving disabled to avoid conflicts.
+    // await pg.query(`
+    //   DO $$
+    //   BEGIN
+    //     IF NOT EXISTS (
+    //       SELECT 1
+    //       FROM pg_indexes
+    //       WHERE indexname = 'contactlens_exam_tenant_lensid_ux'
+    //     ) THEN
+    //       CREATE UNIQUE INDEX contactlens_exam_tenant_lensid_ux
+    //       ON "ContactLensExamination" ("tenantId", "lensId");
+    //     END IF;
+    //   END$$;
+    // `);
 
     const { rows: customerRows } = await pg.query(
       `SELECT id, "customerId"

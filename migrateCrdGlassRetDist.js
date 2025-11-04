@@ -35,19 +35,20 @@ async function migrateCrdGlassRetDist(tenantId = "tenant_1", branchId = null) {
   let total = 0;
 
   try {
-    await pg.query(`
-      DO $$
-      BEGIN
-        IF NOT EXISTS (
-          SELECT 1
-          FROM pg_indexes
-          WHERE indexname = 'crd_glass_retdist_tenant_ret_id_ux'
-        ) THEN
-          CREATE UNIQUE INDEX crd_glass_retdist_tenant_ret_id_ux
-          ON "CrdGlassRetDist" ("tenantId","retDistId");
-        END IF;
-      END$$;
-    `);
+    // Unique index creation moved to Prisma schema/migrations. Leaving disabled to avoid conflicts.
+    // await pg.query(`
+    //   DO $$
+    //   BEGIN
+    //     IF NOT EXISTS (
+    //       SELECT 1
+    //       FROM pg_indexes
+    //       WHERE indexname = 'crd_glass_retdist_tenant_ret_id_ux'
+    //     ) THEN
+    //       CREATE UNIQUE INDEX crd_glass_retdist_tenant_ret_id_ux
+    //       ON "CrdGlassRetDist" ("tenantId","retDistId");
+    //     END IF;
+    //   END$$;
+    // `);
 
     while (true) {
       const [rows] = await mysql.query(

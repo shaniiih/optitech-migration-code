@@ -42,6 +42,7 @@ const migrateLowVisionCap = require("./migrateLowVisionCap");
 const migrateLowVisionManufacturer = require("./migrateLowVisionManufacturer");
 const migrateSupplier = require("./migrateSupplier");
 const migrateSapakComment = require("./migrateSapakComment");
+const migrateSapakDest = require("./migrateSapakDest");
 const migrateInvoice = require("./migrateInvoice");
 const migrateSMS = require("./migrateSMS");
 const migrateOpticalBase = require("./migrateOpticalBase");
@@ -153,7 +154,6 @@ async function ensureTenant(tenantId) {
     await runStep("PrlType", () => migratePrlType(tenantId, branchId)); // Verified
     await runStep("SolutionName", () => migrateSolutionName(tenantId, branchId)); // Verified
     await runStep("Supplier", () => migrateSupplier(tenantId)); // Verified
-    await runStep("SapakComment", () => migrateSapakComment(tenantId, branchId));
     await runStep("Discount", () => migrateDiscount(tenantId, branchId)); // Verified
     await runStep("Users", () => migrateUser(tenantId)); // Verified
     await runStep("CustomerGroup", () => migrateCustomerGroup(tenantId, branchId)); // Verified
@@ -229,6 +229,8 @@ async function ensureTenant(tenantId) {
     await runStep("CreditCard", () => migrateCreditCard(tenantId, branchId)); // Verified
     await runStep("Dummy", () => migrateDummy(tenantId, branchId)); // Verified
     await runStep("CrdGlassIOPInst", () => migrateCrdGlassIOPInst(tenantId, branchId)); // Verified
+    await runStep("SapakComment", () => migrateSapakComment(tenantId, branchId)); // Verified
+    await runStep("SapakDest", () => migrateSapakDest(tenantId, branchId)); // Verified
     console.log(`[${now()}] 🎉 All migrations completed successfully!`);
     process.exit(0);
   } catch (err) {

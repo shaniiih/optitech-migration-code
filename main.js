@@ -83,6 +83,7 @@ const migrateServiceType = require("./migrateServiceType");
 const migrateInvoiceType = require("./migrateInvoiceType");
 const migratePayType = require("./migratePayType");
 const migrateSearchOrder = require("./migrateSearchOrder");
+const migrateSysLevel = require("./migrateSysLevel");
 const migrateShortCut = require("./migrateShortCut");
 const migrateSMSLen = require("./migrateSMSLen");
 const migrateCrdGlassIOPInst = require("./migrateCrdGlassIOPInst");
@@ -227,6 +228,7 @@ async function ensureTenant(tenantId) {
     await runStep("InvoiceType", () => migrateInvoiceType(tenantId, branchId)); // Verified
     await runStep("PayType", () => migratePayType(tenantId, branchId)); // Verified
     await runStep("ServiceType", () => migrateServiceType(tenantId, branchId)); // Verified
+    await runStep("SysLevel", () => migrateSysLevel(tenantId, branchId));
     await runStep("SearchOrder", () => migrateSearchOrder(tenantId, branchId)); // Verified
     await runStep("ShortCut", () => migrateShortCut(tenantId, branchId));  // Verified
     await runStep("SMSLen", () => migrateSMSLen(tenantId, branchId));  // Verified

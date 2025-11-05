@@ -47,9 +47,9 @@ async function migrateSapakDest(tenantId = "tenant_1", branchId = null) {
 
           let pgSapakId = null;
           if (mysqlSapakId) {
-            const res = await pg.query(`SELECT "supplierId" FROM "Supplier" WHERE "supplierId" = $1 AND "tenantId" = $2`, [String(mysqlSapakId), tenantId]);
+            const res = await pg.query(`SELECT "id" FROM "Supplier" WHERE "supplierId" = $1 AND "tenantId" = $2`, [String(mysqlSapakId), tenantId]);
             if (res.rows.length > 0) {
-              pgSapakId = parseInt(res.rows[0].supplierId, 10);
+              pgSapakId = res.rows[0].id;
             }
           }
 

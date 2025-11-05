@@ -26,7 +26,7 @@ async function migrateCrdClensChecksPr(tenantId = "tenant_1", branchId = null) {
   let skippedInvalidId = 0;
 
   try {
-    await pg.query(`
+    /*await pg.query(`
       DO $$
       BEGIN
         IF NOT EXISTS (
@@ -38,7 +38,7 @@ async function migrateCrdClensChecksPr(tenantId = "tenant_1", branchId = null) {
           ON "CrdClensChecksPr" ("tenantId","prId");
         END IF;
       END$$;
-    `);
+    `);*/
 
     while (true) {
       const [rows] = await mysql.query(

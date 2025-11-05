@@ -85,7 +85,7 @@ async function migrateSapakDest(tenantId = "tenant_1", branchId = null) {
               id, "tenantId", "branchId", "sapakDestId", "sapakDestName", "sapakId", fax1, fax2, email1, email2, "clientId", "createdAt", "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT (id) DO UPDATE SET
+            ON CONFLICT ("tenantId", "sapakDestId") DO UPDATE SET
               "tenantId" = EXCLUDED."tenantId",
               "branchId" = EXCLUDED."branchId",
               "sapakDestId" = EXCLUDED."sapakDestId",

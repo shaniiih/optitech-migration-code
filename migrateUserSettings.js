@@ -71,7 +71,7 @@ async function migrateUserSettings(tenantId, branchId) {
               "emailNotifications", "smsNotifications", "createdAt", "updatedAt",
               "branchId", "ProfileId", "profileName", "profileSql", "profileDesc"
             ) VALUES ${values.join(",")}
-            ON CONFLICT (id) DO UPDATE SET
+            ON CONFLICT ("tenantId", "ProfileId") DO UPDATE SET
               phone = EXCLUDED.phone,
               "preferredLanguage" = EXCLUDED."preferredLanguage",
               theme = EXCLUDED.theme,

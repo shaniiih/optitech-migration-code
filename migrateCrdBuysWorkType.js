@@ -30,7 +30,7 @@ async function migrateCrdBuysWorkType(tenantId = "tenant_1", branchId = null) {
   let skippedInvalidId = 0;
 
   try {
-    await pg.query(`
+    /*await pg.query(`
       DO $$
       BEGIN
         IF NOT EXISTS (
@@ -42,7 +42,7 @@ async function migrateCrdBuysWorkType(tenantId = "tenant_1", branchId = null) {
           ON "CrdBuysWorkType" ("tenantId","workTypeId");
         END IF;
       END$$;
-    `);
+    `);*/
 
     while (true) {
       const [rows] = await mysql.query(

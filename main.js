@@ -86,6 +86,7 @@ const migrateSearchOrder = require("./migrateSearchOrder");
 const migrateShortCut = require("./migrateShortCut");
 const migrateSMSLen = require("./migrateSMSLen");
 const migrateCrdGlassIOPInst = require("./migrateCrdGlassIOPInst");
+const migrateItemCountsYear = require("./migrateItemCountsYear");
 const { getPostgresConnection } = require("./dbConfig");
 const { ensureTenantId, cleanTenantId } = require("./tenantUtils");
 
@@ -229,6 +230,7 @@ async function ensureTenant(tenantId) {
     await runStep("SearchOrder", () => migrateSearchOrder(tenantId, branchId)); // Verified
     await runStep("ShortCut", () => migrateShortCut(tenantId, branchId));  // Verified
     await runStep("SMSLen", () => migrateSMSLen(tenantId, branchId));  // Verified
+    await runStep("ItemCountsYear", () => migrateItemCountsYear(tenantId, branchId));
     await runStep("CustomerPhoto", () => migrateCustomerPhoto(tenantId, branchId)); // Verified
     await runStep("CreditCard", () => migrateCreditCard(tenantId, branchId)); // Verified
     await runStep("Dummy", () => migrateDummy(tenantId, branchId)); // Verified

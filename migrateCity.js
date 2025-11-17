@@ -8,22 +8,10 @@ async function migrateCity(tenantId = "tenant_1", branchId = null) {
   const mysql = await getMySQLConnection();
   const pg = await getPostgresConnection();
 
-  let lastId = 0;
+  let lastId = -1;
   let total = 0;
 
   try {
-    await pg.query(`
-      DO $$
-      BEGIN
-        IF NOT EXISTS (
-          SELECT 1 FROM pg_indexes WHERE indexname = 'city_tenant_cityid_ux'
-        ) THEN
-          CREATE UNIQUE INDEX city_tenant_cityid_ux
-          ON "City" ("tenantId","cityId");
-        END IF;
-      END$$;
-    `);
-
     while (true) {
       const [rows] = await mysql.execute(
         `SELECT CityId, CityName
@@ -64,7 +52,7 @@ async function migrateCity(tenantId = "tenant_1", branchId = null) {
               id, "tenantId", "branchId", "cityId", name, "isActive", "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("cityId")
+            ON CONFLICT ("tenantId", "branchId", "cityId")
             DO UPDATE SET
               "tenantId" = EXCLUDED."tenantId",
               "branchId" = EXCLUDED."branchId",

@@ -53,6 +53,7 @@ const migrateContactLensManufacturer = require("./migrateContactLensManufacturer
 const migrateContactLensDisinfectingSolution = require("./migrateContactLensDisinfectingSolution");
 const migrateContactLensRinsingSolution = require("./migrateContactLensRinsingSolution");
 const migrateContactLensExamination = require("./migrateContactLensExamination");
+const migrateClndrTasksPriority = require("./migrateClndrTasksPriority");
 const migrateClndrWrk = require("./migrateClndrWrk");
 const migrateProduct = require("./migrateProduct");
 const migrateBarcodeManagement = require("./migrateBarcodeManagement");
@@ -149,11 +150,17 @@ async function ensureTenant(tenantId) {
     await runStep("Ensure tenant", () => ensureTenant(tenantId));
 
     // Order matters if there are FKs/assumptions; this keeps your current sequence.
+    await runStep("OpticalBase", () => migrateOpticalBase(tenantId)); // Verified
+    await runStep("BisData", () => migrateBisData(tenantId, branchId)); // Verified
     await runStep("Branch", () => migrateBranch(tenantId)); // Verified
+    await runStep("CheckType", () => migrateCheckType(tenantId)); // Verified
     await runStep("City", () => migrateCity(tenantId, branchId)); // Verified
+    await runStep("ClndrTasksPriority", () => migrateClndrTasksPriority(tenantId, branchId)); // Verified
+    
+
     await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
     await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified
-    await runStep("CheckType", () => migrateCheckType(tenantId)); // Verified
+    
     await runStep("CreditType", () => migrateCreditType(tenantId, branchId)); // Verified
     await runStep("Eye", () => migrateEye(tenantId, branchId)); // Verified
     await runStep("PrlType", () => migratePrlType(tenantId, branchId)); // Verified
@@ -186,14 +193,14 @@ async function ensureTenant(tenantId) {
     await runStep("WorkLabel", () => migrateWorkLabel(tenantId)); // Verified
     await runStep("WorkStatus", () => migrateWorkStatus(tenantId)); // Verified
     await runStep("CrdBuysWorkType", () => migrateCrdBuysWorkType(tenantId, branchId));
-    await runStep("BisData", () => migrateBisData(tenantId, branchId));
+    
     await runStep("WorkSupplier", () => migrateWorkSupplier(tenantId)); // Verified
     await runStep("CrdBuysWorkSupply", () => migrateCrdBuysWorkSupply(tenantId, branchId)); // Verified
     await runStep("ContactLensMaterial", () => migrateContactLensMaterial(tenantId)); // Verified
     await runStep("GlassModel", () => migrateGlassModel(tenantId)); // Verified
     await runStep("LensType", () => migrateLensType(tenantId)); // Verified
     await runStep("ContactLensCleaningSolution", () => migrateContactLensCleaningSolution(tenantId)); // Verified
-    await runStep("OpticalBase", () => migrateOpticalBase(tenantId)); // Verified
+    
     await runStep("ContactLensTint", () => migrateContactLensTint(tenantId)); //  Verified
     await runStep("CrdClensChecksPr", () => migrateCrdClensChecksPr(tenantId, branchId));
     await runStep("ContactLensManufacturer", () => migrateContactLensManufacturer(tenantId)); // Verified

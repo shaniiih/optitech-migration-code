@@ -21,7 +21,7 @@ function cleanText(value) {
   return trimmed.length ? trimmed : null;
 }
 
-async function migrateOpticalBase(tenantId = "tenant_1") {
+async function migrateOpticalBase(tenantId = "tenant_1", branchId) {
   const mysql = await getMySQLConnection();
   const pg = await getPostgresConnection();
 
@@ -61,11 +61,12 @@ async function migrateOpticalBase(tenantId = "tenant_1") {
           const name = cleanText(row.BaseName) || `Optical Base ${baseId}`;
           const offset = params.length;
           values.push(
-            `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7})`
+            `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8})`
           );
           params.push(
             uuidv4(),
             tenantId,
+            branchId || null,
             baseId,
             name,
             true,
@@ -85,6 +86,7 @@ async function migrateOpticalBase(tenantId = "tenant_1") {
             `INSERT INTO "OpticalBase" (
               id,
               "tenantId",
+              "branchId",
               "baseId",
               name,
               "isActive",
@@ -92,8 +94,7 @@ async function migrateOpticalBase(tenantId = "tenant_1") {
               "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("baseId") DO UPDATE SET
-              "tenantId" = EXCLUDED."tenantId",
+            ON CONFLICT ("tenantId", "branchId","baseId") DO UPDATE SET
               name = EXCLUDED.name,
               "isActive" = EXCLUDED."isActive",
               "updatedAt" = EXCLUDED."updatedAt"`,

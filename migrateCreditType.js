@@ -12,7 +12,7 @@ async function migrateCreditType(tenantId = "tenant_1", branchId = null) {
   let total = 0;
 
   try {
-    await pg.query(`
+    /*await pg.query(`
       DO $$
       BEGIN
         IF NOT EXISTS (
@@ -24,7 +24,7 @@ async function migrateCreditType(tenantId = "tenant_1", branchId = null) {
           ON "CreditType" ("tenantId","creditTypeId");
         END IF;
       END$$;
-    `);
+    `);*/
 
     while (true) {
       const [rows] = await mysql.execute(

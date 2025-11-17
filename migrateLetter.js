@@ -93,7 +93,7 @@ async function migrateLetter(tenantId, branchId) {
               "text1Size", "text2Size", "text3Size", "text4Size",
               "LetterId"
             ) VALUES ${values.join(",")}
-            ON CONFLICT (id) DO UPDATE SET
+            ON CONFLICT ("tenantId", "templateName") DO UPDATE SET
               "templateName" = EXCLUDED."templateName",
               subject = EXCLUDED.subject,
               content = EXCLUDED.content,

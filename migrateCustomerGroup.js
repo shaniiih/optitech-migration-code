@@ -17,7 +17,7 @@ async function migrateCustomerGroup(tenantId = "tenant_1", branchId = null) {
   const missingDiscounts = new Set();
 
   try {
-    await pg.query(`
+    /*await pg.query(`
       DO $$
       BEGIN
         IF NOT EXISTS (
@@ -27,7 +27,7 @@ async function migrateCustomerGroup(tenantId = "tenant_1", branchId = null) {
             ON "CustomerGroup" ("tenantId", "groupCode");
         END IF;
       END$$;
-    `);
+    `);*/
 
     const { rows: cityRows } = await pg.query(
       `SELECT id, "cityId" FROM "City" WHERE "tenantId" = $1`,

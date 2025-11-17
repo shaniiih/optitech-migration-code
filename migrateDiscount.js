@@ -112,7 +112,7 @@ async function migrateDiscount(tenantId = "tenant_1", branchId = null) {
             VALUES ${values
               .map(v => v)
               .join(",")}
-            ON CONFLICT (id)
+            ON CONFLICT ("tenantId", "code")
             DO UPDATE SET
               name = EXCLUDED.name,
               type = EXCLUDED.type,

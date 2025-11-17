@@ -12,7 +12,7 @@ async function migrateEye(tenantId = "tenant_1", branchId = null) {
   let total = 0;
 
   try {
-    await pg.query(`
+    /*await pg.query(`
       DO $$
       BEGIN
         IF NOT EXISTS (
@@ -24,7 +24,7 @@ async function migrateEye(tenantId = "tenant_1", branchId = null) {
           ON "Eye" ("tenantId","eyeId");
         END IF;
       END$$;
-    `);
+    `);*/
 
     while (true) {
       const [rows] = await mysql.execute(

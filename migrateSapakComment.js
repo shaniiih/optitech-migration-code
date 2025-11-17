@@ -11,12 +11,35 @@ function cleanText(value) {
   return trimmed.length ? trimmed : null;
 }
 
+function normalizeInt(value) {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "number") return Number.isFinite(value) ? Math.trunc(value) : null;
+  if (typeof value === "bigint") return Number(value);
+  if (Buffer.isBuffer(value)) return normalizeInt(value.toString("utf8"));
+  const n = Number(String(value).trim());
+  return Number.isFinite(n) ? Math.trunc(n) : null;
+}
+
+async function getPrlTypeId(pg, tenantId, prlTypeNumber) {
+  if (prlTypeNumber === null || prlTypeNumber === undefined) {
+    throw new Error(`Missing prlType for SapakComment row (tenantId=${tenantId})`);
+  }
+  const { rows } = await pg.query(
+    `SELECT id FROM "PrlType" WHERE "tenantId" = $1 AND "prlType" = $2 LIMIT 1`,
+    [tenantId, prlTypeNumber]
+  );
+  const found = rows && rows[0] && rows[0].id;
+  if (!found) throw new Error(`PrlType not found for tenantId=${tenantId}, prlType=${prlTypeNumber}`);
+  return found;
+}
+
 async function migrateSapakComment(tenantId = "tenant_1", branchId = null) {
   const mysql = await getMySQLConnection();
   const pg = await getPostgresConnection();
 
   let lastId = 0;
   let total = 0;
+  // no cache; prlType existence is required and validated on each row
 
   try {
     const now = () => new Date();
@@ -39,11 +62,13 @@ async function migrateSapakComment(tenantId = "tenant_1", branchId = null) {
         const params = [];
 
         for (const r of chunk) {
-          const sapakId = r.SapakId;
-          const prlType = r.prlType;
+          const sapakId = normalizeInt(r.SapakId);
+          const prlTypeNumber = normalizeInt(r.prlType);
           const comments = cleanText(r.Comments);
-          const prlSp = r.PrlSp;
+          const prlSp = normalizeInt(r.PrlSp);
           const timestamp = now();
+
+          const prlTypeId = await getPrlTypeId(pg, tenantId, prlTypeNumber);
 
           const paramBase = params.length;
           values.push(
@@ -55,7 +80,7 @@ async function migrateSapakComment(tenantId = "tenant_1", branchId = null) {
             tenantId,
             branchId,
             sapakId,
-            prlType,
+            prlTypeId,
             comments,
             prlSp,
             timestamp,
@@ -73,7 +98,7 @@ async function migrateSapakComment(tenantId = "tenant_1", branchId = null) {
               id, "tenantId", "branchId", "sapakId", "prlType", comments, "prlSp", "createdAt", "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT (id) DO UPDATE SET
+            ON CONFLICT ("tenantId", "sapakId") DO UPDATE SET
               "tenantId" = EXCLUDED."tenantId",
               "branchId" = EXCLUDED."branchId",
               "sapakId" = EXCLUDED."sapakId",

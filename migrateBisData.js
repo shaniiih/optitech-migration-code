@@ -128,7 +128,7 @@ async function migrateBisData(tenantId = "tenant_1", branchId = null) {
               "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("tenantId", "bisId")
+            ON CONFLICT ("tenantId", "branchId", "bisId")
             DO UPDATE SET
               "branchId" = EXCLUDED."branchId",
               "bisNum" = EXCLUDED."bisNum",
@@ -171,4 +171,3 @@ async function migrateBisData(tenantId = "tenant_1", branchId = null) {
 }
 
 module.exports = migrateBisData;
-

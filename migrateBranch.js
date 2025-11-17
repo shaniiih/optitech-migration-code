@@ -11,7 +11,7 @@ async function migrateBranch(tenantId = "tenant_1") {
   // Ensure a unique constraint for idempotency, for example on ("tenantId", "code")
   // CREATE UNIQUE INDEX IF NOT EXISTS "Branch_tenant_code_ux" ON "Branch"("tenantId", "code");
 
-  let lastId = 0;
+  let lastId = -1;
   let total = 0;
 
   try {
@@ -40,12 +40,15 @@ async function migrateBranch(tenantId = "tenant_1") {
         chunk.forEach((r) => {
           // You can use deterministic UUIDs if you want true idempotency even when re-running
           // For now we derive 'code' from BranchId and rely on tenantId+code unique
-          values.push(`($${params.length + 1}, $${params.length + 2}, $${params.length + 3}, $${params.length + 4}, $${params.length + 5}, $${params.length + 6}, $${params.length + 7})`);
+          values.push(
+            `($${params.length + 1}, $${params.length + 2}, $${params.length + 3}, $${params.length + 4}, $${params.length + 5}, $${params.length + 6}, $${params.length + 7}, $${params.length + 8})`
+          );
           params.push(
             uuidv4(),                  // id (or keep a deterministic mapping if needed)
             tenantId,                  // "tenantId"
             r.BranchName ?? null,      // name
             String(r.BranchId),        // code
+            r.BranchId ?? null,        // branchId (Int?)
             false,                     // "isMain"
             now,                       // "createdAt"
             now                        // "updatedAt"
@@ -56,10 +59,17 @@ async function migrateBranch(tenantId = "tenant_1") {
         try {
           const sql = `
             INSERT INTO "Branch" (
-              id, "tenantId", name, code, "isMain", "createdAt", "updatedAt"
+              id,
+              "tenantId",
+              name,
+              code,
+              "branchId",
+              "isMain",
+              "createdAt",
+              "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("tenantId", code)
+            ON CONFLICT ("tenantId", code, "branchId")
             DO UPDATE SET
               "tenantId" = EXCLUDED."tenantId",
               name = EXCLUDED.name,

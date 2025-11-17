@@ -147,7 +147,7 @@ async function ensureTenant(tenantId) {
 
     // Order matters if there are FKs/assumptions; this keeps your current sequence.
     await runStep("Branch", () => migrateBranch(tenantId)); // Verified
-    await runStep("City", () => migrateCity(tenantId)); // Verified
+    await runStep("City", () => migrateCity(tenantId, branchId)); // Verified
     await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
     await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified
     await runStep("CheckType", () => migrateCheckType(tenantId)); // Verified

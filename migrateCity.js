@@ -4,7 +4,7 @@ const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 const WINDOW_SIZE = 5000;
 const BATCH_SIZE  = 1000;
 
-async function migrateCity(tenantId = "tenant_1") {
+async function migrateCity(tenantId = "tenant_1", branchId = null) {
   const mysql = await getMySQLConnection();
   const pg = await getPostgresConnection();
 
@@ -43,11 +43,12 @@ async function migrateCity(tenantId = "tenant_1") {
 
         for (const r of chunk) {
           values.push(
-            `($${params.length + 1}, $${params.length + 2}, $${params.length + 3}, $${params.length + 4}, $${params.length + 5}, $${params.length + 6})`
+            `($${params.length + 1}, $${params.length + 2}, $${params.length + 3}, $${params.length + 4}, $${params.length + 5}, $${params.length + 6}, $${params.length + 7})`
           );
           params.push(
             uuidv4(),         // id
             tenantId,         // tenantId
+            branchId,         // branchId
             r.CityId,         // cityId
             r.CityName,       // name
             true,             // isActive
@@ -60,12 +61,13 @@ async function migrateCity(tenantId = "tenant_1") {
           await pg.query(
             `
             INSERT INTO "City" (
-              id, "tenantId", "cityId", name, "isActive", "updatedAt"
+              id, "tenantId", "branchId", "cityId", name, "isActive", "updatedAt"
             )
             VALUES ${values.join(",")}
             ON CONFLICT ("cityId")
             DO UPDATE SET
               "tenantId" = EXCLUDED."tenantId",
+              "branchId" = EXCLUDED."branchId",
               name = EXCLUDED.name,
               "isActive" = EXCLUDED."isActive",
               "updatedAt" = EXCLUDED."updatedAt"

@@ -54,6 +54,7 @@ const migrateOpticalBase = require("./migrateOpticalBase");
 const migrateContactLensTint = require("./migrateContactLensTint");
 const migrateCrdClensChecksPr = require("./migrateCrdClensChecksPr");
 const migrateCrdClensChecksMater = require("./migrateCrdClensChecksMater");
+const migrateCrdClensChecksTint = require("./migrateCrdClensChecksTint");
 const migrateContactLensManufacturer = require("./migrateContactLensManufacturer");
 const migrateContactLensDisinfectingSolution = require("./migrateContactLensDisinfectingSolution");
 const migrateCrdClensSolDisinfect = require("./migrateCrdClensSolDisinfect");
@@ -172,6 +173,7 @@ async function ensureTenant(tenantId) {
     await runStep("CrdClensSolDisinfect", () => migrateCrdClensSolDisinfect(tenantId, branchId)); // Verified
     await runStep("CrdBuysWorkSupply", () => migrateCrdBuysWorkSupply(tenantId, branchId)); // Verified
     await runStep("CrdClensBrand", () => migrateCrdClensBrand(tenantId, branchId)); // Verified
+    await runStep("CrdClensChecksTint", () => migrateCrdClensChecksTint(tenantId, branchId)); // Verified
     await runStep("CrdClensChecksMater", () => migrateCrdClensChecksMater(tenantId, branchId)); // Verified
     await runStep("CrdClensChecksPr", () => migrateCrdClensChecksPr(tenantId, branchId)); // Verified
 
@@ -218,7 +220,7 @@ async function ensureTenant(tenantId) {
     await runStep("LensType", () => migrateLensType(tenantId)); // Verified
     await runStep("ContactLensCleaningSolution", () => migrateContactLensCleaningSolution(tenantId)); // Verified
     
-    await runStep("ContactLensTint", () => migrateContactLensTint(tenantId)); //  Verified
+    // await runStep("ContactLensTint", () => migrateContactLensTint(tenantId)); //  Verified
     await runStep("ContactLensManufacturer", () => migrateContactLensManufacturer(tenantId)); // Verified
     // await runStep("ContactLensDisinfectingSolution", () => migrateContactLensDisinfectingSolution(tenantId)); // Verified
     await runStep("ContactLensRinsingSolution", () => migrateContactLensRinsingSolution(tenantId));  // Verified

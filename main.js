@@ -56,6 +56,7 @@ const migrateCrdClensChecksPr = require("./migrateCrdClensChecksPr");
 const migrateCrdClensChecksMater = require("./migrateCrdClensChecksMater");
 const migrateCrdClensChecksTint = require("./migrateCrdClensChecksTint");
 const migrateCrdClensManuf = require("./migrateCrdClensManuf");
+const migrateCrdClensSolRinse = require("./migrateCrdClensSolRinse");
 const migrateContactLensManufacturer = require("./migrateContactLensManufacturer");
 const migrateContactLensDisinfectingSolution = require("./migrateContactLensDisinfectingSolution");
 const migrateCrdClensSolDisinfect = require("./migrateCrdClensSolDisinfect");
@@ -178,6 +179,7 @@ async function ensureTenant(tenantId) {
     await runStep("CrdClensChecksTint", () => migrateCrdClensChecksTint(tenantId, branchId)); // Verified
     await runStep("CrdClensManuf", () => migrateCrdClensManuf(tenantId, branchId)); // Verified
     await runStep("CrdClensSolDisinfect", () => migrateCrdClensSolDisinfect(tenantId, branchId)); // Verified
+    await runStep("CrdClensSolRinse", () => migrateCrdClensSolRinse(tenantId, branchId)); // Verified
 
 
 
@@ -225,7 +227,7 @@ async function ensureTenant(tenantId) {
     // await runStep("ContactLensTint", () => migrateContactLensTint(tenantId)); //  Verified
     await runStep("ContactLensManufacturer", () => migrateContactLensManufacturer(tenantId)); // Verified
     // await runStep("ContactLensDisinfectingSolution", () => migrateContactLensDisinfectingSolution(tenantId)); // Verified
-    await runStep("ContactLensRinsingSolution", () => migrateContactLensRinsingSolution(tenantId));  // Verified
+    // await runStep("ContactLensRinsingSolution", () => migrateContactLensRinsingSolution(tenantId));  // Verified
     //await runStep("ContactLensType", () => migrateContactLensType(tenantId)); // Verified
     await runStep("ContactLensExamination", () => migrateContactLensExamination(tenantId, branchId)); // Verified
     await runStep("DiagnosticProtocol", () => migrateDiagnosticProtocol(tenantId)); // Verified

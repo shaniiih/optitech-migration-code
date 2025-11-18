@@ -55,6 +55,7 @@ const migrateContactLensRinsingSolution = require("./migrateContactLensRinsingSo
 const migrateContactLensExamination = require("./migrateContactLensExamination");
 const migrateClndrTasksPriority = require("./migrateClndrTasksPriority");
 const migrateCLnsChar = require("./migrateCLnsChar");
+const migrateCLnsType = require("./migrateCLnsType");
 const migrateClndrWrk = require("./migrateClndrWrk");
 const migrateProduct = require("./migrateProduct");
 const migrateBarcodeManagement = require("./migrateBarcodeManagement");
@@ -158,6 +159,7 @@ async function ensureTenant(tenantId) {
     await runStep("City", () => migrateCity(tenantId, branchId)); // Verified
     await runStep("ClndrTasksPriority", () => migrateClndrTasksPriority(tenantId, branchId)); // Verified
     await runStep("CLnsChar", () => migrateCLnsChar(tenantId, branchId)); // Verified
+    await runStep("CLnsType", () => migrateCLnsType(tenantId, branchId)); // Verified
 
     await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
     await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified
@@ -206,7 +208,7 @@ async function ensureTenant(tenantId) {
     await runStep("ContactLensManufacturer", () => migrateContactLensManufacturer(tenantId)); // Verified
     await runStep("ContactLensDisinfectingSolution", () => migrateContactLensDisinfectingSolution(tenantId)); // Verified
     await runStep("ContactLensRinsingSolution", () => migrateContactLensRinsingSolution(tenantId));  // Verified
-    await runStep("ContactLensType", () => migrateContactLensType(tenantId)); // Verified
+    //await runStep("ContactLensType", () => migrateContactLensType(tenantId)); // Verified
     await runStep("ContactLensExamination", () => migrateContactLensExamination(tenantId, branchId)); // Verified
     await runStep("DiagnosticProtocol", () => migrateDiagnosticProtocol(tenantId)); // Verified
     await runStep("Purchase", () => migratePurchase(tenantId)); // Verified

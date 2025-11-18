@@ -12,18 +12,6 @@ async function migrateClndrTasksPriority(tenantId = "tenant_1", branchId = null)
   let total = 0;
 
   try {
-    await pg.query(`
-      DO $$
-      BEGIN
-        IF NOT EXISTS (
-          SELECT 1 FROM pg_indexes WHERE indexname = 'clndr_tasks_priority_tenant_priorityid_ux'
-        ) THEN
-          CREATE UNIQUE INDEX clndr_tasks_priority_tenant_priorityid_ux
-          ON "ClndrTasksPriority" ("tenantId","priorityId");
-        END IF;
-      END$$;
-    `);
-
     while (true) {
       const [rows] = await mysql.execute(
         `SELECT PriorityId, PriorityName
@@ -74,7 +62,7 @@ async function migrateClndrTasksPriority(tenantId = "tenant_1", branchId = null)
               id, "tenantId", "branchId", "priorityId", "priorityName", "createdAt", "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("tenantId", "priorityId")
+            ON CONFLICT ("tenantId", "branchId", "priorityId")
             DO UPDATE SET
               "branchId" = EXCLUDED."branchId",
               "priorityName" = EXCLUDED."priorityName",

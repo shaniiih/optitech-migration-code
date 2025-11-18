@@ -54,6 +54,7 @@ const migrateContactLensDisinfectingSolution = require("./migrateContactLensDisi
 const migrateContactLensRinsingSolution = require("./migrateContactLensRinsingSolution");
 const migrateContactLensExamination = require("./migrateContactLensExamination");
 const migrateClndrTasksPriority = require("./migrateClndrTasksPriority");
+const migrateCLnsChar = require("./migrateCLnsChar");
 const migrateClndrWrk = require("./migrateClndrWrk");
 const migrateProduct = require("./migrateProduct");
 const migrateBarcodeManagement = require("./migrateBarcodeManagement");
@@ -150,17 +151,16 @@ async function ensureTenant(tenantId) {
     await runStep("Ensure tenant", () => ensureTenant(tenantId));
 
     // Order matters if there are FKs/assumptions; this keeps your current sequence.
-    await runStep("OpticalBase", () => migrateOpticalBase(tenantId)); // Verified
+    await runStep("OpticalBase", () => migrateOpticalBase(tenantId, branchId)); // Verified
     await runStep("BisData", () => migrateBisData(tenantId, branchId)); // Verified
     await runStep("Branch", () => migrateBranch(tenantId)); // Verified
-    await runStep("CheckType", () => migrateCheckType(tenantId)); // Verified
+    await runStep("CheckType", () => migrateCheckType(tenantId, branchId)); // Verified
     await runStep("City", () => migrateCity(tenantId, branchId)); // Verified
     await runStep("ClndrTasksPriority", () => migrateClndrTasksPriority(tenantId, branchId)); // Verified
-    
+    await runStep("CLnsChar", () => migrateCLnsChar(tenantId, branchId)); // Verified
 
     await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
     await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified
-    
     await runStep("CreditType", () => migrateCreditType(tenantId, branchId)); // Verified
     await runStep("Eye", () => migrateEye(tenantId, branchId)); // Verified
     await runStep("PrlType", () => migratePrlType(tenantId, branchId)); // Verified

@@ -57,6 +57,7 @@ const migrateCrdClensChecksMater = require("./migrateCrdClensChecksMater");
 const migrateCrdClensChecksTint = require("./migrateCrdClensChecksTint");
 const migrateCrdClensManuf = require("./migrateCrdClensManuf");
 const migrateCrdClensSolRinse = require("./migrateCrdClensSolRinse");
+const migrateCrdClensType = require("./migrateCrdClensType");
 const migrateContactLensManufacturer = require("./migrateContactLensManufacturer");
 const migrateContactLensDisinfectingSolution = require("./migrateContactLensDisinfectingSolution");
 const migrateCrdClensSolDisinfect = require("./migrateCrdClensSolDisinfect");
@@ -180,6 +181,7 @@ async function ensureTenant(tenantId) {
     await runStep("CrdClensManuf", () => migrateCrdClensManuf(tenantId, branchId)); // Verified
     await runStep("CrdClensSolDisinfect", () => migrateCrdClensSolDisinfect(tenantId, branchId)); // Verified
     await runStep("CrdClensSolRinse", () => migrateCrdClensSolRinse(tenantId, branchId)); // Verified
+    await runStep("CrdClensType", () => migrateCrdClensType(tenantId, branchId)); // Verified
 
 
 

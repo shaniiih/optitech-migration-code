@@ -7,7 +7,9 @@ const BATCH_SIZE = 1000;
 function asInteger(value) {
   if (value === null || value === undefined) return null;
   if (typeof value === "number") return Number.isFinite(value) ? Math.trunc(value) : null;
-  const parsed = Number(String(value).trim());
+  const trimmed = String(value).trim();
+  if (!trimmed) return null;
+  const parsed = Number(trimmed);
   return Number.isFinite(parsed) ? Math.trunc(parsed) : null;
 }
 
@@ -26,19 +28,6 @@ async function migrateCrdClensChecksPr(tenantId = "tenant_1", branchId = null) {
   let skippedInvalidId = 0;
 
   try {
-    /*await pg.query(`
-      DO $$
-      BEGIN
-        IF NOT EXISTS (
-          SELECT 1
-          FROM pg_indexes
-          WHERE indexname = 'crdclenscheckspr_tenant_prid_ux'
-        ) THEN
-          CREATE UNIQUE INDEX crdclenscheckspr_tenant_prid_ux
-          ON "CrdClensChecksPr" ("tenantId","prId");
-        END IF;
-      END$$;
-    `);*/
 
     while (true) {
       const [rows] = await mysql.query(
@@ -57,6 +46,7 @@ async function migrateCrdClensChecksPr(tenantId = "tenant_1", branchId = null) {
         const values = [];
         const params = [];
         const timestamp = new Date();
+        const seenPrIds = new Set(); // avoid duplicates in same statement
         let processedInChunk = 0;
 
         for (const row of chunk) {
@@ -65,6 +55,8 @@ async function migrateCrdClensChecksPr(tenantId = "tenant_1", branchId = null) {
             skippedInvalidId += 1;
             continue;
           }
+          if (seenPrIds.has(prId)) continue;
+          seenPrIds.add(prId);
 
           const prName = cleanText(row.PrName) || `Crd Clens Checks Pr ${prId}`;
           const offset = params.length;
@@ -104,9 +96,8 @@ async function migrateCrdClensChecksPr(tenantId = "tenant_1", branchId = null) {
               "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("tenantId", "prId")
+            ON CONFLICT ("tenantId", "branchId", "prId")
             DO UPDATE SET
-              "branchId" = EXCLUDED."branchId",
               "prName" = EXCLUDED."prName",
               "idCount" = COALESCE(EXCLUDED."idCount", "CrdClensChecksPr"."idCount"),
               "updatedAt" = EXCLUDED."updatedAt"
@@ -139,4 +130,3 @@ async function migrateCrdClensChecksPr(tenantId = "tenant_1", branchId = null) {
 }
 
 module.exports = migrateCrdClensChecksPr;
-

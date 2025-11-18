@@ -173,7 +173,7 @@ async function ensureTenant(tenantId) {
     await runStep("CrdBuysWorkSupply", () => migrateCrdBuysWorkSupply(tenantId, branchId)); // Verified
     await runStep("CrdClensBrand", () => migrateCrdClensBrand(tenantId, branchId)); // Verified
     await runStep("CrdClensChecksMater", () => migrateCrdClensChecksMater(tenantId, branchId)); // Verified
-
+    await runStep("CrdClensChecksPr", () => migrateCrdClensChecksPr(tenantId, branchId)); // Verified
 
 
 
@@ -219,7 +219,6 @@ async function ensureTenant(tenantId) {
     await runStep("ContactLensCleaningSolution", () => migrateContactLensCleaningSolution(tenantId)); // Verified
     
     await runStep("ContactLensTint", () => migrateContactLensTint(tenantId)); //  Verified
-    await runStep("CrdClensChecksPr", () => migrateCrdClensChecksPr(tenantId, branchId));
     await runStep("ContactLensManufacturer", () => migrateContactLensManufacturer(tenantId)); // Verified
     // await runStep("ContactLensDisinfectingSolution", () => migrateContactLensDisinfectingSolution(tenantId)); // Verified
     await runStep("ContactLensRinsingSolution", () => migrateContactLensRinsingSolution(tenantId));  // Verified

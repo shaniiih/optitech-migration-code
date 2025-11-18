@@ -6,9 +6,7 @@ const BATCH_SIZE = 1000;
 
 function asInteger(value) {
   if (value === null || value === undefined) return null;
-  if (typeof value === "number") {
-    return Number.isFinite(value) ? Math.trunc(value) : null;
-  }
+  if (typeof value === "number") return Number.isFinite(value) ? Math.trunc(value) : null;
   const trimmed = String(value).trim();
   if (!trimmed) return null;
   const parsed = Number(trimmed);
@@ -21,7 +19,7 @@ function cleanText(value) {
   return trimmed.length ? trimmed : null;
 }
 
-async function migrateCrdClensSolDisinfect(tenantId = "tenant_1", branchId = null) {
+async function migrateCrdClensChecksMater(tenantId = "tenant_1", branchId = null) {
   const mysql = await getMySQLConnection();
   const pg = await getPostgresConnection();
 
@@ -32,10 +30,10 @@ async function migrateCrdClensSolDisinfect(tenantId = "tenant_1", branchId = nul
   try {
     while (true) {
       const [rows] = await mysql.query(
-        `SELECT ClensSolDisinfectId, ClensSolDisinfectName
-           FROM tblCrdClensSolDisinfect
-          WHERE ClensSolDisinfectId > ?
-          ORDER BY ClensSolDisinfectId
+        `SELECT MaterId, MaterName
+           FROM sqlCrdClensChecksMater
+          WHERE MaterId > ?
+          ORDER BY MaterId
           LIMIT ${WINDOW_SIZE}`,
         [lastId]
       );
@@ -47,30 +45,32 @@ async function migrateCrdClensSolDisinfect(tenantId = "tenant_1", branchId = nul
         const values = [];
         const params = [];
         const timestamp = new Date();
+        const seenMaterIds = new Set(); // avoid duplicates in same statement
 
         for (const row of chunk) {
-          const clensSolDisinfectId = asInteger(row.ClensSolDisinfectId);
-          if (clensSolDisinfectId === null) {
+          const materId = asInteger(row.MaterId);
+          if (materId === null) {
             skippedInvalidId += 1;
             continue;
           }
+          if (seenMaterIds.has(materId)) {
+            continue; // skip duplicates in the same batch to avoid ON CONFLICT multiple times
+          }
+          seenMaterIds.add(materId);
 
-          const name =
-            cleanText(row.ClensSolDisinfectName) ||
-            `Clens Sol Disinfect ${clensSolDisinfectId}`;
-
+          const materName = cleanText(row.MaterName) || `Crd Clens Checks Mater ${materId}`;
           const base = params.length;
           values.push(
             `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7})`
           );
           params.push(
-            uuidv4(),           // id
-            tenantId,           // tenantId
-            branchId,           // branchId
-            clensSolDisinfectId,// clensSolDisinfectId
-            name,               // clensSolDisinfectName
-            timestamp,          // createdAt
-            timestamp           // updatedAt
+            uuidv4(),    // id
+            tenantId,    // tenantId
+            branchId,    // branchId
+            materId,     // materId
+            materName,   // materName
+            timestamp,   // createdAt
+            timestamp    // updatedAt
           );
         }
 
@@ -79,18 +79,18 @@ async function migrateCrdClensSolDisinfect(tenantId = "tenant_1", branchId = nul
         await pg.query("BEGIN");
         try {
           await pg.query(
-            `INSERT INTO "CrdClensSolDisinfect" (
+            `INSERT INTO "CrdClensChecksMater" (
                id,
                "tenantId",
                "branchId",
-               "clensSolDisinfectId",
-               "clensSolDisinfectName",
+               "materId",
+               "materName",
                "createdAt",
                "updatedAt"
              )
              VALUES ${values.join(",")}
-             ON CONFLICT ("tenantId", "branchId", "clensSolDisinfectId") DO UPDATE SET
-               "clensSolDisinfectName" = EXCLUDED."clensSolDisinfectName",
+             ON CONFLICT ("tenantId", "branchId", "materId") DO UPDATE SET
+               "materName" = EXCLUDED."materName",
                "updatedAt" = EXCLUDED."updatedAt"`,
             params
           );
@@ -102,18 +102,16 @@ async function migrateCrdClensSolDisinfect(tenantId = "tenant_1", branchId = nul
         }
       }
 
-      const latestId = asInteger(rows[rows.length - 1]?.ClensSolDisinfectId);
+      const latestId = asInteger(rows[rows.length - 1]?.MaterId);
       if (latestId !== null) {
         lastId = latestId;
       }
-      console.log(`CrdClensSolDisinfect migrated so far: ${total} (lastId=${lastId})`);
+      console.log(`CrdClensChecksMater migrated so far: ${total} (lastId=${lastId})`);
     }
 
-    console.log(`✅ CrdClensSolDisinfect migration completed. Total rows processed: ${total}`);
+    console.log(`✅ CrdClensChecksMater migration completed. Total rows processed: ${total}`);
     if (skippedInvalidId) {
-      console.warn(
-        `⚠️ CrdClensSolDisinfect: skipped ${skippedInvalidId} records due to invalid ClensSolDisinfectId`
-      );
+      console.warn(`⚠️ CrdClensChecksMater: skipped ${skippedInvalidId} records due to invalid MaterId`);
     }
   } finally {
     await mysql.end();
@@ -121,4 +119,4 @@ async function migrateCrdClensSolDisinfect(tenantId = "tenant_1", branchId = nul
   }
 }
 
-module.exports = migrateCrdClensSolDisinfect;
+module.exports = migrateCrdClensChecksMater;

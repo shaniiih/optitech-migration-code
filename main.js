@@ -53,6 +53,7 @@ const migrateSMS = require("./migrateSMS");
 const migrateOpticalBase = require("./migrateOpticalBase");
 const migrateContactLensTint = require("./migrateContactLensTint");
 const migrateCrdClensChecksPr = require("./migrateCrdClensChecksPr");
+const migrateCrdClensChecksMater = require("./migrateCrdClensChecksMater");
 const migrateContactLensManufacturer = require("./migrateContactLensManufacturer");
 const migrateContactLensDisinfectingSolution = require("./migrateContactLensDisinfectingSolution");
 const migrateCrdClensSolDisinfect = require("./migrateCrdClensSolDisinfect");
@@ -171,11 +172,12 @@ async function ensureTenant(tenantId) {
     await runStep("CrdClensSolDisinfect", () => migrateCrdClensSolDisinfect(tenantId, branchId)); // Verified
     await runStep("CrdBuysWorkSupply", () => migrateCrdBuysWorkSupply(tenantId, branchId)); // Verified
     await runStep("CrdClensBrand", () => migrateCrdClensBrand(tenantId, branchId)); // Verified
+    await runStep("CrdClensChecksMater", () => migrateCrdClensChecksMater(tenantId, branchId)); // Verified
 
 
-    
 
-    await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
+
+    // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
     await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified
     await runStep("CreditType", () => migrateCreditType(tenantId, branchId)); // Verified
     await runStep("Eye", () => migrateEye(tenantId, branchId)); // Verified
@@ -211,7 +213,7 @@ async function ensureTenant(tenantId) {
     await runStep("CrdBuysWorkType", () => migrateCrdBuysWorkType(tenantId, branchId));
     
     await runStep("WorkSupplier", () => migrateWorkSupplier(tenantId)); // Verified
-    await runStep("ContactLensMaterial", () => migrateContactLensMaterial(tenantId)); // Verified
+    // await runStep("ContactLensMaterial", () => migrateContactLensMaterial(tenantId)); // Verified
     await runStep("GlassModel", () => migrateGlassModel(tenantId)); // Verified
     await runStep("LensType", () => migrateLensType(tenantId)); // Verified
     await runStep("ContactLensCleaningSolution", () => migrateContactLensCleaningSolution(tenantId)); // Verified

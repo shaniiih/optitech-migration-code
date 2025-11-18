@@ -32,6 +32,7 @@ const migrateExaminationOverview = require("./migrateExaminationOverview");
 const migrateWorkLabel = require("./migrateWorkLabel");
 const migrateCrdBuysWorkLab = require("./migrateCrdBuysWorkLab");
 const migrateCrdBuysWorkSapak = require("./migrateCrdBuysWorkSapak");
+const migrateCrdBuysWorkStat = require("./migrateCrdBuysWorkStat");
 const migrateWorkStatus = require("./migrateWorkStatus");
 const migrateCrdBuysWorkType = require("./migrateCrdBuysWorkType");
 const migrateBisData = require("./migrateBisData");
@@ -164,6 +165,7 @@ async function ensureTenant(tenantId) {
     await runStep("CLnsType", () => migrateCLnsType(tenantId, branchId)); // Verified
     await runStep("CrdBuysWorkLab", () => migrateCrdBuysWorkLab(tenantId, branchId)); // Verified
     await runStep("CrdBuysWorkSapak", () => migrateCrdBuysWorkSapak(tenantId, branchId)); // Verified
+    await runStep("CrdBuysWorkStat", () => migrateCrdBuysWorkStat(tenantId, branchId)); // Verified
 
     //await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
     await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified

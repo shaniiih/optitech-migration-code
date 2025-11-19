@@ -89,6 +89,7 @@ const migrateCrdGlassRetType = require("./migrateCrdGlassRetType");
 const migrateCrdGlassUse = require("./migrateCrdGlassUse");
 const migrateMovementProperty = require("./migrateMovementProperty");
 const migrateMovementType = require("./migrateMovementType");
+const migrateCrdOrder = require("./migrateCrdOrder");
 const migrateCustomerPhoto = require("./migrateCustomerPhoto");
 const migrateUserSettings = require("./migrateUserSettings");
 const migrateCreditCard = require("./migrateCreditCard");
@@ -207,6 +208,7 @@ async function ensureTenant(tenantId) {
     await runStep("CrdLVFrame", () => migrateCrdLVFrame(tenantId, branchId)); // Verified
     await runStep("CrdGlassUse", () => migrateCrdGlassUse(tenantId, branchId)); // Verified
     await runStep("CrdLVManuf", () => migrateCrdLVManuf(tenantId, branchId)); // Verified
+    await runStep("CrdOrder", () => migrateCrdOrder(tenantId, branchId)); // Verified
 
       
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified

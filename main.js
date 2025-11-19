@@ -108,6 +108,7 @@ const migrateCrdGlassChecksFrm = require("./migrateCrdGlassChecksFrm");
 const migrateCrdGlassCoat = require("./migrateCrdGlassCoat");
 const migrateCrdGlassColor = require("./migrateCrdGlassColor");
 const migrateCrdGlassMater = require("./migrateCrdGlassMater");
+const migrateCrdGlassModel = require("./migrateCrdGlassModel");
 const { getPostgresConnection } = require("./dbConfig");
 const { ensureTenantId, cleanTenantId } = require("./tenantUtils");
 
@@ -194,6 +195,7 @@ async function ensureTenant(tenantId) {
     await runStep("CrdGlassCoat", () => migrateCrdGlassCoat(tenantId, branchId)); // Verified
     await runStep("CrdGlassColor", () => migrateCrdGlassColor(tenantId, branchId)); // Verified
     await runStep("CrdGlassMater", () => migrateCrdGlassMater(tenantId, branchId)); // Verified
+    await runStep("CrdGlassModel", () => migrateCrdGlassModel(tenantId, branchId)); // Verified
 
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified

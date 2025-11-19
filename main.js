@@ -47,6 +47,7 @@ const migrateLowVisionCap = require("./migrateLowVisionCap");
 const migrateLowVisionManufacturer = require("./migrateLowVisionManufacturer");
 const migrateCrdLVArea = require("./migrateCrdLVArea");
 const migrateCrdLVFrame = require("./migrateCrdLVFrame");
+const migrateCrdLVManuf = require("./migrateCrdLVManuf");
 const migrateSupplier = require("./migrateSupplier");
 const migrateSapakComment = require("./migrateSapakComment");
 const migrateSapakDest = require("./migrateSapakDest");
@@ -205,6 +206,7 @@ async function ensureTenant(tenantId) {
     await runStep("CrdLVArea", () => migrateCrdLVArea(tenantId, branchId)); // Verified
     await runStep("CrdLVFrame", () => migrateCrdLVFrame(tenantId, branchId)); // Verified
     await runStep("CrdGlassUse", () => migrateCrdGlassUse(tenantId, branchId)); // Verified
+    await runStep("CrdLVManuf", () => migrateCrdLVManuf(tenantId, branchId)); // Verified
 
       
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified

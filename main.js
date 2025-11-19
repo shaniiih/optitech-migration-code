@@ -105,6 +105,7 @@ const migrateItemCountsYear = require("./migrateItemCountsYear");
 const migrateCrdClinicFld = require("./migrateCrdClinicFld");
 const migrateCrdGlassBrand = require("./migrateCrdGlassBrand");
 const migrateCrdGlassChecksFrm = require("./migrateCrdGlassChecksFrm");
+const migrateCrdGlassCoat = require("./migrateCrdGlassCoat");
 const { getPostgresConnection } = require("./dbConfig");
 const { ensureTenantId, cleanTenantId } = require("./tenantUtils");
 
@@ -188,6 +189,7 @@ async function ensureTenant(tenantId) {
     await runStep("CrdClinicFld", () => migrateCrdClinicFld(tenantId, branchId)); // Verified
     await runStep("CrdGlassBrand", () => migrateCrdGlassBrand(tenantId, branchId)); // Verified
     await runStep("CrdGlassChecksFrm", () => migrateCrdGlassChecksFrm(tenantId, branchId)); // Verified (No data present in old DB)
+    await runStep("CrdGlassCoat", () => migrateCrdGlassCoat(tenantId, branchId)); // Verified
 
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified

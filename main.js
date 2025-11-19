@@ -103,6 +103,7 @@ const migrateSMSLen = require("./migrateSMSLen");
 const migrateCrdGlassIOPInst = require("./migrateCrdGlassIOPInst");
 const migrateItemCountsYear = require("./migrateItemCountsYear");
 const migrateCrdClinicFld = require("./migrateCrdClinicFld");
+const migrateCrdGlassBrand = require("./migrateCrdGlassBrand");
 const { getPostgresConnection } = require("./dbConfig");
 const { ensureTenantId, cleanTenantId } = require("./tenantUtils");
 
@@ -183,10 +184,11 @@ async function ensureTenant(tenantId) {
     await runStep("CrdClensSolDisinfect", () => migrateCrdClensSolDisinfect(tenantId, branchId)); // Verified
     await runStep("CrdClensSolRinse", () => migrateCrdClensSolRinse(tenantId, branchId)); // Verified
     await runStep("CrdClensType", () => migrateCrdClensType(tenantId, branchId)); // Verified
-    await runStep("CrdClinicFld", () => migrateCrdClinicFld(tenantId, branchId));
+    await runStep("CrdClinicFld", () => migrateCrdClinicFld(tenantId, branchId)); // Verified
+    await runStep("CrdGlassBrand", () => migrateCrdGlassBrand(tenantId, branchId)); // Verified
 
 
-    // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
+   /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
     await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified
     await runStep("CreditType", () => migrateCreditType(tenantId, branchId)); // Verified
     await runStep("Eye", () => migrateEye(tenantId, branchId)); // Verified
@@ -272,7 +274,7 @@ async function ensureTenant(tenantId) {
     await runStep("Dummy", () => migrateDummy(tenantId, branchId)); // Verified
     await runStep("CrdGlassIOPInst", () => migrateCrdGlassIOPInst(tenantId, branchId)); // Verified
     await runStep("SapakComment", () => migrateSapakComment(tenantId, branchId)); // Verified
-    await runStep("SapakDest", () => migrateSapakDest(tenantId, branchId)); // Verified
+    await runStep("SapakDest", () => migrateSapakDest(tenantId, branchId)); // Verified*/
     console.log(`[${now()}] 🎉 All migrations completed successfully!`);
     process.exit(0);
   } catch (err) {

@@ -204,6 +204,7 @@ async function ensureTenant(tenantId) {
     await runStep("CrdGlassRole", () => migrateCrdGlassRole(tenantId, branchId)); // Verified
     await runStep("CrdLVArea", () => migrateCrdLVArea(tenantId, branchId)); // Verified
     await runStep("CrdLVFrame", () => migrateCrdLVFrame(tenantId, branchId)); // Verified
+    await runStep("CrdGlassUse", () => migrateCrdGlassUse(tenantId, branchId)); // Verified
 
       
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
@@ -265,7 +266,6 @@ async function ensureTenant(tenantId) {
     await runStep("LowVisionArea", () => migrateLowVisionArea(tenantId)); // Verified
     await runStep("GlassColor", () => migrateGlassColor(tenantId)); // Verified
     await runStep("GlassRole", () => migrateGlassRole(tenantId)); // Verified
-    await runStep("CrdGlassUse", () => migrateCrdGlassUse(tenantId, branchId)); // Verified
     await runStep("MovementType", () => migrateMovementType(tenantId, branchId)); // Verified
     await runStep("MovementProperty", () => migrateMovementProperty(tenantId, branchId)); // Verified
     await runStep("GlassCoating", () => migrateGlassCoating(tenantId)); // Verified

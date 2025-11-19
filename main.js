@@ -197,6 +197,7 @@ async function ensureTenant(tenantId) {
     await runStep("CrdGlassColor", () => migrateCrdGlassColor(tenantId, branchId)); // Verified
     await runStep("CrdGlassMater", () => migrateCrdGlassMater(tenantId, branchId)); // Verified
     await runStep("CrdGlassModel", () => migrateCrdGlassModel(tenantId, branchId)); // Verified
+    await runStep("CrdGlassRetDist", () => migrateCrdGlassRetDist(tenantId, branchId)); // Verified
     await runStep("CrdLVArea", () => migrateCrdLVArea(tenantId, branchId)); // Verified
 
 
@@ -259,7 +260,6 @@ async function ensureTenant(tenantId) {
     await runStep("LowVisionArea", () => migrateLowVisionArea(tenantId)); // Verified
     await runStep("GlassColor", () => migrateGlassColor(tenantId)); // Verified
     await runStep("GlassRole", () => migrateGlassRole(tenantId)); // Verified
-    await runStep("CrdGlassRetDist", () => migrateCrdGlassRetDist(tenantId, branchId)); // Verified
     await runStep("CrdGlassRetType", () => migrateCrdGlassRetType(tenantId, branchId)); // Verified
     await runStep("CrdGlassUse", () => migrateCrdGlassUse(tenantId, branchId)); // Verified
     await runStep("MovementType", () => migrateMovementType(tenantId, branchId)); // Verified

@@ -82,6 +82,7 @@ const migrateDiagnosticProtocol = require("./migrateDiagnosticProtocol");
 const migrateGlassCoating = require("./migrateGlassCoating");
 const migrateGlassColor = require("./migrateGlassColor");
 const migrateGlassRole = require("./migrateGlassRole");
+const migrateCrdGlassRole = require("./migrateCrdGlassRole");
 const migrateCrdGlassRetDist = require("./migrateCrdGlassRetDist");
 const migrateCrdGlassRetType = require("./migrateCrdGlassRetType");
 const migrateCrdGlassUse = require("./migrateCrdGlassUse");
@@ -200,6 +201,7 @@ async function ensureTenant(tenantId) {
     await runStep("CrdGlassModel", () => migrateCrdGlassModel(tenantId, branchId)); // Verified
     await runStep("CrdGlassRetDist", () => migrateCrdGlassRetDist(tenantId, branchId)); // Verified
     await runStep("CrdGlassRetType", () => migrateCrdGlassRetType(tenantId, branchId)); // Verified
+    await runStep("CrdGlassRole", () => migrateCrdGlassRole(tenantId, branchId)); // Verified
     await runStep("CrdLVArea", () => migrateCrdLVArea(tenantId, branchId)); // Verified
     await runStep("CrdLVFrame", () => migrateCrdLVFrame(tenantId, branchId)); // Verified
 

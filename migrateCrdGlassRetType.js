@@ -35,21 +35,6 @@ async function migrateCrdGlassRetType(tenantId = "tenant_1", branchId = null) {
   let total = 0;
 
   try {
-    // Unique index creation moved to Prisma schema/migrations. Leaving disabled to avoid conflicts.
-    // await pg.query(`
-    //   DO $$
-    //   BEGIN
-    //     IF NOT EXISTS (
-    //       SELECT 1
-    //       FROM pg_indexes
-    //       WHERE indexname = 'crd_glass_rettype_tenant_ret_id_ux'
-    //     ) THEN
-    //       CREATE UNIQUE INDEX crd_glass_rettype_tenant_ret_id_ux
-    //       ON "CrdGlassRetType" ("tenantId","retTypeId");
-    //     END IF;
-    //   END$$;
-    // `);
-
     while (true) {
       const [rows] = await mysql.query(
         `SELECT RetTypeId, RetTypeName
@@ -106,7 +91,7 @@ async function migrateCrdGlassRetType(tenantId = "tenant_1", branchId = null) {
               "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("tenantId", "retTypeId")
+            ON CONFLICT ("tenantId", "branchId", "retTypeId")
             DO UPDATE SET
               "branchId" = EXCLUDED."branchId",
               "retTypeName" = EXCLUDED."retTypeName",

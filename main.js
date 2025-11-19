@@ -102,6 +102,7 @@ const migrateShortCut = require("./migrateShortCut");
 const migrateSMSLen = require("./migrateSMSLen");
 const migrateCrdGlassIOPInst = require("./migrateCrdGlassIOPInst");
 const migrateItemCountsYear = require("./migrateItemCountsYear");
+const migrateCrdClinicFld = require("./migrateCrdClinicFld");
 const { getPostgresConnection } = require("./dbConfig");
 const { ensureTenantId, cleanTenantId } = require("./tenantUtils");
 
@@ -182,7 +183,7 @@ async function ensureTenant(tenantId) {
     await runStep("CrdClensSolDisinfect", () => migrateCrdClensSolDisinfect(tenantId, branchId)); // Verified
     await runStep("CrdClensSolRinse", () => migrateCrdClensSolRinse(tenantId, branchId)); // Verified
     await runStep("CrdClensType", () => migrateCrdClensType(tenantId, branchId)); // Verified
-
+    await runStep("CrdClinicFld", () => migrateCrdClinicFld(tenantId, branchId));
 
 
     // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified

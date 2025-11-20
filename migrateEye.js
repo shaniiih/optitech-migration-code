@@ -12,20 +12,6 @@ async function migrateEye(tenantId = "tenant_1", branchId = null) {
   let total = 0;
 
   try {
-    /*await pg.query(`
-      DO $$
-      BEGIN
-        IF NOT EXISTS (
-          SELECT 1
-          FROM pg_indexes
-          WHERE indexname = 'eye_tenant_eyeid_ux'
-        ) THEN
-          CREATE UNIQUE INDEX eye_tenant_eyeid_ux
-          ON "Eye" ("tenantId","eyeId");
-        END IF;
-      END$$;
-    `);*/
-
     while (true) {
       const [rows] = await mysql.execute(
         `SELECT EyeId, EyeName
@@ -76,7 +62,7 @@ async function migrateEye(tenantId = "tenant_1", branchId = null) {
               id, "tenantId", "branchId", "eyeId", "eyeName", "createdAt", "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("tenantId", "eyeId")
+            ON CONFLICT ("tenantId", "branchId", "eyeId")
             DO UPDATE SET
               "eyeName" = EXCLUDED."eyeName",
               "branchId" = EXCLUDED."branchId",

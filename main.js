@@ -212,12 +212,13 @@ async function ensureTenant(tenantId) {
     await runStep("CreditType", () => migrateCreditType(tenantId, branchId)); // Verified
     await runStep("Discount", () => migrateDiscount(tenantId, branchId)); // Verified
     await runStep("Dummy", () => migrateDummy(tenantId, branchId)); // Verified
+    await runStep("Eye", () => migrateEye(tenantId, branchId)); // Verified
 
       
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
     await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified
 
-    await runStep("Eye", () => migrateEye(tenantId, branchId)); // Verified
+
     await runStep("PrlType", () => migratePrlType(tenantId, branchId)); // Verified
     await runStep("SolutionName", () => migrateSolutionName(tenantId, branchId)); // Verified
     await runStep("SpecialName", () => migrateSpecialName(tenantId, branchId)); // Verified

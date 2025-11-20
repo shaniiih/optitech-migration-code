@@ -94,6 +94,7 @@ const migrateCustomerPhoto = require("./migrateCustomerPhoto");
 const migrateUserSettings = require("./migrateUserSettings");
 const migrateCreditCard = require("./migrateCreditCard");
 const migrateDummy = require("./migrateDummy");
+const migrateFixExpense = require("./migrateFixExpense");
 const migrateContact = require("./migrateContact");
 const migrateContactAgents = require("./migrateContactAgents");
 const migrateLetter = require("./migrateLetter");
@@ -209,10 +210,13 @@ async function ensureTenant(tenantId) {
     await runStep("CrdGlassUse", () => migrateCrdGlassUse(tenantId, branchId)); // Verified
     await runStep("CrdLVManuf", () => migrateCrdLVManuf(tenantId, branchId)); // Verified
     await runStep("CrdOrder", () => migrateCrdOrder(tenantId, branchId)); // Verified
+    // #tblCrdOrthoks
     await runStep("CreditType", () => migrateCreditType(tenantId, branchId)); // Verified
     await runStep("Discount", () => migrateDiscount(tenantId, branchId)); // Verified
     await runStep("Dummy", () => migrateDummy(tenantId, branchId)); // Verified
     await runStep("Eye", () => migrateEye(tenantId, branchId)); // Verified
+    // #tblFaxLines
+    await runStep("FixExpense", () => migrateFixExpense(tenantId, branchId));
 
       
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified

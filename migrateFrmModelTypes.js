@@ -98,7 +98,7 @@ async function migrateFrmModelTypes(tenantId = "tenant_1", branchId = null) {
         await pg.query("BEGIN");
         try {
           await pg.query(
-            `INSERT INTO "FrmModelTypes" (
+            `INSERT INTO "FrmModelType" (
                id,
                "tenantId",
                "branchId",

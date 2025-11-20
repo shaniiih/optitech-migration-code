@@ -79,7 +79,7 @@ async function migrateFrmLabelTypes(tenantId = "tenant_1", branchId = null) {
         await pg.query("BEGIN");
         try {
           await pg.query(
-            `INSERT INTO "FrmLabelTypes" (
+            `INSERT INTO "FrmLabelType" (
                id,
                "tenantId",
                "branchId",

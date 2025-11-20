@@ -94,6 +94,7 @@ const migrateMovementProperty = require("./migrateMovementProperty");
 const migrateMovementType = require("./migrateMovementType");
 const migrateCrdOrder = require("./migrateCrdOrder");
 const migrateInvMoveProps = require("./migrateInvMoveProps");
+const migrateInvMoveType = require("./migrateInvMoveType");
 const migrateCustomerPhoto = require("./migrateCustomerPhoto");
 const migrateUserSettings = require("./migrateUserSettings");
 const migrateCreditCard = require("./migrateCreditCard");
@@ -221,10 +222,11 @@ async function ensureTenant(tenantId) {
     await runStep("Eye", () => migrateEye(tenantId, branchId)); // Verified
     // #tblFaxLines
     await runStep("FixExpense", () => migrateFixExpense(tenantId, branchId));
-    await runStep("FrmLabelTypes", () => migrateFrmLabelTypes(tenantId, branchId)); // Verified
-    await runStep("FrmModelTypes", () => migrateFrmModelTypes(tenantId, branchId)); // Verified
-    await runStep("FrmPrivColors", () => migrateFrmPrivColors(tenantId, branchId)); // Verified
-    await runStep("InvMoveProps", () => migrateInvMoveProps(tenantId, branchId)); // Verified
+    await runStep("FrmLabelType", () => migrateFrmLabelTypes(tenantId, branchId)); // Verified
+    await runStep("FrmModelType", () => migrateFrmModelTypes(tenantId, branchId)); // Verified
+    await runStep("FrmPrivColor", () => migrateFrmPrivColors(tenantId, branchId)); // Verified
+    await runStep("InvMoveProp", () => migrateInvMoveProps(tenantId, branchId)); // Verified
+    await runStep("InvMoveType", () => migrateInvMoveType(tenantId, branchId));
 
       
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified

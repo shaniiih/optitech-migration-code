@@ -79,7 +79,7 @@ async function migrateInvMoveProps(tenantId = "tenant_1", branchId = null) {
         await pg.query("BEGIN");
         try {
           await pg.query(
-            `INSERT INTO "InvMoveProps" (
+            `INSERT INTO "InvMoveProp" (
                id,
                "tenantId",
                "branchId",

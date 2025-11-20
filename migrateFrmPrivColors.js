@@ -80,7 +80,7 @@ async function migrateFrmPrivColors(tenantId = "tenant_1", branchId = null) {
         await pg.query("BEGIN");
         try {
           await pg.query(
-            `INSERT INTO "FrmPrivColors" (
+            `INSERT INTO "FrmPrivColor" (
                id,
                "tenantId",
                "branchId",

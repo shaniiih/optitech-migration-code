@@ -31,6 +31,7 @@ const migrateLensTreatmentCharacteristic = require("./migrateLensTreatmentCharac
 const migrateExaminationOverview = require("./migrateExaminationOverview");
 const migrateWorkLabel = require("./migrateWorkLabel");
 const migrateFrmLabelTypes = require("./migrateFrmLabelTypes");
+const migrateFrmModelTypes = require("./migrateFrmModelTypes");
 const migrateCrdBuysWorkLab = require("./migrateCrdBuysWorkLab");
 const migrateCrdBuysWorkSapak = require("./migrateCrdBuysWorkSapak");
 const migrateCrdBuysWorkStat = require("./migrateCrdBuysWorkStat");
@@ -219,6 +220,7 @@ async function ensureTenant(tenantId) {
     // #tblFaxLines
     await runStep("FixExpense", () => migrateFixExpense(tenantId, branchId));
     await runStep("FrmLabelTypes", () => migrateFrmLabelTypes(tenantId, branchId)); // Verified
+    await runStep("FrmModelTypes", () => migrateFrmModelTypes(tenantId, branchId)); // Verified
 
       
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified

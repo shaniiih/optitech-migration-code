@@ -88,6 +88,10 @@ app.post("/import-schema", upload.single("xns_file"), async (req, res) => {
       logStep("import-stderr", importResult.stderr.trim());
     }
 
+    // Always start from a clean dataset for this schema before loading data
+    await truncateAllTables(databaseName);
+    logStep("truncate", `All tables in ${databaseName} truncated before data import`);
+
     if (exportResult.dataSqlPath) {
       const dataImportResult = await importData(exportResult.dataSqlPath, databaseName);
       if (dataImportResult.stdout.trim()) {
@@ -206,6 +210,46 @@ async function importData(dataPath, databaseName) {
     force: true,
   });
   return runCommand("mysql", args, { stdinFilePath: dataPath });
+}
+
+async function truncateAllTables(databaseName) {
+  console.log(`[${new Date().toISOString()}] truncateAllTables: truncating all tables in ${databaseName}`);
+
+  // 1) Fetch all table names for the target schema
+  const listArgs = buildMysqlArgs({
+    charset: process.env.MYSQL_IMPORT_CHARSET || "utf8mb4",
+    force: true,
+    extra: [
+      "--skip-column-names",
+      `--execute=SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='${databaseName}';`,
+    ],
+  });
+
+  const { stdout } = await runCommand("mysql", listArgs);
+  const tables = stdout
+    .split("\n")
+    .map((t) => t.trim())
+    .filter(Boolean);
+
+  if (!tables.length) {
+    console.log(`[${new Date().toISOString()}] truncateAllTables: no tables found in ${databaseName}`);
+    return;
+  }
+
+  const truncateStatements = [
+    "SET FOREIGN_KEY_CHECKS = 0;",
+    ...tables.map((t) => `TRUNCATE TABLE \`${t}\`;`),
+    "SET FOREIGN_KEY_CHECKS = 1;",
+  ].join(" ");
+
+  const truncateArgs = buildMysqlArgs({
+    database: databaseName,
+    charset: process.env.MYSQL_IMPORT_CHARSET || "utf8mb4",
+    force: true,
+    extra: [`--execute=${truncateStatements}`],
+  });
+
+  await runCommand("mysql", truncateArgs);
 }
 
 async function runMigration(tenantId, branchId, databaseName) {

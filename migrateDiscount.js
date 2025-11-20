@@ -34,68 +34,36 @@ async function migrateDiscount(tenantId = "tenant_1", branchId = null) {
         const params = [];
 
         chunk.forEach((r) => {
-          // Build placeholders programmatically to guarantee 40 placeholders
+          // We insert 21 columns per row
           const placeholderStart = params.length + 1;
-          const casts = {
-            8: '::text[]',   // productIds
-            11: '::text[]',  // customerGroupIds
-            12: '::text[]',  // customerIds
-            13: '::timestamp', // validFrom
-            14: '::timestamp', // validTo
-          };
-          const tuple = Array.from({ length: 40 }, (_, idx) => {
+          const tuple = Array.from({ length: 21 }, (_, idx) => {
             const pos = placeholderStart + idx;
-            const cast = casts[idx + 1] || '';
-            return `$${pos}${cast}`;
+            return `$${pos}`;
           }).join(', ');
           values.push(`(${tuple})`);
 
-          // Build code with pure random suffix for uniqueness
-          const baseCode = `CODE_${String(r.DiscountId ?? "")}`;
-          const rand6 = Math.random().toString(36).slice(2, 8).toUpperCase();
-          const uniqueCode = `${baseCode}_${rand6}`;
-          const code = String(r.DiscountId);
           params.push(
-            uuidv4(),             // id
-            tenantId,             // tenantId
-            r.DiscountName || `Discount ${uniqueCode}`, // name
-            uniqueCode,                 // code
-            "percentage",         // type
-            0.0,                  // value
-            "category",           // appliesTo
-            null,                 // productIds
-            null,                 // minimumPurchase
-            null,                 // maximumDiscount
-            null,                 // customerGroupIds
-            null,                 // customerIds
-            null,                 // validFrom
-            null,                 // validTo
-            null,                 // usageLimit
-            0,                    // usageCount
-            null,                 // perCustomerLimit
-            false,                // combinable
-            0,                    // priority
-            true,                 // active
-            false,                // requiresApproval
-            null,                 // notes
-            now,                  // createdAt
-            now,                  // updatedAt
-            code,                 // discountId (legacy id as text)
-            num(r.prlCheck),
+            uuidv4(),                // id
+            tenantId,                // tenantId
+            branchId,                // branchId
+            String(r.DiscountId),    // discountId (legacy id as text)
+            r.DiscountName || null,  // daiscountName
+            num(r.prlGlass),
+            num(r.prlTreat),
             num(r.prlClens),
             num(r.prlFrame),
-            num(r.prlGlass),
+            num(r.prlSunGlass),
+            num(r.prlProp),
+            num(r.prlSolution),
+            num(r.prlService),
+            num(r.prlCheck),
+            num(r.prlMisc),
+            num(r.prlGlassOneS),
+            num(r.prlGlassOneP),
             num(r.prlGlassBif),
             num(r.prlGlassMul),
-            num(r.prlGlassOneP),
-            num(r.prlGlassOneS),
-            num(r.prlMisc),
-            num(r.prlProp),
-            num(r.prlService),
-            num(r.prlSolution),
-            num(r.prlSunGlass),
-            num(r.prlTreat),
-            branchId  // branchId
+            now,                     // createdAt
+            now                      // updatedAt
           );
         });
 
@@ -103,38 +71,49 @@ async function migrateDiscount(tenantId = "tenant_1", branchId = null) {
         try {
           const sql = `
             INSERT INTO "Discount" (
-              id, "tenantId", name, code, type, value, "appliesTo", "productIds", "minimumPurchase", "maximumDiscount",
-              "customerGroupIds", "customerIds", "validFrom", "validTo", "usageLimit", "usageCount", "perCustomerLimit",
-              combinable, priority, active, "requiresApproval", notes, "createdAt", "updatedAt", "discountId",
-              "prlCheck", "prlClens", "prlFrame", "prlGlass", "prlGlassBif", "prlGlassMul", "prlGlassOneP", "prlGlassOneS",
-              "prlMisc", "prlProp", "prlService", "prlSolution", "prlSunGlass", "prlTreat", "branchId"
+              id,
+              "tenantId",
+              "branchId",
+              "discountId",
+              "daiscountName",
+              "prlGlass",
+              "prlTreat",
+              "prlClens",
+              "prlFrame",
+              "prlSunGlass",
+              "prlProp",
+              "prlSolution",
+              "prlService",
+              "prlCheck",
+              "prlMisc",
+              "prlGlassOneS",
+              "prlGlassOneP",
+              "prlGlassBif",
+              "prlGlassMul",
+              "createdAt",
+              "updatedAt"
             )
             VALUES ${values
               .map(v => v)
               .join(",")}
-            ON CONFLICT ("tenantId", "code")
+            ON CONFLICT ("tenantId", "branchId", "discountId")
             DO UPDATE SET
-              name = EXCLUDED.name,
-              type = EXCLUDED.type,
-              value = EXCLUDED.value,
-              "appliesTo" = EXCLUDED."appliesTo",
-              active = EXCLUDED.active,
-              "updatedAt" = EXCLUDED."updatedAt",
-              "prlCheck" = EXCLUDED."prlCheck",
+              "daiscountName" = EXCLUDED."daiscountName",
+              "prlGlass" = EXCLUDED."prlGlass",
+              "prlTreat" = EXCLUDED."prlTreat",
               "prlClens" = EXCLUDED."prlClens",
               "prlFrame" = EXCLUDED."prlFrame",
-              "prlGlass" = EXCLUDED."prlGlass",
+              "prlSunGlass" = EXCLUDED."prlSunGlass",
+              "prlProp" = EXCLUDED."prlProp",
+              "prlSolution" = EXCLUDED."prlSolution",
+              "prlService" = EXCLUDED."prlService",
+              "prlCheck" = EXCLUDED."prlCheck",
+              "prlMisc" = EXCLUDED."prlMisc",
+              "prlGlassOneS" = EXCLUDED."prlGlassOneS",
+              "prlGlassOneP" = EXCLUDED."prlGlassOneP",
               "prlGlassBif" = EXCLUDED."prlGlassBif",
               "prlGlassMul" = EXCLUDED."prlGlassMul",
-              "prlGlassOneP" = EXCLUDED."prlGlassOneP",
-              "prlGlassOneS" = EXCLUDED."prlGlassOneS",
-              "prlMisc" = EXCLUDED."prlMisc",
-              "prlProp" = EXCLUDED."prlProp",
-              "prlService" = EXCLUDED."prlService",
-              "prlSolution" = EXCLUDED."prlSolution",
-              "prlSunGlass" = EXCLUDED."prlSunGlass",
-              "prlTreat" = EXCLUDED."prlTreat",
-              "branchId" = EXCLUDED."branchId"
+              "updatedAt" = EXCLUDED."updatedAt"
           `;
           await pg.query(sql, params);
           await pg.query("COMMIT");

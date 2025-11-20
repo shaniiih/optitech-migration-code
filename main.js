@@ -211,6 +211,7 @@ async function ensureTenant(tenantId) {
     await runStep("CrdOrder", () => migrateCrdOrder(tenantId, branchId)); // Verified
     await runStep("CreditType", () => migrateCreditType(tenantId, branchId)); // Verified
     await runStep("Discount", () => migrateDiscount(tenantId, branchId)); // Verified
+    await runStep("Dummy", () => migrateDummy(tenantId, branchId)); // Verified
 
       
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
@@ -292,7 +293,6 @@ async function ensureTenant(tenantId) {
     await runStep("ItemCountsYear", () => migrateItemCountsYear(tenantId, branchId)); // Verified
     await runStep("CustomerPhoto", () => migrateCustomerPhoto(tenantId, branchId)); // Verified
     await runStep("CreditCard", () => migrateCreditCard(tenantId, branchId)); // Verified
-    await runStep("Dummy", () => migrateDummy(tenantId, branchId)); // Verified
     await runStep("CrdGlassIOPInst", () => migrateCrdGlassIOPInst(tenantId, branchId)); // Verified
     await runStep("SapakComment", () => migrateSapakComment(tenantId, branchId)); // Verified
     await runStep("SapakDest", () => migrateSapakDest(tenantId, branchId)); // Verified*/

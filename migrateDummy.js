@@ -4,30 +4,26 @@ const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 const WINDOW_SIZE = 5000;
 const BATCH_SIZE = 1000;
 
-async function migrateDummy(tenantId = "tenant_1", branchId = null) {
+async function migrateDummy(tenantId = "tenant_1", branchId) {
   const mysql = await getMySQLConnection();
   const pg = await getPostgresConnection();
 
-  let offset = 0;
   let total = 0;
 
   try {
-    await pg.query(`
-      DO $$
-      BEGIN
-        IF NOT EXISTS (
-          SELECT 1
-          FROM pg_indexes
-          WHERE indexname = 'dummy_tenant_dummy_ux'
-        ) THEN
-          CREATE UNIQUE INDEX dummy_tenant_dummy_ux
-          ON "Dummy" ("tenantId","dummy");
-        END IF;
-      END$$;
-    `);
+    if (!branchId) {
+      throw new Error("migrateDummy requires a non-null branchId");
+    }
+
+    // For Dummy we always fully refresh per tenant/branch:
+    // remove existing rows for this scope, then insert fresh.
+    await pg.query(
+      `DELETE FROM "Dummy" WHERE "tenantId" = $1 AND "branchId" = $2`,
+      [tenantId, branchId]
+    );
 
     const [rows] = await mysql.query(
-      `SELECT DISTINCT Dummy
+      `SELECT Dummy
        FROM tblDummy`
     );
 
@@ -54,26 +50,15 @@ async function migrateDummy(tenantId = "tenant_1", branchId = null) {
 
         if (!values.length) continue;
 
-        await pg.query("BEGIN");
-        try {
-          await pg.query(
-            `
-            INSERT INTO "Dummy" (
-              id, "tenantId", "branchId", dummy, "createdAt", "updatedAt"
-            )
-            VALUES ${values.join(",")}
-            ON CONFLICT ("tenantId", dummy)
-            DO UPDATE SET
-              "branchId" = EXCLUDED."branchId",
-              "updatedAt" = EXCLUDED."updatedAt"
-            `,
-            params
-          );
-          await pg.query("COMMIT");
-        } catch (error) {
-          await pg.query("ROLLBACK");
-          throw error;
-        }
+        await pg.query(
+          `
+          INSERT INTO "Dummy" (
+            id, "tenantId", "branchId", dummy, "createdAt", "updatedAt"
+          )
+          VALUES ${values.join(",")}
+          `,
+          params
+        );
 
         total += chunk.length;
       }
@@ -85,12 +70,14 @@ async function migrateDummy(tenantId = "tenant_1", branchId = null) {
 }
 
 function toDummyInt(value) {
-  if (value === null || value === undefined) return 0;
+  if (value === null || value === undefined) return null;
+  if (typeof value === "number") return Math.trunc(value);
   if (typeof value === "boolean") return value ? 1 : 0;
-  if (typeof value === "number") return value !== 0 ? 1 : 0;
-  const normalized = String(value).trim().toLowerCase();
-  if (["1", "true", "yes", "y"].includes(normalized)) return 1;
-  return 0;
+
+  const parsed = Number(String(value).trim());
+  if (Number.isFinite(parsed)) return Math.trunc(parsed);
+
+  return null;
 }
 
 module.exports = migrateDummy;

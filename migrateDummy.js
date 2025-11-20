@@ -34,7 +34,7 @@ async function migrateDummy(tenantId = "tenant_1", branchId) {
         const params = [];
 
         for (const row of chunk) {
-          const dummyValue = toDummyInt(row.Dummy);
+          const dummyValue = toDummyBool(row.Dummy);
           values.push(
             `($${params.length + 1}, $${params.length + 2}, $${params.length + 3}, $${params.length + 4}, $${params.length + 5}, $${params.length + 6})`
           );
@@ -69,13 +69,14 @@ async function migrateDummy(tenantId = "tenant_1", branchId) {
   }
 }
 
-function toDummyInt(value) {
+function toDummyBool(value) {
   if (value === null || value === undefined) return null;
-  if (typeof value === "number") return Math.trunc(value);
-  if (typeof value === "boolean") return value ? 1 : 0;
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value !== 0;
 
-  const parsed = Number(String(value).trim());
-  if (Number.isFinite(parsed)) return Math.trunc(parsed);
+  const normalized = String(value).trim().toLowerCase();
+  if (["1", "true", "yes", "y"].includes(normalized)) return true;
+  if (["0", "false", "no", "n"].includes(normalized)) return false;
 
   return null;
 }

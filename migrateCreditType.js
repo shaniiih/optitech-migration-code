@@ -12,20 +12,6 @@ async function migrateCreditType(tenantId = "tenant_1", branchId = null) {
   let total = 0;
 
   try {
-    /*await pg.query(`
-      DO $$
-      BEGIN
-        IF NOT EXISTS (
-          SELECT 1
-          FROM pg_indexes
-          WHERE indexname = 'credittype_tenant_creditid_ux'
-        ) THEN
-          CREATE UNIQUE INDEX credittype_tenant_creditid_ux
-          ON "CreditType" ("tenantId","creditTypeId");
-        END IF;
-      END$$;
-    `);*/
-
     while (true) {
       const [rows] = await mysql.execute(
         `SELECT CreditTypeId, CreditTypeName
@@ -80,7 +66,7 @@ async function migrateCreditType(tenantId = "tenant_1", branchId = null) {
               "createdAt", "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("tenantId", "creditTypeId")
+            ON CONFLICT ("tenantId", "branchId" ,"creditTypeId")
             DO UPDATE SET
               "creditTypeName" = EXCLUDED."creditTypeName",
               "branchId" = EXCLUDED."branchId",

@@ -227,8 +227,10 @@ async function ensureTenant(tenantId) {
     await runStep("FrmModelType", () => migrateFrmModelTypes(tenantId, branchId)); // Verified
     await runStep("FrmPrivColor", () => migrateFrmPrivColors(tenantId, branchId)); // Verified
     await runStep("InvMoveProp", () => migrateInvMoveProps(tenantId, branchId)); // Verified
-    await runStep("InvMoveType", () => migrateInvMoveType(tenantId, branchId));
+    await runStep("InvMoveType", () => migrateInvMoveType(tenantId, branchId)); // Verified
+    await runStep("InvoiceType", () => migrateInvoiceType(tenantId, branchId)); // Verified
     await runStep("ItemColor", () => migrateItemColor(tenantId, branchId)); // Verified
+
 
       
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
@@ -299,7 +301,6 @@ async function ensureTenant(tenantId) {
     await runStep("Diagnosis", () => migrateDiagnosis(tenantId)); // Verified
     await runStep("OrthokeratologyTreatment", () => migrateOrthokeratologyTreatment(tenantId)); // Verified
     await runStep("Letter", () => migrateLetter(tenantId, branchId)); // Verified
-    await runStep("InvoiceType", () => migrateInvoiceType(tenantId, branchId)); // Verified
     await runStep("PayType", () => migratePayType(tenantId, branchId)); // Verified
     await runStep("ServiceType", () => migrateServiceType(tenantId, branchId)); // Verified
     await runStep("SysLevel", () => migrateSysLevel(tenantId, branchId)); // Verified

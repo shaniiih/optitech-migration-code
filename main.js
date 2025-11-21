@@ -106,6 +106,7 @@ const migrateLetter = require("./migrateLetter");
 const migrateServiceType = require("./migrateServiceType");
 const migrateInvoiceType = require("./migrateInvoiceType");
 const migratePayType = require("./migratePayType");
+const migrateItemColor = require("./migrateItemColor");
 const migrateSearchOrder = require("./migrateSearchOrder");
 const migrateSysLevel = require("./migrateSysLevel");
 const migrateLang = require("./migrateLang");
@@ -227,6 +228,7 @@ async function ensureTenant(tenantId) {
     await runStep("FrmPrivColor", () => migrateFrmPrivColors(tenantId, branchId)); // Verified
     await runStep("InvMoveProp", () => migrateInvMoveProps(tenantId, branchId)); // Verified
     await runStep("InvMoveType", () => migrateInvMoveType(tenantId, branchId));
+    await runStep("ItemColor", () => migrateItemColor(tenantId, branchId)); // Verified
 
       
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified

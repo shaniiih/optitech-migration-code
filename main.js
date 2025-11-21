@@ -225,7 +225,7 @@ async function ensureTenant(tenantId) {
     await runStep("Dummy", () => migrateDummy(tenantId, branchId)); // Verified
     await runStep("Eye", () => migrateEye(tenantId, branchId)); // Verified
     // #tblFaxLines
-    await runStep("FixExpense", () => migrateFixExpense(tenantId, branchId));
+    await runStep("FixExpense", () => migrateFixExpense(tenantId, branchId)); // Verified
     await runStep("FrmLabelType", () => migrateFrmLabelTypes(tenantId, branchId)); // Verified
     await runStep("FrmModelType", () => migrateFrmModelTypes(tenantId, branchId)); // Verified
     await runStep("FrmPrivColor", () => migrateFrmPrivColors(tenantId, branchId)); // Verified
@@ -234,8 +234,9 @@ async function ensureTenant(tenantId) {
     await runStep("InvoiceType", () => migrateInvoiceType(tenantId, branchId)); // Verified
     await runStep("ItemColor", () => migrateItemColor(tenantId, branchId)); // Verified
     await runStep("ItemsAdd", () => migrateItemsAdd(tenantId, branchId));
-    await runStep("ItemStat", () => migrateItemStat(tenantId, branchId));
-    await runStep("Label", () => migrateLabel(tenantId, branchId));
+    await runStep("ItemStat", () => migrateItemStat(tenantId, branchId)); // Verified
+    await runStep("Label", () => migrateLabel(tenantId, branchId)); // Verified
+    await runStep("Lang", () => migrateLang(tenantId, branchId)); // Verified
 
 
       
@@ -310,7 +311,6 @@ async function ensureTenant(tenantId) {
     await runStep("PayType", () => migratePayType(tenantId, branchId)); // Verified
     await runStep("ServiceType", () => migrateServiceType(tenantId, branchId)); // Verified
     await runStep("SysLevel", () => migrateSysLevel(tenantId, branchId)); // Verified
-    await runStep("Lang", () => migrateLang(tenantId, branchId)); // Verified
     await runStep("SearchOrder", () => migrateSearchOrder(tenantId, branchId)); // Verified
     await runStep("ShortCut", () => migrateShortCut(tenantId, branchId));  // Verified
     await runStep("SMSLen", () => migrateSMSLen(tenantId, branchId));  // Verified

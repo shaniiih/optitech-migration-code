@@ -71,7 +71,7 @@ async function migrateLang(tenantId = "tenant_1", branchId = null) {
             `INSERT INTO "Lang" (
                id, "tenantId", "branchId", "langId", "langName", "createdAt", "updatedAt"
              ) VALUES ${values.join(",")}
-             ON CONFLICT ("tenantId", "langId") DO UPDATE SET
+             ON CONFLICT ("tenantId", "branchId" ,"langId") DO UPDATE SET
                "branchId" = EXCLUDED."branchId",
                "langName" = EXCLUDED."langName",
                "updatedAt" = EXCLUDED."updatedAt"`,

@@ -109,6 +109,7 @@ const migratePayType = require("./migratePayType");
 const migrateItemColor = require("./migrateItemColor");
 const migrateItemsAdd = require("./migrateItemsAdd");
 const migrateItemStat = require("./migrateItemStat");
+const migrateLabel = require("./migrateLabel");
 const migrateSearchOrder = require("./migrateSearchOrder");
 const migrateSysLevel = require("./migrateSysLevel");
 const migrateLang = require("./migrateLang");
@@ -234,6 +235,7 @@ async function ensureTenant(tenantId) {
     await runStep("ItemColor", () => migrateItemColor(tenantId, branchId)); // Verified
     await runStep("ItemsAdd", () => migrateItemsAdd(tenantId, branchId));
     await runStep("ItemStat", () => migrateItemStat(tenantId, branchId));
+    await runStep("Label", () => migrateLabel(tenantId, branchId));
 
 
       

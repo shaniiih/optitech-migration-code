@@ -91,7 +91,6 @@ async function migrateCrdBuysWorkSupply(tenantId = "tenant_1", branchId = null) 
             VALUES ${values.join(",")}
             ON CONFLICT ("tenantId", "branchId" ,"workSupplyId")
             DO UPDATE SET
-              "branchId" = EXCLUDED."branchId",
               "workSupplyName" = EXCLUDED."workSupplyName",
               "updatedAt" = EXCLUDED."updatedAt"
             `,

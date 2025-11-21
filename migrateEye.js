@@ -65,7 +65,6 @@ async function migrateEye(tenantId = "tenant_1", branchId = null) {
             ON CONFLICT ("tenantId", "branchId", "eyeId")
             DO UPDATE SET
               "eyeName" = EXCLUDED."eyeName",
-              "branchId" = EXCLUDED."branchId",
               "updatedAt" = EXCLUDED."updatedAt"
             `,
             params

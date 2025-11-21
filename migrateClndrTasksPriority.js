@@ -64,7 +64,6 @@ async function migrateClndrTasksPriority(tenantId = "tenant_1", branchId = null)
             VALUES ${values.join(",")}
             ON CONFLICT ("tenantId", "branchId", "priorityId")
             DO UPDATE SET
-              "branchId" = EXCLUDED."branchId",
               "priorityName" = EXCLUDED."priorityName",
               "updatedAt" = EXCLUDED."updatedAt"
             `,

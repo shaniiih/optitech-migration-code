@@ -67,7 +67,6 @@ async function migrateCheckType(tenantId = "tenant_1", branchId) {
             ON CONFLICT ("tenantId", "branchId", "checkId")
             DO UPDATE SET
               "tenantId" = EXCLUDED."tenantId",
-              "branchId" = EXCLUDED."branchId",
               name = EXCLUDED.name,
               price = EXCLUDED.price,
               description = EXCLUDED.description,

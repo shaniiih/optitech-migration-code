@@ -118,7 +118,6 @@ async function migrateFixExpense(tenantId = "tenant_1", branchId = null) {
               "endDate" = EXCLUDED."endDate",
               "intervalType" = EXCLUDED."intervalType",
               "intervalNum" = EXCLUDED."intervalNum",
-              "branchId" = EXCLUDED."branchId",
               "updatedAt" = EXCLUDED."updatedAt"
             `,
             params

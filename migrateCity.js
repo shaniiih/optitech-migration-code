@@ -55,7 +55,6 @@ async function migrateCity(tenantId = "tenant_1", branchId = null) {
             ON CONFLICT ("tenantId", "branchId", "cityId")
             DO UPDATE SET
               "tenantId" = EXCLUDED."tenantId",
-              "branchId" = EXCLUDED."branchId",
               name = EXCLUDED.name,
               "isActive" = EXCLUDED."isActive",
               "updatedAt" = EXCLUDED."updatedAt"

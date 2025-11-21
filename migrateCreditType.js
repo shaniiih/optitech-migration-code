@@ -69,7 +69,6 @@ async function migrateCreditType(tenantId = "tenant_1", branchId = null) {
             ON CONFLICT ("tenantId", "branchId" ,"creditTypeId")
             DO UPDATE SET
               "creditTypeName" = EXCLUDED."creditTypeName",
-              "branchId" = EXCLUDED."branchId",
               "updatedAt" = EXCLUDED."updatedAt"
             `,
             params

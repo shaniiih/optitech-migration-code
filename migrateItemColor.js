@@ -94,7 +94,6 @@ async function migrateItemColor(tenantId = "tenant_1", branchId = null) {
             VALUES ${values.join(",")}
             ON CONFLICT ("tenantId", "branchId" ,"itemColorId")
             DO UPDATE SET
-              "branchId" = EXCLUDED."branchId",
               "itemColorName" = EXCLUDED."itemColorName",
               "itemCode" = EXCLUDED."itemCode",
               "updatedAt" = EXCLUDED."updatedAt"

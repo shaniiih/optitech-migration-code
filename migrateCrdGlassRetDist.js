@@ -93,7 +93,6 @@ async function migrateCrdGlassRetDist(tenantId = "tenant_1", branchId = null) {
             VALUES ${values.join(",")}
             ON CONFLICT ("tenantId", "branchId", "retDistId")
             DO UPDATE SET
-              "branchId" = EXCLUDED."branchId",
               "retDistName" = EXCLUDED."retDistName",
               "updatedAt" = EXCLUDED."updatedAt"
             `,

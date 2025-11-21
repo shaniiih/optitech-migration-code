@@ -130,7 +130,6 @@ async function migrateBisData(tenantId = "tenant_1", branchId = null) {
             VALUES ${values.join(",")}
             ON CONFLICT ("tenantId", "branchId", "bisId")
             DO UPDATE SET
-              "branchId" = EXCLUDED."branchId",
               "bisNum" = EXCLUDED."bisNum",
               "bisName" = EXCLUDED."bisName",
               phone = EXCLUDED.phone,

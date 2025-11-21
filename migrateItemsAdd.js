@@ -81,7 +81,7 @@ async function migrateItemsAdd(tenantId = "tenant_1", branchId = null) {
         try {
           await pg.query(
             `
-            INSERT INTO "itemsAdd" (
+            INSERT INTO "ItemsAdd" (
               id,
               "tenantId",
               "branchId",

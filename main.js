@@ -111,6 +111,7 @@ const migrateItemsAdd = require("./migrateItemsAdd");
 const migrateItemStat = require("./migrateItemStat");
 const migrateLabel = require("./migrateLabel");
 const migrateLnsChar = require("./migrateLnsChar");
+const migrateLnsMaterial = require("./migrateLnsMaterial");
 const migrateSearchOrder = require("./migrateSearchOrder");
 const migrateSysLevel = require("./migrateSysLevel");
 const migrateLang = require("./migrateLang");
@@ -239,6 +240,7 @@ async function ensureTenant(tenantId) {
     await runStep("Label", () => migrateLabel(tenantId, branchId)); // Verified
     await runStep("Lang", () => migrateLang(tenantId, branchId)); // Verified
     await runStep("LnsChar", () => migrateLnsChar(tenantId, branchId)); // Verified
+    await runStep("LnsMaterial", () => migrateLnsMaterial(tenantId, branchId));
 
 
       

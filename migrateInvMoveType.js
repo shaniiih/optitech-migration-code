@@ -30,21 +30,6 @@ async function migrateInvMoveType(tenantId = "tenant_1", branchId = null) {
   let skippedInvalidId = 0;
 
   try {
-    await pg.query(`
-      DO $$
-      BEGIN
-        IF NOT EXISTS (
-          SELECT 1
-          FROM pg_indexes
-          WHERE schemaname = 'public'
-            AND indexname = 'invmovetype_tenant_typeid_ux'
-        ) THEN
-          CREATE UNIQUE INDEX invmovetype_tenant_typeid_ux
-          ON "InvMoveType" ("tenantId","invMoveTypeId");
-        END IF;
-      END$$;
-    `);
-
     while (true) {
       const [rows] = await mysql.query(
         `SELECT InvMoveTypeId, InvMoveTypeName, MoveAction

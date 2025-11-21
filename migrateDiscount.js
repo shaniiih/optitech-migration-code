@@ -34,20 +34,43 @@ async function migrateDiscount(tenantId = "tenant_1", branchId = null) {
         const params = [];
 
         chunk.forEach((r) => {
-          // We insert 21 columns per row
           const placeholderStart = params.length + 1;
-          const tuple = Array.from({ length: 21 }, (_, idx) => {
+          const tuple = Array.from({ length: 40 }, (_, idx) => {
             const pos = placeholderStart + idx;
             return `$${pos}`;
-          }).join(', ');
+          }).join(", ");
           values.push(`(${tuple})`);
 
+          const legacyId = String(r.DiscountId);
+          const legacyName = r.DiscountName || null;
+
+          const name = legacyName || `Legacy Discount ${legacyId}`;
+          const code = `${tenantId}:${legacyId}`;
+
           params.push(
-            uuidv4(),                // id
-            tenantId,                // tenantId
-            branchId,                // branchId
-            String(r.DiscountId),    // discountId (legacy id as text)
-            r.DiscountName || null,  // daiscountName
+            uuidv4(),              // id
+            tenantId,              // tenantId
+            name,                  // name
+            code,                  // code (globally unique)
+            "PERCENTAGE",          // type
+            0.0,                   // value
+            "LEGACY_TABLE",        // appliesTo
+            [],                    // productIds
+            null,                  // minimumPurchase
+            null,                  // maximumDiscount
+            [],                    // customerGroupIds
+            [],                    // customerIds
+            null,                  // validFrom
+            null,                  // validTo
+            null,                  // usageLimit
+            0,                     // usageCount
+            null,                  // perCustomerLimit
+            false,                 // combinable
+            0,                     // priority
+            true,                  // active
+            false,                 // requiresApproval
+            null,                  // notes
+            legacyId,              // discountId (legacy)
             num(r.prlGlass),
             num(r.prlTreat),
             num(r.prlClens),
@@ -62,10 +85,13 @@ async function migrateDiscount(tenantId = "tenant_1", branchId = null) {
             num(r.prlGlassOneP),
             num(r.prlGlassBif),
             num(r.prlGlassMul),
-            now,                     // createdAt
-            now                      // updatedAt
+            branchId,              // branchId
+            now,                   // createdAt
+            now                    // updatedAt
           );
         });
+
+        if (!values.length) continue;
 
         await pg.query("BEGIN");
         try {
@@ -73,9 +99,27 @@ async function migrateDiscount(tenantId = "tenant_1", branchId = null) {
             INSERT INTO "Discount" (
               id,
               "tenantId",
-              "branchId",
+              name,
+              code,
+              type,
+              value,
+              "appliesTo",
+              "productIds",
+              "minimumPurchase",
+              "maximumDiscount",
+              "customerGroupIds",
+              "customerIds",
+              "validFrom",
+              "validTo",
+              "usageLimit",
+              "usageCount",
+              "perCustomerLimit",
+              combinable,
+              priority,
+              active,
+              "requiresApproval",
+              notes,
               "discountId",
-              "daiscountName",
               "prlGlass",
               "prlTreat",
               "prlClens",
@@ -90,15 +134,33 @@ async function migrateDiscount(tenantId = "tenant_1", branchId = null) {
               "prlGlassOneP",
               "prlGlassBif",
               "prlGlassMul",
+              "branchId",
               "createdAt",
               "updatedAt"
             )
-            VALUES ${values
-              .map(v => v)
-              .join(",")}
+            VALUES ${values.join(",")}
             ON CONFLICT ("tenantId", "branchId", "discountId")
             DO UPDATE SET
-              "daiscountName" = EXCLUDED."daiscountName",
+              name = EXCLUDED.name,
+              type = EXCLUDED.type,
+              value = EXCLUDED.value,
+              "appliesTo" = EXCLUDED."appliesTo",
+              "productIds" = EXCLUDED."productIds",
+              "minimumPurchase" = EXCLUDED."minimumPurchase",
+              "maximumDiscount" = EXCLUDED."maximumDiscount",
+              "customerGroupIds" = EXCLUDED."customerGroupIds",
+              "customerIds" = EXCLUDED."customerIds",
+              "validFrom" = EXCLUDED."validFrom",
+              "validTo" = EXCLUDED."validTo",
+              "usageLimit" = EXCLUDED."usageLimit",
+              "usageCount" = EXCLUDED."usageCount",
+              "perCustomerLimit" = EXCLUDED."perCustomerLimit",
+              combinable = EXCLUDED.combinable,
+              priority = EXCLUDED.priority,
+              active = EXCLUDED.active,
+              "requiresApproval" = EXCLUDED."requiresApproval",
+              notes = EXCLUDED.notes,
+              "discountId" = EXCLUDED."discountId",
               "prlGlass" = EXCLUDED."prlGlass",
               "prlTreat" = EXCLUDED."prlTreat",
               "prlClens" = EXCLUDED."prlClens",

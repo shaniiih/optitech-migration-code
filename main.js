@@ -101,6 +101,7 @@ const migrateProfile = require("./migrateProfile");
 const migratePropsName = require("./migratePropsName");
 const migrateRef = require("./migrateRef");
 const migrateRefsSub1 = require("./migrateRefsSub1");
+const migrateRefsSub2 = require("./migrateRefsSub2");
 const migrateCreditCard = require("./migrateCreditCard");
 const migrateDummy = require("./migrateDummy");
 const migrateFixExpense = require("./migrateFixExpense");
@@ -261,7 +262,8 @@ async function ensureTenant(tenantId) {
     await runStep("Profile", () => migrateProfile(tenantId, branchId)); // Verified
     await runStep("PropsName", () => migratePropsName(tenantId, branchId)); // Verified
     await runStep("Ref", () => migrateRef(tenantId, branchId)); // Verified
-    await runStep("RefsSub1", () => migrateRefsSub1(tenantId, branchId));
+    await runStep("RefsSub1", () => migrateRefsSub1(tenantId, branchId)); // Verified
+    await runStep("RefsSub2", () => migrateRefsSub2(tenantId, branchId)); // Verified
 
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified

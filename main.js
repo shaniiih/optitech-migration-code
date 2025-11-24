@@ -95,6 +95,7 @@ const migrateMovementType = require("./migrateMovementType");
 const migrateCrdOrder = require("./migrateCrdOrder");
 const migrateInvMoveProps = require("./migrateInvMoveProps");
 const migrateInvMoveType = require("./migrateInvMoveType");
+const migrateSapak = require("./migrateSapak");
 const migrateCustomerPhoto = require("./migrateCustomerPhoto");
 const migrateUserSettings = require("./migrateUserSettings");
 const migrateProfile = require("./migrateProfile");
@@ -264,6 +265,8 @@ async function ensureTenant(tenantId) {
     await runStep("Ref", () => migrateRef(tenantId, branchId)); // Verified
     await runStep("RefsSub1", () => migrateRefsSub1(tenantId, branchId)); // Verified
     await runStep("RefsSub2", () => migrateRefsSub2(tenantId, branchId)); // Verified
+    await runStep("SysLevel", () => migrateSysLevel(tenantId, branchId)); // Verified
+    await runStep("Sapak", () => migrateSapak(tenantId, branchId)); // Verified
 
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified

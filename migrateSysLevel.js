@@ -71,8 +71,7 @@ async function migrateSysLevel(tenantId = "tenant_1", branchId = null) {
             `INSERT INTO "SysLevel" (
                id, "tenantId", "branchId", "levelId", "levelName", "createdAt", "updatedAt"
              ) VALUES ${values.join(",")}
-             ON CONFLICT ("tenantId", "levelId") DO UPDATE SET
-               "branchId" = EXCLUDED."branchId",
+             ON CONFLICT ("tenantId", "branchId", "levelId") DO UPDATE SET
                "levelName" = EXCLUDED."levelName",
                "updatedAt" = EXCLUDED."updatedAt"`,
             params

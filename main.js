@@ -253,6 +253,7 @@ async function ensureTenant(tenantId) {
     await runStep("LnsType", () => migrateLnsType(tenantId, branchId)); // Verified
     await runStep("NewProd", () => migrateNewProd(tenantId, branchId)); // Verified
     await runStep("OReport", () => migrateOReport(tenantId, branchId)); // Verified
+    await runStep("PrlType", () => migratePrlType(tenantId, branchId)); // Verified
 
 
       
@@ -260,7 +261,6 @@ async function ensureTenant(tenantId) {
     await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified
 
 
-    await runStep("PrlType", () => migratePrlType(tenantId, branchId)); // Verified
     await runStep("SolutionName", () => migrateSolutionName(tenantId, branchId)); // Verified
     await runStep("SpecialName", () => migrateSpecialName(tenantId, branchId)); // Verified
     await runStep("Supplier", () => migrateSupplier(tenantId)); // Verified

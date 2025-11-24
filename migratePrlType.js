@@ -12,20 +12,6 @@ async function migratePrlType(tenantId = "tenant_1", branchId = null) {
   let total = 0;
 
   try {
-    await pg.query(`
-      DO $$
-      BEGIN
-        IF NOT EXISTS (
-          SELECT 1
-          FROM pg_indexes
-          WHERE indexname = 'prltype_tenant_prltype_ux'
-        ) THEN
-          CREATE UNIQUE INDEX prltype_tenant_prltype_ux
-          ON "PrlType" ("tenantId","prlType");
-        END IF;
-      END$$;
-    `);
-
     while (true) {
       const [rows] = await mysql.execute(
         `SELECT prlType, prlName
@@ -76,10 +62,9 @@ async function migratePrlType(tenantId = "tenant_1", branchId = null) {
               id, "tenantId", "branchId", "prlType", "prlName", "createdAt", "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("tenantId", "prlType")
+            ON CONFLICT ("tenantId", "branchId", "prlType")
             DO UPDATE SET
               "prlName" = EXCLUDED."prlName",
-              "branchId" = EXCLUDED."branchId",
               "updatedAt" = EXCLUDED."updatedAt"
             `,
             params

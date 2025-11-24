@@ -130,6 +130,7 @@ const migrateCrdGlassColor = require("./migrateCrdGlassColor");
 const migrateCrdGlassMater = require("./migrateCrdGlassMater");
 const migrateCrdGlassModel = require("./migrateCrdGlassModel");
 const migrateNewProd = require("./migrateNewProd");
+const migrateOReport = require("./migrateOReport");
 const { getPostgresConnection } = require("./dbConfig");
 const { ensureTenantId, cleanTenantId } = require("./tenantUtils");
 
@@ -251,6 +252,7 @@ async function ensureTenant(tenantId) {
     // #tblLnsTreatTypesConnect
     await runStep("LnsType", () => migrateLnsType(tenantId, branchId)); // Verified
     await runStep("NewProd", () => migrateNewProd(tenantId, branchId)); // Verified
+    await runStep("OReport", () => migrateOReport(tenantId, branchId)); // Verified
 
 
       

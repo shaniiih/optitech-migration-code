@@ -98,6 +98,7 @@ const migrateInvMoveType = require("./migrateInvMoveType");
 const migrateCustomerPhoto = require("./migrateCustomerPhoto");
 const migrateUserSettings = require("./migrateUserSettings");
 const migrateProfile = require("./migrateProfile");
+const migratePropsName = require("./migratePropsName");
 const migrateCreditCard = require("./migrateCreditCard");
 const migrateDummy = require("./migrateDummy");
 const migrateFixExpense = require("./migrateFixExpense");
@@ -255,7 +256,8 @@ async function ensureTenant(tenantId) {
     await runStep("NewProd", () => migrateNewProd(tenantId, branchId)); // Verified
     await runStep("OReport", () => migrateOReport(tenantId, branchId)); // Verified
     await runStep("PrlType", () => migratePrlType(tenantId, branchId)); // Verified
-    await runStep("Profile", () => migrateProfile(tenantId, branchId));
+    await runStep("Profile", () => migrateProfile(tenantId, branchId)); // Verified
+    await runStep("PropsName", () => migratePropsName(tenantId, branchId)); // Verified
 
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified

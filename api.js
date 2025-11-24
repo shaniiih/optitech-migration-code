@@ -193,7 +193,7 @@ async function importSchema(schemaPath, databaseName) {
     charset: process.env.MYSQL_IMPORT_CHARSET || "utf8mb4",
     initCommand:
       process.env.MYSQL_IMPORT_INIT_COMMAND ||
-      "SET SESSION sql_mode='NO_ENGINE_SUBSTITUTION,NO_BACKSLASH_ESCAPES,ALLOW_INVALID_DATES';",
+      "SET SESSION sql_mode='NO_ENGINE_SUBSTITUTION,NO_BACKSLASH_ESCAPES,ALLOW_INVALID_DATES,NO_AUTO_VALUE_ON_ZERO';",
     force: true,
   });
   return runCommand("mysql", args, { stdinFilePath: schemaPath });
@@ -206,7 +206,7 @@ async function importData(dataPath, databaseName) {
     charset: process.env.MYSQL_IMPORT_CHARSET || "utf8mb4",
     initCommand:
       process.env.MYSQL_IMPORT_INIT_COMMAND ||
-      "SET SESSION sql_mode='NO_ENGINE_SUBSTITUTION,NO_BACKSLASH_ESCAPES,ALLOW_INVALID_DATES';",
+      "SET SESSION sql_mode='NO_ENGINE_SUBSTITUTION,NO_BACKSLASH_ESCAPES,ALLOW_INVALID_DATES,NO_AUTO_VALUE_ON_ZERO';",
     force: true,
   });
   return runCommand("mysql", args, { stdinFilePath: dataPath });

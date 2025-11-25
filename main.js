@@ -268,7 +268,10 @@ async function ensureTenant(tenantId) {
     await runStep("RefsSub2", () => migrateRefsSub2(tenantId, branchId)); // Verified
     await runStep("SysLevel", () => migrateSysLevel(tenantId, branchId)); // Verified
     await runStep("Sapak", () => migrateSapak(tenantId, branchId)); // Verified
-    await runStep("SapakSendStat", () => migrateSapakSendStat(tenantId, branchId));
+    // #tblReportDummy
+    await runStep("SapakSendStat", () => migrateSapakSendStat(tenantId, branchId)); // Verified
+    // #tblSearchOrder
+    await runStep("ServiceType", () => migrateServiceType(tenantId, branchId)); // Verified
 
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
@@ -339,7 +342,6 @@ async function ensureTenant(tenantId) {
     await runStep("OrthokeratologyTreatment", () => migrateOrthokeratologyTreatment(tenantId)); // Verified
     await runStep("Letter", () => migrateLetter(tenantId, branchId)); // Verified
     await runStep("PayType", () => migratePayType(tenantId, branchId)); // Verified
-    await runStep("ServiceType", () => migrateServiceType(tenantId, branchId)); // Verified
     await runStep("SysLevel", () => migrateSysLevel(tenantId, branchId)); // Verified
     await runStep("SearchOrder", () => migrateSearchOrder(tenantId, branchId)); // Verified
     await runStep("ShortCut", () => migrateShortCut(tenantId, branchId));  // Verified

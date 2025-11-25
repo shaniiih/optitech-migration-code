@@ -57,6 +57,7 @@ const migrateSapakDest = require("./migrateSapakDest");
 const migrateInvoice = require("./migrateInvoice");
 const migrateSMS = require("./migrateSMS");
 const migrateOpticalBase = require("./migrateOpticalBase");
+const migrateSapakSendStat = require("./migrateSapakSendStat");
 const migrateContactLensTint = require("./migrateContactLensTint");
 const migrateCrdClensChecksPr = require("./migrateCrdClensChecksPr");
 const migrateCrdClensChecksMater = require("./migrateCrdClensChecksMater");
@@ -267,6 +268,7 @@ async function ensureTenant(tenantId) {
     await runStep("RefsSub2", () => migrateRefsSub2(tenantId, branchId)); // Verified
     await runStep("SysLevel", () => migrateSysLevel(tenantId, branchId)); // Verified
     await runStep("Sapak", () => migrateSapak(tenantId, branchId)); // Verified
+    await runStep("SapakSendStat", () => migrateSapakSendStat(tenantId, branchId));
 
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified

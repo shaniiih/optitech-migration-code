@@ -5,6 +5,7 @@ const migrateBranch = require("./migrateBranch");
 const migrateCity = require("./migrateCity"); 
 const migrateWorkLab = require("./migrateWorkLab");
 const migrateZipCode = require("./migrateZipCode");
+const migrateZipcodeCity = require("./migrateZipcodeCity");
 const migrateCheckType = require("./migrateCheckType");
 const migrateCreditType = require("./migrateCreditType");
 const migrateEye = require("./migrateEye");
@@ -280,7 +281,8 @@ async function ensureTenant(tenantId) {
     await runStep("SolutionName", () => migrateSolutionName(tenantId, branchId)); // Verified
     await runStep("SpecialName", () => migrateSpecialName(tenantId, branchId)); // Verified
     await runStep("UReport", () => migrateUReport(tenantId, branchId)); // Verified
-    await runStep("VAT", () => migrateVAT(tenantId, branchId));
+    await runStep("VAT", () => migrateVAT(tenantId, branchId)); // Verified
+    await runStep("ZipcodeCity", () => migrateZipcodeCity(tenantId, branchId)); // Verified
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
     await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified

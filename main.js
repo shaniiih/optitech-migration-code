@@ -78,6 +78,7 @@ const migrateCLnsType = require("./migrateCLnsType");
 const migrateClndrWrk = require("./migrateClndrWrk");
 const migrateProduct = require("./migrateProduct");
 const migrateBarcodeManagement = require("./migrateBarcodeManagement");
+const migrateBarCode = require("./migrateBarCode");
 const migrateDetailedWorkOrder = require("./migrateDetailedWorkOrder");
 const migrateFrameTrial = require("./migrateFrameTrial");
 const migrateGlassMaterial = require("./migrateGlassMaterial");
@@ -283,6 +284,8 @@ async function ensureTenant(tenantId) {
     await runStep("UReport", () => migrateUReport(tenantId, branchId)); // Verified
     await runStep("VAT", () => migrateVAT(tenantId, branchId)); // Verified
     await runStep("ZipcodeCity", () => migrateZipcodeCity(tenantId, branchId)); // Verified
+    // #tblZipcodeStreetsZipcode
+   await runStep("BarCode", () => migrateBarCode(tenantId, branchId)); // Verified
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
     await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified

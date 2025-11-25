@@ -12,20 +12,6 @@ async function migrateSolutionName(tenantId = "tenant_1", branchId = null) {
   let total = 0;
 
   try {
-    /*await pg.query(`
-      DO $$
-      BEGIN
-        IF NOT EXISTS (
-          SELECT 1
-          FROM pg_indexes
-          WHERE indexname = 'solutionname_tenant_solutionid_ux'
-        ) THEN
-          CREATE UNIQUE INDEX solutionname_tenant_solutionid_ux
-          ON "SolutionName" ("tenantId","solutionId");
-        END IF;
-      END$$;
-    `);*/
-
     while (true) {
       const [rows] = await mysql.execute(
         `SELECT SolutionId, SolutionName
@@ -78,10 +64,9 @@ async function migrateSolutionName(tenantId = "tenant_1", branchId = null) {
               "createdAt", "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("tenantId", "solutionId")
+            ON CONFLICT ("tenantId", "branchId", "solutionId")
             DO UPDATE SET
               "solutionName" = EXCLUDED."solutionName",
-              "branchId" = EXCLUDED."branchId",
               "updatedAt" = EXCLUDED."updatedAt"
             `,
             params

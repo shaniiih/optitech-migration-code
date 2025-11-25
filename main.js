@@ -275,13 +275,11 @@ async function ensureTenant(tenantId) {
     await runStep("ShortCut", () => migrateShortCut(tenantId, branchId));  // Verified
     await runStep("SMS", () => migrateSMS(tenantId, branchId)); // Verified
     await runStep("SMSLen", () => migrateSMSLen(tenantId, branchId));  // Verified
+    await runStep("SolutionName", () => migrateSolutionName(tenantId, branchId)); // Verified
 
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
     await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified
-
-
-    await runStep("SolutionName", () => migrateSolutionName(tenantId, branchId)); // Verified
     await runStep("SpecialName", () => migrateSpecialName(tenantId, branchId)); // Verified
     await runStep("Supplier", () => migrateSupplier(tenantId)); // Verified
     await runStep("Users", () => migrateUser(tenantId)); // Verified

@@ -58,6 +58,7 @@ const migrateInvoice = require("./migrateInvoice");
 const migrateSMS = require("./migrateSMS");
 const migrateOpticalBase = require("./migrateOpticalBase");
 const migrateSapakSendStat = require("./migrateSapakSendStat");
+const migrateVAT = require("./migrateVAT");
 const migrateContactLensTint = require("./migrateContactLensTint");
 const migrateCrdClensChecksPr = require("./migrateCrdClensChecksPr");
 const migrateCrdClensChecksMater = require("./migrateCrdClensChecksMater");
@@ -279,6 +280,7 @@ async function ensureTenant(tenantId) {
     await runStep("SolutionName", () => migrateSolutionName(tenantId, branchId)); // Verified
     await runStep("SpecialName", () => migrateSpecialName(tenantId, branchId)); // Verified
     await runStep("UReport", () => migrateUReport(tenantId, branchId)); // Verified
+    await runStep("VAT", () => migrateVAT(tenantId, branchId));
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
     await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified

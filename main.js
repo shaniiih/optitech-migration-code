@@ -138,6 +138,7 @@ const migrateCrdGlassMater = require("./migrateCrdGlassMater");
 const migrateCrdGlassModel = require("./migrateCrdGlassModel");
 const migrateNewProd = require("./migrateNewProd");
 const migrateOReport = require("./migrateOReport");
+const migrateUReport = require("./migrateUReport");
 const { getPostgresConnection } = require("./dbConfig");
 const { ensureTenantId, cleanTenantId } = require("./tenantUtils");
 
@@ -277,6 +278,7 @@ async function ensureTenant(tenantId) {
     await runStep("SMSLen", () => migrateSMSLen(tenantId, branchId));  // Verified
     await runStep("SolutionName", () => migrateSolutionName(tenantId, branchId)); // Verified
     await runStep("SpecialName", () => migrateSpecialName(tenantId, branchId)); // Verified
+    await runStep("UReport", () => migrateUReport(tenantId, branchId)); // Verified
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
     await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified

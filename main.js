@@ -273,7 +273,8 @@ async function ensureTenant(tenantId) {
     // #tblSearchOrder
     await runStep("ServiceType", () => migrateServiceType(tenantId, branchId)); // Verified
     await runStep("ShortCut", () => migrateShortCut(tenantId, branchId));  // Verified
-    await runStep("SMS", () => migrateSMS(tenantId, branchId));
+    await runStep("SMS", () => migrateSMS(tenantId, branchId)); // Verified
+    await runStep("SMSLen", () => migrateSMSLen(tenantId, branchId));  // Verified
 
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
@@ -345,7 +346,6 @@ async function ensureTenant(tenantId) {
     await runStep("PayType", () => migratePayType(tenantId, branchId)); // Verified
     await runStep("SysLevel", () => migrateSysLevel(tenantId, branchId)); // Verified
     await runStep("SearchOrder", () => migrateSearchOrder(tenantId, branchId)); // Verified
-    await runStep("SMSLen", () => migrateSMSLen(tenantId, branchId));  // Verified
     await runStep("ItemCountsYear", () => migrateItemCountsYear(tenantId, branchId)); // Verified
     await runStep("CustomerPhoto", () => migrateCustomerPhoto(tenantId, branchId)); // Verified
     await runStep("CreditCard", () => migrateCreditCard(tenantId, branchId)); // Verified

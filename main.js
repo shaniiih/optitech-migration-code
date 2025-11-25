@@ -273,6 +273,7 @@ async function ensureTenant(tenantId) {
     // #tblSearchOrder
     await runStep("ServiceType", () => migrateServiceType(tenantId, branchId)); // Verified
     await runStep("ShortCut", () => migrateShortCut(tenantId, branchId));  // Verified
+    await runStep("SMS", () => migrateSMS(tenantId, branchId));
 
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
@@ -292,7 +293,6 @@ async function ensureTenant(tenantId) {
     //await runStep("LowVisionFrame", () => migrateLowVisionFrame(tenantId));
     //await runStep("LowVisionCheck", () => migrateLowVisionCheck(tenantId));
     //await runStep("Invoice", () => migrateInvoice(tenantId));
-    //await runStep("SMS", () => migrateSMS(tenantId));
     await runStep("Appointment", () => migrateAppointment(tenantId)); // Verified
     await runStep("ClndrWrk", () => migrateClndrWrk(tenantId, branchId)); // Verified
     //await runStep("ClinicalExamination", () => migrateClinicalExamination(tenantId));

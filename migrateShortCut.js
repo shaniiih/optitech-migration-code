@@ -35,19 +35,6 @@ async function migrateShortCut(tenantId = "tenant_1", branchId = null) {
   let total = 0;
 
   try {
-    // Unique index creation moved to Prisma schema/migrations. Leaving disabled to avoid conflicts.
-    // await pg.query(`
-    //   DO $$
-    //   BEGIN
-    //     IF NOT EXISTS (
-    //       SELECT 1 FROM pg_indexes WHERE indexname = 'shortcut_tenant_prkey_ux'
-    //     ) THEN
-    //       CREATE UNIQUE INDEX shortcut_tenant_prkey_ux
-    //       ON "ShortCut" ("tenantId", "prKey");
-    //     END IF;
-    //   END$$;
-    // `);
-
     while (true) {
       const [rows] = await mysql.query(
         `SELECT PrKey, ShKey, \`Desc\` AS DescVal
@@ -106,9 +93,8 @@ async function migrateShortCut(tenantId = "tenant_1", branchId = null) {
               "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("tenantId", "prKey")
+            ON CONFLICT ("tenantId", "branchId", "prKey")
             DO UPDATE SET
-              "branchId" = EXCLUDED."branchId",
               "shKey" = EXCLUDED."shKey",
               "desc" = EXCLUDED."desc",
               "updatedAt" = NOW()

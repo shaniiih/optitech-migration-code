@@ -146,6 +146,7 @@ const migrateCrdGlassModel = require("./migrateCrdGlassModel");
 const migrateNewProd = require("./migrateNewProd");
 const migrateOReport = require("./migrateOReport");
 const migrateUReport = require("./migrateUReport");
+const migrateSetting = require("./migrateSetting");
 const { getPostgresConnection } = require("./dbConfig");
 const { ensureTenantId, cleanTenantId } = require("./tenantUtils");
 
@@ -300,6 +301,7 @@ async function ensureTenant(tenantId) {
    await runStep("ItemCountsYear", () => migrateItemCountsYear(tenantId, branchId)); // Verified
    await runStep("Letter", () => migrateLetter(tenantId, branchId)); // Verified
    await runStep("PayType", () => migratePayType(tenantId, branchId)); // Verified
+   await runStep("Setting", () => migrateSetting(tenantId, branchId)); // Verified
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
     await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified

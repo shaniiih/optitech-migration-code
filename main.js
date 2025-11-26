@@ -113,6 +113,7 @@ const migrateRefsSub2 = require("./migrateRefsSub2");
 const migrateCreditCard = require("./migrateCreditCard");
 const migrateDummy = require("./migrateDummy");
 const migrateFixExpense = require("./migrateFixExpense");
+const migrateFaxStat = require("./migrateFaxStat");
 const migrateContact = require("./migrateContact");
 const migrateContactAgents = require("./migrateContactAgents");
 const migrateLetter = require("./migrateLetter");
@@ -295,6 +296,7 @@ async function ensureTenant(tenantId) {
    await runStep("CrdGlassIOPInst", () => migrateCrdGlassIOPInst(tenantId, branchId)); // Verified
    await runStep("CrdLVCap", () => migrateCrdLVCap(tenantId, branchId)); // Verified
    await runStep("CreditCard", () => migrateCreditCard(tenantId, branchId)); // Verified
+   await runStep("FaxStat", () => migrateFaxStat(tenantId, branchId)); // Verified
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
     await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified

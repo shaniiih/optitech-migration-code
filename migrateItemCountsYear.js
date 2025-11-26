@@ -81,8 +81,7 @@ async function migrateItemCountsYear(tenantId = "tenant_1", branchId = null) {
             `INSERT INTO "ItemCountsYear" (
                id, "tenantId", "branchId", "countYear", "countDate", closed, "createdAt", "updatedAt"
              ) VALUES ${values.join(",")}
-             ON CONFLICT ("tenantId", "countYear") DO UPDATE SET
-               "branchId" = EXCLUDED."branchId",
+             ON CONFLICT ("tenantId", "branchId", "countYear") DO UPDATE SET
                "countDate" = EXCLUDED."countDate",
                closed = EXCLUDED.closed,
                "updatedAt" = EXCLUDED."updatedAt"`,

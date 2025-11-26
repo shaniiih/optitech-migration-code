@@ -66,6 +66,7 @@ const migrateCrdClensChecksMater = require("./migrateCrdClensChecksMater");
 const migrateCrdClensChecksTint = require("./migrateCrdClensChecksTint");
 const migrateCrdClensManuf = require("./migrateCrdClensManuf");
 const migrateCrdClensSolRinse = require("./migrateCrdClensSolRinse");
+const migrateCrdClensSolClean = require("./migrateCrdClensSolClean");
 const migrateCrdClensType = require("./migrateCrdClensType");
 const migrateContactLensManufacturer = require("./migrateContactLensManufacturer");
 const migrateContactLensDisinfectingSolution = require("./migrateContactLensDisinfectingSolution");
@@ -286,7 +287,8 @@ async function ensureTenant(tenantId) {
     await runStep("ZipcodeCity", () => migrateZipcodeCity(tenantId, branchId)); // Verified
     // #tblZipcodeStreetsZipcode
    await runStep("BarCode", () => migrateBarCode(tenantId, branchId)); // Verified
-   await runStep("CrdBuysWorkType", () => migrateCrdBuysWorkType(tenantId, branchId));
+   await runStep("CrdBuysWorkType", () => migrateCrdBuysWorkType(tenantId, branchId)); // Verified
+   await runStep("CrdClensSolClean", () => migrateCrdClensSolClean(tenantId, branchId)); // Verified
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
     await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified

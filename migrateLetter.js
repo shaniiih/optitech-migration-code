@@ -5,6 +5,20 @@ const { ensureTenantId } = require("./tenantUtils");
 const WINDOW_SIZE = 5000;
 const BATCH_SIZE = 1000;
 
+function asInteger(value) {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "number") return Number.isFinite(value) ? Math.trunc(value) : null;
+  const trimmed = String(value).trim();
+  if (!trimmed) return null;
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? Math.trunc(parsed) : null;
+}
+
+function cleanText(value) {
+  if (value === null || value === undefined) return null;
+  const trimmed = String(value).trim();
+  return trimmed.length ? trimmed : null;
+}
 
 async function migrateLetter(tenantId, branchId) {
   tenantId = ensureTenantId(tenantId);
@@ -16,7 +30,6 @@ async function migrateLetter(tenantId, branchId) {
   let total = 0;
 
   try {
-
     while (true) {
       const [rows] = await mysql.execute(
         `SELECT LetterId, LetterName, Text1, Text2, Text3, Text4,
@@ -37,45 +50,41 @@ async function migrateLetter(tenantId, branchId) {
 
         const values = [];
         const params = [];
+        const timestamp = new Date();
 
         for (const r of chunk) {
-          const id = uuidv4();
-          const now = new Date();
+          const letterId = asInteger(r.LetterId);
+          if (letterId === null) continue;
 
+          const base = params.length;
           values.push(
-            `($${params.length + 1}, $${params.length + 2}, $${params.length + 3}, $${params.length + 4}, $${params.length + 5}, $${params.length + 6}, $${params.length + 7}, $${params.length + 8}, $${params.length + 9}, $${params.length + 10}, $${params.length + 11}, $${params.length + 12}, $${params.length + 13}, $${params.length + 14}, $${params.length + 15}, $${params.length + 16}, $${params.length + 17}, $${params.length + 18}, $${params.length + 19}, $${params.length + 20}, $${params.length + 21}, $${params.length + 22}, $${params.length + 23}, $${params.length + 24}, $${params.length + 25}, $${params.length + 26}, $${params.length + 27}, $${params.length + 28}, $${params.length + 29})`
+            `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9}, $${base + 10}, $${base + 11}, $${base + 12}, $${base + 13}, $${base + 14}, $${base + 15}, $${base + 16}, $${base + 17}, $${base + 18}, $${base + 19}, $${base + 20}, $${base + 21}, $${base + 22}, $${base + 23})`
           );
 
           params.push(
-            id, // id
-            tenantId, // tenantId
-            branchId, // branchId
-            String(r.LetterName || ""), // templateName (use legacy LetterName)
-            String(r.LetterName || ""), // subject (use legacy LetterName)
-            r.Text2 || "", // content (fallback to Text2)
-            "GENERAL", // category default
-            null, // mergeFields
-            true, // isActive
-            now, // createdAt
-            now, // updatedAt
-            String(r.LetterName || null), // letterName
-            r.Text1 || null, // text1
-            r.Text2 || null, // text2
-            r.Text3 || null, // text3
-            r.Text4 || null, // text4
-            r.Text1Style != null ? String(r.Text1Style) : null, // text1Style as string
-            r.Text2Style != null ? String(r.Text2Style) : null, // text2Style as string
-            r.Text3Style != null ? String(r.Text3Style) : null, // text3Style as string
-            r.Text4Style != null ? String(r.Text4Style) : null, // text4Style as string
-            r.Text1Font || null, // text1Font
-            r.Text2Font || null, // text2Font
-            r.Text3Font || null, // text3Font
-            r.Text4Font || null, // text4Font
-            r.Text1Size != null ? String(r.Text1Size) : null, // text1Size as string
-            r.Text2Size != null ? String(r.Text2Size) : null, // text2Size as string
-            r.Text3Size != null ? String(r.Text3Size) : null, // text3Size as string
-            r.Text4Size != null ? String(r.Text4Size) : null, // text4Size as string
-            String(r.LetterId) // LetterId as string
+            uuidv4(),                      // id
+            tenantId,                      // tenantId
+            branchId,                      // branchId
+            letterId,                      // letterId
+            cleanText(r.LetterName) || null, // letterName
+            r.Text1 || null,               // text1
+            r.Text2 || null,               // text2
+            r.Text3 || null,               // text3
+            r.Text4 || null,               // text4
+            asInteger(r.Text1Style),       // text1Style
+            asInteger(r.Text2Style),       // text2Style
+            asInteger(r.Text3Style),       // text3Style
+            asInteger(r.Text4Style),       // text4Style
+            r.Text1Font || null,           // text1Font
+            r.Text2Font || null,           // text2Font
+            r.Text3Font || null,           // text3Font
+            r.Text4Font || null,           // text4Font
+            asInteger(r.Text1Size),        // text1Size
+            asInteger(r.Text2Size),        // text2Size
+            asInteger(r.Text3Size),        // text3Size
+            asInteger(r.Text4Size),        // text4Size
+            timestamp,                     // createdAt
+            timestamp                      // updatedAt
           );
         }
 
@@ -85,22 +94,32 @@ async function migrateLetter(tenantId, branchId) {
         try {
           const sql = `
             INSERT INTO "Letter" (
-              id, "tenantId", "branchId", "templateName", subject, content, category,
-              "mergeFields", "isActive", "createdAt", "updatedAt",
-              "letterName", "text1", "text2", "text3", "text4",
-              "text1Style", "text2Style", "text3Style", "text4Style",
-              "text1Font", "text2Font", "text3Font", "text4Font",
-              "text1Size", "text2Size", "text3Size", "text4Size",
-              "LetterId"
-            ) VALUES ${values.join(",")}
-            ON CONFLICT ("tenantId", "templateName") DO UPDATE SET
-              "templateName" = EXCLUDED."templateName",
-              subject = EXCLUDED.subject,
-              content = EXCLUDED.content,
-              category = EXCLUDED.category,
-              "mergeFields" = EXCLUDED."mergeFields",
-              "isActive" = EXCLUDED."isActive",
-              "updatedAt" = EXCLUDED."updatedAt",
+              id,
+              "tenantId",
+              "branchId",
+              "letterId",
+              "letterName",
+              "text1",
+              "text2",
+              "text3",
+              "text4",
+              "text1Style",
+              "text2Style",
+              "text3Style",
+              "text4Style",
+              "text1Font",
+              "text2Font",
+              "text3Font",
+              "text4Font",
+              "text1Size",
+              "text2Size",
+              "text3Size",
+              "text4Size",
+              "createdAt",
+              "updatedAt"
+            )
+            VALUES ${values.join(",")}
+            ON CONFLICT ("tenantId", "branchId", "letterId") DO UPDATE SET
               "letterName" = EXCLUDED."letterName",
               "text1" = EXCLUDED."text1",
               "text2" = EXCLUDED."text2",
@@ -118,8 +137,7 @@ async function migrateLetter(tenantId, branchId) {
               "text2Size" = EXCLUDED."text2Size",
               "text3Size" = EXCLUDED."text3Size",
               "text4Size" = EXCLUDED."text4Size",
-              "branchId" = EXCLUDED."branchId",
-              "LetterId" = EXCLUDED."LetterId";
+              "updatedAt" = EXCLUDED."updatedAt";
           `;
           await pg.query(sql, params);
           await pg.query("COMMIT");
@@ -140,12 +158,6 @@ async function migrateLetter(tenantId, branchId) {
     await mysql.end();
     await pg.end();
   }
-}
-
-function toSmallInt(v) {
-  if (v === null || v === undefined) return null;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
 }
 
 module.exports = migrateLetter;

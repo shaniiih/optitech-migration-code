@@ -286,6 +286,7 @@ async function ensureTenant(tenantId) {
     await runStep("ZipcodeCity", () => migrateZipcodeCity(tenantId, branchId)); // Verified
     // #tblZipcodeStreetsZipcode
    await runStep("BarCode", () => migrateBarCode(tenantId, branchId)); // Verified
+   await runStep("CrdBuysWorkType", () => migrateCrdBuysWorkType(tenantId, branchId));
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
     await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified
@@ -313,7 +314,7 @@ async function ensureTenant(tenantId) {
     //await runStep("LensTreatmentCharacteristic", () => migrateLensTreatmentCharacteristic(tenantId));
     await runStep("WorkLabel", () => migrateWorkLabel(tenantId)); // Verified
     await runStep("WorkStatus", () => migrateWorkStatus(tenantId)); // Verified
-    await runStep("CrdBuysWorkType", () => migrateCrdBuysWorkType(tenantId, branchId));
+
     
     await runStep("WorkSupplier", () => migrateWorkSupplier(tenantId)); // Verified
     // await runStep("ContactLensMaterial", () => migrateContactLensMaterial(tenantId)); // Verified

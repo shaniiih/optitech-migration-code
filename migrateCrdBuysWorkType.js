@@ -30,20 +30,6 @@ async function migrateCrdBuysWorkType(tenantId = "tenant_1", branchId = null) {
   let skippedInvalidId = 0;
 
   try {
-    /*await pg.query(`
-      DO $$
-      BEGIN
-        IF NOT EXISTS (
-          SELECT 1
-          FROM pg_indexes
-          WHERE indexname = 'crdbuysworktype_tenant_worktypeid_ux'
-        ) THEN
-          CREATE UNIQUE INDEX crdbuysworktype_tenant_worktypeid_ux
-          ON "CrdBuysWorkType" ("tenantId","workTypeId");
-        END IF;
-      END$$;
-    `);*/
-
     while (true) {
       const [rows] = await mysql.query(
         `SELECT WorkTypeId, WorkTypeName
@@ -105,9 +91,8 @@ async function migrateCrdBuysWorkType(tenantId = "tenant_1", branchId = null) {
               "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("tenantId", "workTypeId")
+            ON CONFLICT ("tenantId", "branchId", "workTypeId")
             DO UPDATE SET
-              "branchId" = EXCLUDED."branchId",
               "workTypeName" = EXCLUDED."workTypeName",
               "updatedAt" = EXCLUDED."updatedAt"
             `,

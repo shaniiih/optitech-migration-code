@@ -12,20 +12,6 @@ async function migrateCreditCard(tenantId = "tenant_1", branchId = null) {
   let total = 0;
 
   try {
-    await pg.query(`
-      DO $$
-      BEGIN
-        IF NOT EXISTS (
-          SELECT 1
-          FROM pg_indexes
-          WHERE indexname = 'creditcard_tenant_creditcardid_ux'
-        ) THEN
-          CREATE UNIQUE INDEX creditcard_tenant_creditcardid_ux
-          ON "CreditCard" ("tenantId","creditCardId");
-        END IF;
-      END$$;
-    `);
-
     while (true) {
       const [rows] = await mysql.execute(
         `SELECT CreditCardId, CreditCardName
@@ -78,10 +64,9 @@ async function migrateCreditCard(tenantId = "tenant_1", branchId = null) {
               "createdAt", "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("tenantId", "creditCardId")
+            ON CONFLICT ("tenantId", "branchId", "creditCardId")
             DO UPDATE SET
               "creditCardName" = EXCLUDED."creditCardName",
-              "branchId" = EXCLUDED."branchId",
               "updatedAt" = EXCLUDED."updatedAt"
             `,
             params

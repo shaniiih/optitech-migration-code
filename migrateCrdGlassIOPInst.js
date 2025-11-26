@@ -35,21 +35,6 @@ async function migrateCrdGlassIOPInst(tenantId = "tenant_1", branchId = null) {
   let total = 0;
 
   try {
-    // Unique index creation moved to Prisma schema/migrations. Leaving disabled to avoid conflicts.
-    // await pg.query(`
-    //   DO $$
-    //   BEGIN
-    //     IF NOT EXISTS (
-    //       SELECT 1
-    //       FROM pg_indexes
-    //       WHERE indexname = 'crd_glass_iop_inst_tenant_iopid_ux'
-    //     ) THEN
-    //       CREATE UNIQUE INDEX crd_glass_iop_inst_tenant_iopid_ux
-    //       ON "CrdGlassIOPInst" ("tenantId","iOPInstId");
-    //     END IF;
-    //   END$$;
-    // `);
-
     while (true) {
       const [rows] = await mysql.query(
         `SELECT IOPInstId, IOPInstName
@@ -75,7 +60,7 @@ async function migrateCrdGlassIOPInst(tenantId = "tenant_1", branchId = null) {
           const displayName = cleanText(row.IOPInstName);
 
           values.push(
-            `($${params.length + 1}, $${params.length + 2}, $${params.length + 3}, $${params.length + 4}, $${params.length + 5}, $${params.length + 6}, $${params.length + 7}, $${params.length + 8})`
+            `($${params.length + 1}, $${params.length + 2}, $${params.length + 3}, $${params.length + 4}, $${params.length + 5}, $${params.length + 6}, $${params.length + 7})`
           );
           params.push(
             uuidv4(),
@@ -83,7 +68,6 @@ async function migrateCrdGlassIOPInst(tenantId = "tenant_1", branchId = null) {
             branchId,
             iopInstId,
             displayName,
-            null,
             now,
             now
           );
@@ -101,14 +85,12 @@ async function migrateCrdGlassIOPInst(tenantId = "tenant_1", branchId = null) {
               "branchId",
               "iOPInstId",
               "iOPInstName",
-              "idCount",
               "createdAt",
               "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("tenantId", "iOPInstId")
+            ON CONFLICT ("tenantId","branchId", "iOPInstId")
             DO UPDATE SET
-              "branchId" = EXCLUDED."branchId",
               "iOPInstName" = EXCLUDED."iOPInstName",
               "updatedAt" = EXCLUDED."updatedAt"
             `,

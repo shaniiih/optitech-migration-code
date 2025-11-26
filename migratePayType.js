@@ -35,21 +35,6 @@ async function migratePayType(tenantId = "tenant_1", branchId = null) {
   let total = 0;
 
   try {
-    // Unique index creation moved to Prisma schema/migrations. Leaving disabled to avoid conflicts.
-    // await pg.query(`
-    //   DO $$
-    //   BEGIN
-    //     IF NOT EXISTS (
-    //       SELECT 1
-    //       FROM pg_indexes
-    //       WHERE indexname = 'pay_type_tenant_pay_id_ux'
-    //     ) THEN
-    //       CREATE UNIQUE INDEX pay_type_tenant_pay_id_ux
-    //       ON "PayType" ("tenantId","payTypeId");
-    //     END IF;
-    //   END$$;
-    // `);
-
     while (true) {
       const [rows] = await mysql.query(
         `SELECT PayTypeId, PayTypeName
@@ -104,9 +89,8 @@ async function migratePayType(tenantId = "tenant_1", branchId = null) {
               "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("tenantId", "payTypeId")
+            ON CONFLICT ("tenantId", "branchId", "payTypeId")
             DO UPDATE SET
-              "branchId" = EXCLUDED."branchId",
               "payTypeName" = EXCLUDED."payTypeName",
               "updatedAt" = EXCLUDED."updatedAt"
             `,

@@ -290,20 +290,20 @@ async function ensureTenant(tenantId) {
     await runStep("UReport", () => migrateUReport(tenantId, branchId)); // Verified
     await runStep("VAT", () => migrateVAT(tenantId, branchId)); // Verified
     await runStep("ZipcodeCity", () => migrateZipcodeCity(tenantId, branchId)); // Verified
-   await runStep("BarCode", () => migrateBarCode(tenantId, branchId)); // Verified
-   await runStep("CrdBuysWorkType", () => migrateCrdBuysWorkType(tenantId, branchId)); // Verified
-   await runStep("CrdClensSolClean", () => migrateCrdClensSolClean(tenantId, branchId)); // Verified
-   await runStep("CrdClinicChar", () => migrateCrdClinicChar(tenantId, branchId)); // Verified
-   await runStep("CrdGlassIOPInst", () => migrateCrdGlassIOPInst(tenantId, branchId)); // Verified
-   await runStep("CrdLVCap", () => migrateCrdLVCap(tenantId, branchId)); // Verified
-   await runStep("CreditCard", () => migrateCreditCard(tenantId, branchId)); // Verified
-   await runStep("FaxStat", () => migrateFaxStat(tenantId, branchId)); // Verified
-   await runStep("ItemCountsYear", () => migrateItemCountsYear(tenantId, branchId)); // Verified
-   await runStep("Letter", () => migrateLetter(tenantId, branchId)); // Verified
-   await runStep("PayType", () => migratePayType(tenantId, branchId)); // Verified
-   await runStep("Setting", () => migrateSetting(tenantId, branchId)); // Verified
-      // #tblZipcodeStreetsZipcode
-      await runStep("ZipcodeStreet", () => migrateZipcodeStreet(tenantId, branchId));
+    await runStep("BarCode", () => migrateBarCode(tenantId, branchId)); // Verified
+    await runStep("CrdBuysWorkType", () => migrateCrdBuysWorkType(tenantId, branchId)); // Verified
+    await runStep("CrdClensSolClean", () => migrateCrdClensSolClean(tenantId, branchId)); // Verified
+    await runStep("CrdClinicChar", () => migrateCrdClinicChar(tenantId, branchId)); // Verified
+    await runStep("CrdGlassIOPInst", () => migrateCrdGlassIOPInst(tenantId, branchId)); // Verified
+    await runStep("CrdLVCap", () => migrateCrdLVCap(tenantId, branchId)); // Verified
+    await runStep("CreditCard", () => migrateCreditCard(tenantId, branchId)); // Verified
+    await runStep("FaxStat", () => migrateFaxStat(tenantId, branchId)); // Verified
+    await runStep("ItemCountsYear", () => migrateItemCountsYear(tenantId, branchId)); // Verified
+    await runStep("Letter", () => migrateLetter(tenantId, branchId)); // Verified
+    await runStep("PayType", () => migratePayType(tenantId, branchId)); // Verified
+    await runStep("Setting", () => migrateSetting(tenantId, branchId)); // Verified
+    // #tblZipcodeStreetsZipcode
+    await runStep("ZipcodeStreet", () => migrateZipcodeStreet(tenantId, branchId));
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
     await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified

@@ -149,6 +149,7 @@ const migrateUReport = require("./migrateUReport");
 const migrateSetting = require("./migrateSetting");
 const { getPostgresConnection } = require("./dbConfig");
 const { ensureTenantId, cleanTenantId } = require("./tenantUtils");
+const migrateZipcodeStreet = require("./migrateZipcodeStreet");
 
 // ---- utils ---------------------------------------------------------------
 function now() { return new Date().toISOString(); }
@@ -289,7 +290,6 @@ async function ensureTenant(tenantId) {
     await runStep("UReport", () => migrateUReport(tenantId, branchId)); // Verified
     await runStep("VAT", () => migrateVAT(tenantId, branchId)); // Verified
     await runStep("ZipcodeCity", () => migrateZipcodeCity(tenantId, branchId)); // Verified
-    // #tblZipcodeStreetsZipcode
    await runStep("BarCode", () => migrateBarCode(tenantId, branchId)); // Verified
    await runStep("CrdBuysWorkType", () => migrateCrdBuysWorkType(tenantId, branchId)); // Verified
    await runStep("CrdClensSolClean", () => migrateCrdClensSolClean(tenantId, branchId)); // Verified
@@ -302,6 +302,8 @@ async function ensureTenant(tenantId) {
    await runStep("Letter", () => migrateLetter(tenantId, branchId)); // Verified
    await runStep("PayType", () => migratePayType(tenantId, branchId)); // Verified
    await runStep("Setting", () => migrateSetting(tenantId, branchId)); // Verified
+      // #tblZipcodeStreetsZipcode
+      await runStep("ZipcodeStreet", () => migrateZipcodeStreet(tenantId, branchId));
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
     await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified

@@ -35,6 +35,7 @@ const migrateWorkLabel = require("./migrateWorkLabel");
 const migrateFrmLabelTypes = require("./migrateFrmLabelTypes");
 const migrateFrmModelTypes = require("./migrateFrmModelTypes");
 const migrateFrmPrivColors = require("./migrateFrmPrivColors");
+const migrateFrmColor = require("./migrateFrmColor");
 const migrateCrdBuysWorkLab = require("./migrateCrdBuysWorkLab");
 const migrateCrdBuysWorkSapak = require("./migrateCrdBuysWorkSapak");
 const migrateCrdBuysWorkStat = require("./migrateCrdBuysWorkStat");
@@ -311,6 +312,7 @@ async function ensureTenant(tenantId) {
     await runStep("Contact", () => migrateContact(tenantId, branchId)); // Verified
     await runStep("CrdBuysWorkLabel", () => migrateCrdBuysWorkLabel(tenantId, branchId)); // Verified
     await runStep("Group", () => migrateGroup(tenantId, branchId)); // Verified
+    await runStep("FrmColor", () => migrateFrmColor(tenantId, branchId)); // Verified
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
     await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified

@@ -80,7 +80,6 @@ async function migrateContact(tenantId, branchId) {
               "isSapak", "creditCon", "remDate", "supplierId", "createdAt", "updatedAt"
             ) VALUES ${values.join(",")}
             ON CONFLICT ("tenantId", "cntId") DO UPDATE SET
-              "branchId" = EXCLUDED."branchId",
               "cntId" = EXCLUDED."cntId",
               "lastName" = EXCLUDED."lastName",
               "firstName" = EXCLUDED."firstName",

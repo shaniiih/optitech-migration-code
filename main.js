@@ -306,6 +306,7 @@ async function ensureTenant(tenantId) {
     await runStep("ZipcodeCity", () => migrateZipcodeCity(tenantId, branchId)); // Verified
     await runStep("ZipcodeStreet", () => migrateZipcodeStreet(tenantId, branchId)); // Verified
     await runStep("ZipcodeStreetsZipcode", () => migrateZipcodeStreetsZipcode(tenantId, branchId)); // Verified
+    await runStep("Contact", () => migrateContact(tenantId, branchId)); // Verified
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
     await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified
@@ -362,7 +363,6 @@ async function ensureTenant(tenantId) {
     await runStep("MovementType", () => migrateMovementType(tenantId, branchId)); // Verified
     await runStep("MovementProperty", () => migrateMovementProperty(tenantId, branchId)); // Verified
     await runStep("GlassCoating", () => migrateGlassCoating(tenantId)); // Verified
-    await runStep("Contact", () => migrateContact(tenantId, branchId)); // Verified
     await runStep("ContactAgents", () => migrateContactAgents(tenantId, branchId)); // Verified
     await runStep("UserSettings", () => migrateUserSettings(tenantId, branchId)); // Verified
     await runStep("GlassMaterial", () => migrateGlassMaterial(tenantId)); // Verified

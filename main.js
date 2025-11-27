@@ -214,6 +214,7 @@ async function ensureTenant(tenantId) {
     await runStep("Branch", () => migrateBranch(tenantId)); // Verified
     await runStep("CheckType", () => migrateCheckType(tenantId, branchId)); // Verified
     await runStep("City", () => migrateCity(tenantId, branchId)); // Verified
+    await runStep("Users", () => migrateUser(tenantId, branchId)); // Verified
     await runStep("ClndrTasksPriority", () => migrateClndrTasksPriority(tenantId, branchId)); // Verified
     await runStep("CLnsChar", () => migrateCLnsChar(tenantId, branchId)); // Verified
     await runStep("CLnsType", () => migrateCLnsType(tenantId, branchId)); // Verified

@@ -123,7 +123,7 @@ async function migrateCrdBuysWorkLabel(tenantId = "tenant_1", branchId = null) {
               "branchId",
               "labelId",
               "labelName",
-              "ItemCode",
+              "itemCode",
               "sapakId",
               "createdAt",
               "updatedAt"
@@ -132,7 +132,7 @@ async function migrateCrdBuysWorkLabel(tenantId = "tenant_1", branchId = null) {
             ON CONFLICT ("tenantId", "branchId", "labelId")
             DO UPDATE SET
               "labelName" = EXCLUDED."labelName",
-              "ItemCode" = EXCLUDED."ItemCode",
+              "itemCode" = EXCLUDED."itemCode",
               "sapakId" = EXCLUDED."sapakId",
               "updatedAt" = EXCLUDED."updatedAt"
             `,
@@ -161,7 +161,7 @@ async function migrateCrdBuysWorkLabel(tenantId = "tenant_1", branchId = null) {
       console.log(`⚠️ Skipped ${skippedInvalidId} labels due to invalid LabelId`);
     }
     if (skippedMissingItem) {
-      console.log(`⚠️ Skipped ${skippedMissingItem} labels due to missing ItemCode`);
+      console.log(`⚠️ Skipped ${skippedMissingItem} labels due to missing itemCode`);
     }
 
     console.log(`✅ CrdBuysWorkLabel migration completed. Total inserted/updated: ${total}`);

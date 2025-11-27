@@ -82,6 +82,7 @@ const migrateClndrWrk = require("./migrateClndrWrk");
 const migrateProduct = require("./migrateProduct");
 const migrateBarcodeManagement = require("./migrateBarcodeManagement");
 const migrateBarCode = require("./migrateBarCode");
+const migrateCrdBuysWorkLabel = require("./migrateCrdBuysWorkLabel");
 const migrateDetailedWorkOrder = require("./migrateDetailedWorkOrder");
 const migrateFrameTrial = require("./migrateFrameTrial");
 const migrateGlassMaterial = require("./migrateGlassMaterial");
@@ -307,6 +308,7 @@ async function ensureTenant(tenantId) {
     await runStep("ZipcodeStreet", () => migrateZipcodeStreet(tenantId, branchId)); // Verified
     await runStep("ZipcodeStreetsZipcode", () => migrateZipcodeStreetsZipcode(tenantId, branchId)); // Verified
     await runStep("Contact", () => migrateContact(tenantId, branchId)); // Verified
+    await runStep("CrdBuysWorkLabel", () => migrateCrdBuysWorkLabel(tenantId, branchId)); // Verified
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
     await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified

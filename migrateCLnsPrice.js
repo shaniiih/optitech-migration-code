@@ -47,7 +47,7 @@ async function migrateCLnsPrice(tenantId = "tenant_1", branchId = null) {
   const mysql = await getMySQLConnection();
   const pg = await getPostgresConnection();
 
-  let lastSapakId = -1;
+  let offset = 0;
   let total = 0;
 
   try {
@@ -114,10 +114,9 @@ async function migrateCLnsPrice(tenantId = "tenant_1", branchId = null) {
       const [rows] = await mysql.query(
         `SELECT SapakID, CLensTypeID, ClensCharID, Price, PubPrice, RecPrice, PrivPrice, Active, Quantity
            FROM tblCLnsPrices
-          WHERE SapakID > ?
-          ORDER BY SapakID
-          LIMIT ${WINDOW_SIZE}`,
-        [lastSapakId]
+          ORDER BY SapakID, CLensTypeID, ClensCharID
+          LIMIT ? OFFSET ?`,
+        [WINDOW_SIZE, offset]
       );
 
       if (!rows.length) break;
@@ -132,15 +131,6 @@ async function migrateCLnsPrice(tenantId = "tenant_1", branchId = null) {
           const legacySapakId = normalizeInt(row.SapakID);
           const legacyTypeId = normalizeInt(row.CLensTypeID);
           const legacyCharId = normalizeInt(row.ClensCharID);
-
-          // Composite key is NOT NULL in legacy; skip bad rows
-          if (
-            legacySapakId === null ||
-            legacyTypeId === null ||
-            legacyCharId === null
-          ) {
-            continue;
-          }
 
           const sapakId = sapakMap.get(legacySapakId) || null;
           const cLensTypeId = cLensTypeMap.get(legacyTypeId) || null;
@@ -229,8 +219,8 @@ async function migrateCLnsPrice(tenantId = "tenant_1", branchId = null) {
         }
       }
 
-      lastSapakId = rows[rows.length - 1].SapakID ?? lastSapakId;
-      console.log(`CLnsPrice migrated so far: ${total} (last SapakID=${lastSapakId})`);
+      offset += rows.length;
+      console.log(`CLnsPrice migrated so far: ${total} (offset=${offset})`);
     }
 
     console.log(`✅ CLnsPrice migration completed. Total inserted/updated: ${total}`);

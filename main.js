@@ -127,6 +127,7 @@ const migrateItemColor = require("./migrateItemColor");
 const migrateItemsAdd = require("./migrateItemsAdd");
 const migrateItemStat = require("./migrateItemStat");
 const migrateItem = require("./migrateItem");
+const migrateCLnsPrice = require("./migrateCLnsPrice");
 const migrateLabel = require("./migrateLabel");
 const migrateLnsChar = require("./migrateLnsChar");
 const migrateLnsTreatChar = require("./migrateLnsTreatChar");
@@ -315,6 +316,7 @@ async function ensureTenant(tenantId) {
     await runStep("FrmColor", () => migrateFrmColor(tenantId, branchId)); // Verified
     await runStep("ItemStat", () => migrateItemStat(tenantId, branchId)); // Verified
     await runStep("Item", () => migrateItem(tenantId, branchId)); // Verified
+    await runStep("CLnsPrice", () => migrateCLnsPrice(tenantId, branchId)); // Verified
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
     await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified

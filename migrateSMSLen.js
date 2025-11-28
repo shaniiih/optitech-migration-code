@@ -83,19 +83,19 @@ async function migrateSMSLen(tenantId = "tenant_1", branchId = null) {
               id,
               "tenantId",
               "branchId",
-              "sMSProviderPrefix",
-              "sMSLang",
-              "sMSProviderName",
-              "sMSLen",
+              "smsProviderPrefix",
+              "smsLang",
+              "smsProviderName",
+              "smsLen",
               "createdAt",
               "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("tenantId", "branchId", "sMSProviderPrefix", "sMSLang")
+            ON CONFLICT ("tenantId", "branchId", "smsProviderPrefix", "smsLang")
             DO UPDATE SET
               "branchId" = EXCLUDED."branchId",
-              "sMSProviderName" = EXCLUDED."sMSProviderName",
-              "sMSLen" = EXCLUDED."sMSLen",
+              "smsProviderName" = EXCLUDED."smsProviderName",
+              "smsLen" = EXCLUDED."smsLen",
               "updatedAt" = EXCLUDED."updatedAt"
             `,
             params

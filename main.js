@@ -126,6 +126,7 @@ const migratePayType = require("./migratePayType");
 const migrateItemColor = require("./migrateItemColor");
 const migrateItemsAdd = require("./migrateItemsAdd");
 const migrateItemStat = require("./migrateItemStat");
+const migrateItem = require("./migrateItem");
 const migrateLabel = require("./migrateLabel");
 const migrateLnsChar = require("./migrateLnsChar");
 const migrateLnsTreatChar = require("./migrateLnsTreatChar");
@@ -263,7 +264,6 @@ async function ensureTenant(tenantId) {
     await runStep("InvoiceType", () => migrateInvoiceType(tenantId, branchId)); // Verified
     await runStep("ItemColor", () => migrateItemColor(tenantId, branchId)); // Verified
     await runStep("ItemsAdd", () => migrateItemsAdd(tenantId, branchId));
-    await runStep("ItemStat", () => migrateItemStat(tenantId, branchId)); // Verified
     await runStep("Label", () => migrateLabel(tenantId, branchId)); // Verified
     await runStep("Lang", () => migrateLang(tenantId, branchId)); // Verified
     await runStep("LnsChar", () => migrateLnsChar(tenantId, branchId)); // Verified
@@ -313,6 +313,8 @@ async function ensureTenant(tenantId) {
     await runStep("CrdBuysWorkLabel", () => migrateCrdBuysWorkLabel(tenantId, branchId)); // Verified
     await runStep("Group", () => migrateGroup(tenantId, branchId)); // Verified
     await runStep("FrmColor", () => migrateFrmColor(tenantId, branchId)); // Verified
+    await runStep("ItemStat", () => migrateItemStat(tenantId, branchId)); // Verified
+    await runStep("Item", () => migrateItem(tenantId, branchId)); // Verified
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
     await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified

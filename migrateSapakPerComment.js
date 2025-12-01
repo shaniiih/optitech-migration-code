@@ -133,8 +133,6 @@ async function migrateSapakPerComment(tenantId = "tenant_1", branchId = null) {
             )
             VALUES ${values.join(",")}
             ON CONFLICT ("tenantId", "branchId", "sapakId", "prlTypeId") DO UPDATE SET
-              "legacySapakId"   = EXCLUDED."legacySapakId",
-              "legacyPrlTypeId" = EXCLUDED."legacyPrlTypeId",
               comments          = EXCLUDED.comments,
               "updatedAt"       = EXCLUDED."updatedAt"`,
             params

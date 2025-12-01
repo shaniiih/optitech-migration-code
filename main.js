@@ -326,6 +326,7 @@ async function ensureTenant(tenantId) {
     await runStep("PropsPrice", () => migratePropsPrice(tenantId, branchId)); // Verified
     await runStep("FrmPrice", () => migrateFrmPrice(tenantId, branchId)); // Verified
     await runStep("SapakComment", () => migrateSapakComment(tenantId, branchId)); // Verified
+    await runStep("SapakDest", () => migrateSapakDest(tenantId, branchId)); // Verified
 
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
@@ -391,7 +392,7 @@ async function ensureTenant(tenantId) {
     await runStep("SysLevel", () => migrateSysLevel(tenantId, branchId)); // Verified
     await runStep("SearchOrder", () => migrateSearchOrder(tenantId, branchId)); // Verified
     await runStep("CustomerPhoto", () => migrateCustomerPhoto(tenantId, branchId)); // Verified
-    await runStep("SapakDest", () => migrateSapakDest(tenantId, branchId)); // Verified*/
+    */
     console.log(`[${now()}] 🎉 All migrations completed successfully!`);
     process.exit(0);
   } catch (err) {

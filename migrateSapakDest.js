@@ -18,6 +18,26 @@ async function migrateSapakDest(tenantId = "tenant_1", branchId = null) {
   let total = 0;
 
   try {
+    // Build map from legacy SapakID -> Sapak.id for this tenant/branch
+    const sapakMap = new Map();
+    {
+      const { rows } = await pg.query(
+        `
+        SELECT id, "SapakID"
+        FROM "Sapak"
+        WHERE "tenantId" = $1
+          AND "branchId" = $2
+        `,
+        [tenantId, branchId]
+      );
+      for (const row of rows) {
+        const legacyId = row.SapakID;
+        if (legacyId != null && !sapakMap.has(legacyId)) {
+          sapakMap.set(legacyId, row.id);
+        }
+      }
+    }
+
     while (true) {
       const [rows] = await mysql.query(
         `SELECT SapakDestId, SapakDestName, SapakId, Fax1, Fax2, Email1, Email2, ClientId
@@ -37,7 +57,7 @@ async function migrateSapakDest(tenantId = "tenant_1", branchId = null) {
         for (const r of chunk) {
           const sapakDestId = r.SapakDestId;
           const sapakDestName = cleanText(r.SapakDestName);
-          const mysqlSapakId = r.SapakId;
+          const legacySapakId = r.SapakId;
           const fax1 = cleanText(r.Fax1);
           const fax2 = cleanText(r.Fax2);
           const email1 = cleanText(r.Email1);
@@ -45,17 +65,11 @@ async function migrateSapakDest(tenantId = "tenant_1", branchId = null) {
           const clientId = cleanText(r.ClientId);
           const timestamp = new Date();
 
-          let pgSapakId = null;
-          if (mysqlSapakId) {
-            const res = await pg.query(`SELECT "id" FROM "Supplier" WHERE "supplierId" = $1 AND "tenantId" = $2`, [String(mysqlSapakId), tenantId]);
-            if (res.rows.length > 0) {
-              pgSapakId = res.rows[0].id;
-            }
-          }
+          const pgSapakId = legacySapakId != null ? sapakMap.get(legacySapakId) || null : null;
 
           const paramBase = params.length;
           values.push(
-            `($${paramBase + 1}, $${paramBase + 2}, $${paramBase + 3}, $${paramBase + 4}, $${paramBase + 5}, $${paramBase + 6}, $${paramBase + 7}, $${paramBase + 8}, $${paramBase + 9}, $${paramBase + 10}, $${paramBase + 11}, $${paramBase + 12}, $${paramBase + 13})`
+            `($${paramBase + 1}, $${paramBase + 2}, $${paramBase + 3}, $${paramBase + 4}, $${paramBase + 5}, $${paramBase + 6}, $${paramBase + 7}, $${paramBase + 8}, $${paramBase + 9}, $${paramBase + 10}, $${paramBase + 11}, $${paramBase + 12}, $${paramBase + 13}, $${paramBase + 14})`
           );
 
           params.push(
@@ -64,6 +78,7 @@ async function migrateSapakDest(tenantId = "tenant_1", branchId = null) {
             branchId,
             sapakDestId,
             sapakDestName,
+            legacySapakId,
             pgSapakId,
             fax1,
             fax2,
@@ -82,15 +97,24 @@ async function migrateSapakDest(tenantId = "tenant_1", branchId = null) {
           await pg.query(
             `
             INSERT INTO "SapakDest" (
-              id, "tenantId", "branchId", "sapakDestId", "sapakDestName", "sapakId", fax1, fax2, email1, email2, "clientId", "createdAt", "updatedAt"
+              id,
+              "tenantId",
+              "branchId",
+              "sapakDestId",
+              "sapakDestName",
+              "legacySapakId",
+              "sapakId",
+              fax1,
+              fax2,
+              email1,
+              email2,
+              "clientId",
+              "createdAt",
+              "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("tenantId", "sapakDestId") DO UPDATE SET
-              "tenantId" = EXCLUDED."tenantId",
-              "branchId" = EXCLUDED."branchId",
-              "sapakDestId" = EXCLUDED."sapakDestId",
+            ON CONFLICT ("tenantId", "branchId", "sapakDestId") DO UPDATE SET
               "sapakDestName" = EXCLUDED."sapakDestName",
-              "sapakId" = EXCLUDED."sapakId",
               fax1 = EXCLUDED.fax1,
               fax2 = EXCLUDED.fax2,
               email1 = EXCLUDED.email1,

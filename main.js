@@ -161,6 +161,7 @@ const { ensureTenantId, cleanTenantId } = require("./tenantUtils");
 const migrateZipcodeStreet = require("./migrateZipcodeStreet");
 const migrateZipcodeStreetsZipcode = require("./migrateZipcodeStreetsZipcode");
 const migrateSapakPerComment = require("./migrateSapakPerComment");
+const migrateSolutionPrice = require("./migrateSolutionPrice");
 
 // ---- utils ---------------------------------------------------------------
 function now() { return new Date().toISOString(); }
@@ -329,6 +330,7 @@ async function ensureTenant(tenantId) {
     await runStep("SapakComment", () => migrateSapakComment(tenantId, branchId)); // Verified
     await runStep("SapakDest", () => migrateSapakDest(tenantId, branchId)); // Verified
     await runStep("SapakPerComment", () => migrateSapakPerComment(tenantId, branchId)); // Verified
+    await runStep("SolutionPrice", () => migrateSolutionPrice(tenantId, branchId)); // Verified
 
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified

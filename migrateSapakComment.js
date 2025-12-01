@@ -20,38 +20,63 @@ function normalizeInt(value) {
   return Number.isFinite(n) ? Math.trunc(n) : null;
 }
 
-async function getPrlTypeId(pg, tenantId, prlTypeNumber) {
-  if (prlTypeNumber === null || prlTypeNumber === undefined) {
-    throw new Error(`Missing prlType for SapakComment row (tenantId=${tenantId})`);
-  }
-  const { rows } = await pg.query(
-    `SELECT id FROM "PrlType" WHERE "tenantId" = $1 AND "prlType" = $2 LIMIT 1`,
-    [tenantId, prlTypeNumber]
-  );
-  const found = rows && rows[0] && rows[0].id;
-  if (!found) throw new Error(`PrlType not found for tenantId=${tenantId}, prlType=${prlTypeNumber}`);
-  return found;
-}
-
 async function migrateSapakComment(tenantId = "tenant_1", branchId = null) {
   const mysql = await getMySQLConnection();
   const pg = await getPostgresConnection();
 
-  let lastId = 0;
+  let offset = 0;
   let total = 0;
-  // no cache; prlType existence is required and validated on each row
 
   try {
+    // Map legacy SapakID -> Sapak.id for this tenant/branch
+    const sapakMap = new Map();
+    {
+      const { rows } = await pg.query(
+        `
+        SELECT id, "SapakID"
+        FROM "Sapak"
+        WHERE "tenantId" = $1
+          AND "branchId" = $2
+        `,
+        [tenantId, branchId]
+      );
+      for (const row of rows) {
+        const legacyId = normalizeInt(row.SapakID);
+        if (legacyId !== null && !sapakMap.has(legacyId)) {
+          sapakMap.set(legacyId, row.id);
+        }
+      }
+    }
+
+    // Map legacy prlType (number) -> PrlType.id for this tenant/branch
+    const prlTypeMap = new Map();
+    {
+      const { rows } = await pg.query(
+        `
+        SELECT id, "prlType"
+        FROM "PrlType"
+        WHERE "tenantId" = $1
+          AND "branchId" = $2
+        `,
+        [tenantId, branchId]
+      );
+      for (const row of rows) {
+        const legacyType = normalizeInt(row.prlType);
+        if (legacyType !== null && !prlTypeMap.has(legacyType)) {
+          prlTypeMap.set(legacyType, row.id);
+        }
+      }
+    }
+
     const now = () => new Date();
 
     while (true) {
       const [rows] = await mysql.query(
         `SELECT SapakId, prlType, Comments, PrlSp
            FROM tblSapakComments
-          WHERE SapakId > ?
-          ORDER BY SapakId
-          LIMIT ${WINDOW_SIZE}`,
-        [lastId]
+          ORDER BY SapakId, prlType
+          LIMIT ? OFFSET ?`,
+        [WINDOW_SIZE, offset]
       );
 
       if (!rows.length) break;
@@ -62,29 +87,32 @@ async function migrateSapakComment(tenantId = "tenant_1", branchId = null) {
         const params = [];
 
         for (const r of chunk) {
-          const sapakId = normalizeInt(r.SapakId);
+          const legacySapakId = normalizeInt(r.SapakId);
           const prlTypeNumber = normalizeInt(r.prlType);
           const comments = cleanText(r.Comments);
           const prlSp = normalizeInt(r.PrlSp);
           const timestamp = now();
 
-          const prlTypeId = await getPrlTypeId(pg, tenantId, prlTypeNumber);
+          const sapakId = sapakMap.get(legacySapakId) || null;
+          const prlTypeId = prlTypeMap.get(prlTypeNumber) || null;
 
           const paramBase = params.length;
           values.push(
-            `($${paramBase + 1}, $${paramBase + 2}, $${paramBase + 3}, $${paramBase + 4}, $${paramBase + 5}, $${paramBase + 6}, $${paramBase + 7}, $${paramBase + 8}, $${paramBase + 9})`
+            `($${paramBase + 1}, $${paramBase + 2}, $${paramBase + 3}, $${paramBase + 4}, $${paramBase + 5}, $${paramBase + 6}, $${paramBase + 7}, $${paramBase + 8}, $${paramBase + 9}, $${paramBase + 10}, $${paramBase + 11})`
           );
 
           params.push(
-            uuidv4(),
-            tenantId,
-            branchId,
-            sapakId,
-            prlTypeId,
-            comments,
-            prlSp,
-            timestamp,
-            timestamp
+            uuidv4(),       // id
+            tenantId,       // tenantId
+            branchId,       // branchId
+            legacySapakId,  // legacySapakId
+            prlTypeNumber,  // legacyPrlTypeId
+            sapakId,        // sapakId (FK UUID)
+            prlTypeId,      // prlTypeId (FK UUID)
+            comments,       // comments
+            prlSp,          // prlSp
+            timestamp,      // createdAt
+            timestamp       // updatedAt
           );
         }
 
@@ -95,17 +123,25 @@ async function migrateSapakComment(tenantId = "tenant_1", branchId = null) {
           await pg.query(
             `
             INSERT INTO "SapakComment" (
-              id, "tenantId", "branchId", "sapakId", "prlType", comments, "prlSp", "createdAt", "updatedAt"
+              id,
+              "tenantId",
+              "branchId",
+              "legacySapakId",
+              "legacyPrlTypeId",
+              "sapakId",
+              "prlTypeId",
+              comments,
+              "prlSp",
+              "createdAt",
+              "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("tenantId", "sapakId") DO UPDATE SET
-              "tenantId" = EXCLUDED."tenantId",
-              "branchId" = EXCLUDED."branchId",
-              "sapakId" = EXCLUDED."sapakId",
-              "prlType" = EXCLUDED."prlType",
-              comments = EXCLUDED.comments,
-              "prlSp" = EXCLUDED."prlSp",
-              "updatedAt" = EXCLUDED."updatedAt"`,
+            ON CONFLICT ("tenantId", "branchId", "sapakId", "prlTypeId") DO UPDATE SET
+              "legacySapakId"   = EXCLUDED."legacySapakId",
+              "legacyPrlTypeId" = EXCLUDED."legacyPrlTypeId",
+              comments          = EXCLUDED.comments,
+              "prlSp"           = EXCLUDED."prlSp",
+              "updatedAt"       = EXCLUDED."updatedAt"`,
             params
           );
           await pg.query("COMMIT");
@@ -117,8 +153,8 @@ async function migrateSapakComment(tenantId = "tenant_1", branchId = null) {
         total += chunk.length;
       }
 
-      lastId = rows[rows.length - 1].SapakId;
-      console.log(`SapakComment migrated: ${total} (lastId=${lastId})`);
+      offset += rows.length;
+      console.log(`SapakComment migrated: ${total} (offset=${offset})`);
     }
 
     console.log(`✅ SapakComment migration completed. Total inserted: ${total}`);

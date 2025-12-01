@@ -29,7 +29,7 @@ async function migrateFrmColor(tenantId = "tenant_1", branchId = null) {
   const mysql = await getMySQLConnection();
   const pg = await getPostgresConnection();
 
-  let lastId = -1;
+  let offset = 0;
   let total = 0;
   const missingLabels = new Set();
   let skippedInvalidId = 0;
@@ -38,8 +38,9 @@ async function migrateFrmColor(tenantId = "tenant_1", branchId = null) {
     const { rows: labelRows } = await pg.query(
       `SELECT id, "LabelId", "branchId"
          FROM "FrmLabelType"
-        WHERE "tenantId" = $1`,
-      [tenantId]
+        WHERE "tenantId" = $1
+          AND "branchId" = $2`,
+      [tenantId, normalizedBranchId]
     );
     const labelMap = new Map();
     for (const row of labelRows) {
@@ -56,10 +57,9 @@ async function migrateFrmColor(tenantId = "tenant_1", branchId = null) {
       const [rows] = await mysql.query(
         `SELECT LabelId, FrameColorId, FrameColorName
            FROM tblFrmColors
-          WHERE LabelId > ?
-          ORDER BY LabelId
-          LIMIT ${WINDOW_SIZE}`,
-        [lastId]
+          ORDER BY LabelId, FrameColorId
+          LIMIT ? OFFSET ?`,
+        [WINDOW_SIZE, offset]
       );
 
       if (!rows.length) break;
@@ -101,7 +101,7 @@ async function migrateFrmColor(tenantId = "tenant_1", branchId = null) {
             tenantId, // tenantId
             normalizedBranchId || null, // branchId
             mappedLabelId, // labelId (uuid)
-            legacyLabelId, // legacuLabelId
+            legacyLabelId, // legacyLabelId
             frameColorId, // frameColorId
             frameColorName, // frameColorName
             now, // createdAt
@@ -120,16 +120,15 @@ async function migrateFrmColor(tenantId = "tenant_1", branchId = null) {
               "tenantId",
               "branchId",
               "labelId",
-              "legacuLabelId",
+              "legacyLabelId",
               "frameColorId",
               "frameColorName",
               "createdAt",
               "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("tenantId", "branchId", "legacuLabelId", "frameColorId")
+            ON CONFLICT ("tenantId", "branchId", "legacyLabelId", "frameColorId")
             DO UPDATE SET
-              "labelId" = EXCLUDED."labelId",
               "frameColorName" = EXCLUDED."frameColorName",
               "updatedAt" = EXCLUDED."updatedAt"
             `,
@@ -143,8 +142,8 @@ async function migrateFrmColor(tenantId = "tenant_1", branchId = null) {
         }
       }
 
-      lastId = rows[rows.length - 1].LabelId ?? lastId;
-      console.log(`FrmColor migrated: ${total} (lastLabelId=${lastId})`);
+      offset += rows.length;
+      console.log(`FrmColor migrated: ${total} (offset=${offset})`);
     }
 
     if (missingLabels.size) {

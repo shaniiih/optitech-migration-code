@@ -131,9 +131,12 @@ async function migrateUser(tenantId = "tenant_1", branchId = null) {
             continue;
           }
 
-          const email = null;
+          const safeLegacyId = legacyId !== null ? legacyId : uuidv4();
+          const email =
+            cleanText(r.Email)?.toLowerCase() ||
+            `${tenantId}_${safeLegacyId}@optitech.com`.toLowerCase();
           const legacyPass = cleanText(r.Pass);
-          const password = null;
+          const password = legacyPass || "";
           const birthDate = normalizeDate(r.BirthDate);
           const salary = normalizeNumber(r.Salary);
           const zipCode =

@@ -119,6 +119,7 @@ const migrateDummy = require("./migrateDummy");
 const migrateFixExpense = require("./migrateFixExpense");
 const migrateFaxStat = require("./migrateFaxStat");
 const migrateFax = require("./migrateFax");
+const migratePerData = require("./migratePerData");
 const migrateContact = require("./migrateContact");
 const migrateContactAgent = require("./migrateContactAgent");
 const migrateLetter = require("./migrateLetter");
@@ -338,6 +339,7 @@ async function ensureTenant(tenantId) {
     await runStep("InvoicePay", () => migrateInvoicePay(tenantId, branchId)); // Verified
     await runStep("ContactAgent", () => migrateContactAgent(tenantId, branchId)); // Verified
     await runStep("Fax", () => migrateFax(tenantId, branchId)); // Verified
+    await runStep("PerData", () => migratePerData(tenantId, branchId)); // Verified
 
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified

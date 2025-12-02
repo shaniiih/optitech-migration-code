@@ -119,7 +119,7 @@ const migrateDummy = require("./migrateDummy");
 const migrateFixExpense = require("./migrateFixExpense");
 const migrateFaxStat = require("./migrateFaxStat");
 const migrateContact = require("./migrateContact");
-const migrateContactAgents = require("./migrateContactAgents");
+const migrateContactAgent = require("./migrateContactAgent");
 const migrateLetter = require("./migrateLetter");
 const migrateServiceType = require("./migrateServiceType");
 const migrateInvoiceType = require("./migrateInvoiceType");
@@ -335,6 +335,7 @@ async function ensureTenant(tenantId) {
     await runStep("SolutionPrice", () => migrateSolutionPrice(tenantId, branchId)); // Verified
     await runStep("Special", () => migrateSpecial(tenantId, branchId)); // Verified
     await runStep("InvoicePay", () => migrateInvoicePay(tenantId, branchId)); // Verified
+    await runStep("ContactAgent", () => migrateContactAgent(tenantId, branchId)); // Verified
 
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
@@ -392,7 +393,6 @@ async function ensureTenant(tenantId) {
     await runStep("MovementType", () => migrateMovementType(tenantId, branchId)); // Verified
     await runStep("MovementProperty", () => migrateMovementProperty(tenantId, branchId)); // Verified
     await runStep("GlassCoating", () => migrateGlassCoating(tenantId)); // Verified
-    await runStep("ContactAgents", () => migrateContactAgents(tenantId, branchId)); // Verified
     await runStep("UserSettings", () => migrateUserSettings(tenantId, branchId)); // Verified
     await runStep("GlassMaterial", () => migrateGlassMaterial(tenantId)); // Verified
     await runStep("Diagnosis", () => migrateDiagnosis(tenantId)); // Verified

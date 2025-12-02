@@ -59,6 +59,7 @@ const migrateSupplier = require("./migrateSupplier");
 const migrateSapakComment = require("./migrateSapakComment");
 const migrateSapakDest = require("./migrateSapakDest");
 const migrateInvoice = require("./migrateInvoice");
+const migrateInvoicePay = require("./migrateInvoicePay");
 const migrateSMS = require("./migrateSMS");
 const migrateOpticalBase = require("./migrateOpticalBase");
 const migrateSapakSendStat = require("./migrateSapakSendStat");
@@ -333,6 +334,7 @@ async function ensureTenant(tenantId) {
     await runStep("SapakPerComment", () => migrateSapakPerComment(tenantId, branchId)); // Verified
     await runStep("SolutionPrice", () => migrateSolutionPrice(tenantId, branchId)); // Verified
     await runStep("Special", () => migrateSpecial(tenantId, branchId)); // Verified
+    await runStep("InvoicePay", () => migrateInvoicePay(tenantId, branchId)); // Verified
 
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified

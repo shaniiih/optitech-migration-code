@@ -29,7 +29,7 @@ async function migrateContactAgent(tenantId = "tenant_1", branchId) {
   const mysql = await getMySQLConnection();
   const pg = await getPostgresConnection();
 
-  let lastAgentId = -1;
+  let offset = 0;
   let total = 0;
 
   try {
@@ -55,13 +55,14 @@ async function migrateContactAgent(tenantId = "tenant_1", branchId) {
       const [rows] = await mysql.query(
         `SELECT AgentId, CntID, AgentName, WorkPhone, CellPhone, Com
            FROM tblContactAgents
-          WHERE AgentId > ?
           ORDER BY AgentId
-          LIMIT ${WINDOW_SIZE}`,
-        [lastAgentId]
+          LIMIT ${WINDOW_SIZE}
+          OFFSET ${offset}`
       );
 
-      if (!rows.length) break;
+      if (!rows.length) {
+        break;
+      }
 
       for (let i = 0; i < rows.length; i += BATCH_SIZE) {
         const chunk = rows.slice(i, i + BATCH_SIZE);
@@ -107,10 +108,7 @@ async function migrateContactAgent(tenantId = "tenant_1", branchId) {
           );
         }
 
-        if (!values.length) {
-          lastAgentId = rows[rows.length - 1].AgentId;
-          continue;
-        }
+        if (!values.length) continue;
 
         await pg.query("BEGIN");
         try {
@@ -151,8 +149,8 @@ async function migrateContactAgent(tenantId = "tenant_1", branchId) {
         }
       }
 
-      lastAgentId = rows[rows.length - 1].AgentId;
-      console.log(`ContactAgent migrated so far: ${total} (last AgentId=${lastAgentId})`);
+      offset += rows.length;
+      console.log(`ContactAgent migrated so far: ${total} (offset=${offset})`);
     }
 
     console.log(`✅ ContactAgent migration completed. Total inserted/updated: ${total}`);
@@ -163,4 +161,3 @@ async function migrateContactAgent(tenantId = "tenant_1", branchId) {
 }
 
 module.exports = migrateContactAgent;
-

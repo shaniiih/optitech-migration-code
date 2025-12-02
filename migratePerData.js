@@ -56,6 +56,14 @@ async function migratePerData(tenantId = "tenant_1", branchId = null) {
 
   let lastId = -1;
   let total = 0;
+  let missingCity = 0;
+  let missingDiscount = 0;
+  let missingGroup = 0;
+  let missingRef = 0;
+  let missingUser = 0;
+  let missingSub1 = 0;
+  let missingSub2 = 0;
+  let missingLang = 0;
 
   try {
     await pg.query(`
@@ -72,6 +80,36 @@ async function migratePerData(tenantId = "tenant_1", branchId = null) {
         END IF;
       END$$;
     `);
+
+    const cityMap = new Map();
+    const discountMap = new Map();
+    const groupMap = new Map();
+    const refMap = new Map();
+    const userMap = new Map();
+    const refsSub1Map = new Map();
+    const refsSub2Map = new Map();
+    const langMap = new Map();
+
+    const loadMap = async (query, map, keyName = "legacy", valueName = "id") => {
+      const res = await pg.query(query, [tenantId]);
+      for (const row of res.rows) {
+        const key = row[keyName] !== null && row[keyName] !== undefined ? String(row[keyName]) : null;
+        if (key) map.set(key, row[valueName]);
+      }
+    };
+
+    try {
+      await loadMap(`SELECT "cityId" AS legacy, id FROM "City" WHERE "tenantId" = $1`, cityMap);
+      await loadMap(`SELECT "discountId" AS legacy, id FROM "Discount" WHERE "tenantId" = $1`, discountMap);
+      await loadMap(`SELECT "groupId" AS legacy, id FROM "CustomerGroup" WHERE "tenantId" = $1`, groupMap);
+      await loadMap(`SELECT "refId" AS legacy, id FROM "Ref" WHERE "tenantId" = $1`, refMap);
+      await loadMap(`SELECT "userId" AS legacy, id FROM "User" WHERE "tenantId" = $1`, userMap);
+      await loadMap(`SELECT "refsSub1Id" AS legacy, id FROM "RefsSub1" WHERE "tenantId" = $1`, refsSub1Map);
+      await loadMap(`SELECT "refsSub2Id" AS legacy, id FROM "RefsSub2" WHERE "tenantId" = $1`, refsSub2Map);
+      await loadMap(`SELECT "langId" AS legacy, id FROM "Lang" WHERE "tenantId" = $1`, langMap);
+    } catch (err) {
+      console.warn("⚠️ PerData: one or more mapping preloads failed; proceeding with null mappings.", err.message);
+    }
 
     while (true) {
       const [rows] = await mysql.query(
@@ -109,6 +147,48 @@ async function migratePerData(tenantId = "tenant_1", branchId = null) {
             `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9}, $${base + 10}, $${base + 11}, $${base + 12}, $${base + 13}, $${base + 14}, $${base + 15}, $${base + 16}, $${base + 17}, $${base + 18}, $${base + 19}, $${base + 20}, $${base + 21}, $${base + 22}, $${base + 23}, $${base + 24}, $${base + 25}, $${base + 26}, $${base + 27}, $${base + 28}, $${base + 29}, $${base + 30}, $${base + 31}, $${base + 32}, $${base + 33}, $${base + 34}, $${base + 35}, $${base + 36}, $${base + 37}, $${base + 38}, $${base + 39}, $${base + 40}, $${base + 41}, $${base + 42}, $${base + 43}, $${base + 44}, $${base + 45})`
           );
 
+          const legacyCityId = asInteger(row.CityId);
+          const cityId =
+            legacyCityId !== null ? cityMap.get(String(legacyCityId)) ?? (missingCity += 1, null) : null;
+
+          const legacyDiscountId = asInteger(row.DiscountId);
+          const discountId =
+            legacyDiscountId !== null
+              ? discountMap.get(String(legacyDiscountId)) ?? (missingDiscount += 1, null)
+              : null;
+
+          const legacyGroupId = asInteger(row.GroupId);
+          const groupId =
+            legacyGroupId !== null
+              ? groupMap.get(String(legacyGroupId)) ?? (missingGroup += 1, null)
+              : null;
+
+          const legacyRefId = asInteger(row.RefId);
+          const refId =
+            legacyRefId !== null ? refMap.get(String(legacyRefId)) ?? (missingRef += 1, null) : null;
+
+          const legacyUserId = asInteger(row.UserId);
+          const userId =
+            legacyUserId !== null
+              ? userMap.get(String(legacyUserId)) ?? (missingUser += 1, null)
+              : null;
+
+          const legacyRefsSub1Id = asInteger(row.RefsSub1Id);
+          const refsSub1Id =
+            legacyRefsSub1Id !== null
+              ? refsSub1Map.get(String(legacyRefsSub1Id)) ?? (missingSub1 += 1, null)
+              : null;
+
+          const legacyRefsSub2Id = asInteger(row.RefsSub2Id);
+          const refsSub2Id =
+            legacyRefsSub2Id !== null
+              ? refsSub2Map.get(String(legacyRefsSub2Id)) ?? (missingSub2 += 1, null)
+              : null;
+
+          const legacyLangId = asInteger(row.LangId);
+          const langId =
+            legacyLangId !== null ? langMap.get(String(legacyLangId)) ?? (missingLang += 1, null) : null;
+
           params.push(
             uuidv4(),                        // id
             tenantId,                        // tenantId
@@ -126,33 +206,33 @@ async function migratePerData(tenantId = "tenant_1", branchId = null) {
             cleanText(row.Fax),              // fax
             cleanText(row.Email),            // email
             cleanText(row.Address),          // address
-            null,                            // cityId (not mapped)
+            cityId,                          // cityId (FK)
             asInteger(row.CityId),           // legacyCityId
             asInteger(row.ZipCode),          // zipCode
             asInteger(row.DiscountId),       // legacyDiscountId
-            null,                            // discountId
+            discountId,                      // discountId (FK)
             asInteger(row.GroupId),          // legacyGroupId
-            null,                            // groupId
+            groupId,                         // groupId (FK)
             asInteger(row.PerType),          // perType
-            asInteger(row.RefId),            // legacyRefId
-            null,                            // refId
-            asInteger(row.UserId),           // legacyUserId
-            null,                            // userId
+            legacyRefId,                     // legacyRefId
+            refId,                           // refId (FK)
+            legacyUserId,                    // legacyUserId
+            userId,                          // userId (FK)
             cleanText(row.Comment),          // comment
-            asInteger(row.RefsSub1Id),       // legacyRefsSub1Id
-            null,                            // refsSub1Id
-            asInteger(row.RefsSub2Id),       // legacyRefsSub2Id
-            null,                            // refsSub2Id
+            legacyRefsSub1Id,                // legacyRefsSub1Id
+            refsSub1Id,                      // refsSub1Id (FK)
+            legacyRefsSub2Id,                // legacyRefsSub2Id
+            refsSub2Id,                      // refsSub2Id (FK)
             asInteger(row.WantsLaser),       // wantsLaser
             safeDate(row.LaserDate),         // laserDate
             toBoolean(row.DidOperation),     // didOperation
             asInteger(row.FamId),            // legacyFamId
-            null,                            // famId
+            row.FamId !== null && row.FamId !== undefined ? String(row.FamId) : null, // famId (legacy as string)
             toBoolean(row.MailList),         // mailList
             cleanText(row.Ocup),             // ocup
             cleanText(row.HidCom),           // hidCom
-            asInteger(row.LangId),           // legacyLangId
-            null,                            // langId
+            legacyLangId,                    // legacyLangId
+            langId,                          // langId (FK)
             now,                             // createdAt
             now                              // updatedAt
           );
@@ -230,6 +310,11 @@ async function migratePerData(tenantId = "tenant_1", branchId = null) {
     }
 
     console.log(`✅ PerData migration completed. Total inserted/updated: ${total}`);
+    if (missingCity || missingDiscount || missingGroup || missingRef || missingUser || missingSub1 || missingSub2 || missingLang) {
+      console.warn(
+        `⚠️ PerData missing mappings -> city:${missingCity}, discount:${missingDiscount}, group:${missingGroup}, ref:${missingRef}, user:${missingUser}, refsSub1:${missingSub1}, refsSub2:${missingSub2}, lang:${missingLang}`
+      );
+    }
   } finally {
     await mysql.end();
     await pg.end();

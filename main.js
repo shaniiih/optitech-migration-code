@@ -167,6 +167,8 @@ const migrateZipcodeStreetsZipcode = require("./migrateZipcodeStreetsZipcode");
 const migrateSapakPerComment = require("./migrateSapakPerComment");
 const migrateSolutionPrice = require("./migrateSolutionPrice");
 const migrateSpecial = require("./migrateSpecial");
+const migrateItemCount = require("./migrateItemCount");
+const migrateClndrSal = require("./migrateClndrSal");
 
 // ---- utils ---------------------------------------------------------------
 function now() { return new Date().toISOString(); }
@@ -342,6 +344,8 @@ async function ensureTenant(tenantId) {
     await runStep("Fax", () => migrateFax(tenantId, branchId)); // Verified
     await runStep("PerData", () => migratePerData(tenantId, branchId)); // Verified
     await runStep("ReportDummy", () => migrateReportDummy(tenantId, branchId)); // Verified
+    await runStep("ItemCount", () => migrateItemCount(tenantId, branchId)); 
+    await runStep("ClndrSal", () => migrateClndrSal(tenantId, branchId)); 
 
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified

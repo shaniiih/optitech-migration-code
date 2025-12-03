@@ -42,19 +42,6 @@ async function migrateReportDummy(tenantId = "tenant_1", branchId = null) {
   let total = 0;
 
   try {
-    await pg.query(`
-      DO $$
-      BEGIN
-        IF NOT EXISTS (
-          SELECT 1 FROM pg_indexes
-          WHERE schemaname = 'public' AND indexname = 'reportdummy_tenant_xid_ux'
-        ) THEN
-          CREATE UNIQUE INDEX reportdummy_tenant_xid_ux
-          ON "ReportDummy" ("tenantId","xId");
-        END IF;
-      END$$;
-    `);
-
     while (true) {
       const [rows] = await mysql.query(
         `SELECT * FROM tblReportDummy
@@ -248,7 +235,7 @@ async function migrateReportDummy(tenantId = "tenant_1", branchId = null) {
                "updatedAt"
              )
              VALUES ${values.join(",")}
-             ON CONFLICT ("tenantId", "xId") DO NOTHING`,
+             ON CONFLICT ("tenantId", "branchId", "xId") DO NOTHING`,
             params
           );
           await pg.query("COMMIT");

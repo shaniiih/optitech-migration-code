@@ -66,21 +66,6 @@ async function migratePerData(tenantId = "tenant_1", branchId = null) {
   let missingLang = 0;
 
   try {
-    await pg.query(`
-      DO $$
-      BEGIN
-        IF NOT EXISTS (
-          SELECT 1
-          FROM pg_indexes
-          WHERE schemaname = 'public'
-            AND indexname = 'perdata_tenant_perid_ux'
-        ) THEN
-          CREATE UNIQUE INDEX perdata_tenant_perid_ux
-          ON "PerData" ("tenantId","perId");
-        END IF;
-      END$$;
-    `);
-
     const cityMap = new Map();
     const discountMap = new Map();
     const groupMap = new Map();
@@ -99,6 +84,7 @@ async function migratePerData(tenantId = "tenant_1", branchId = null) {
     };
 
     try {
+      // todo use branchId too
       await loadMap(`SELECT "cityId" AS legacy, id FROM "City" WHERE "tenantId" = $1`, cityMap);
       await loadMap(`SELECT "discountId" AS legacy, id FROM "Discount" WHERE "tenantId" = $1`, discountMap);
       await loadMap(`SELECT "groupId" AS legacy, id FROM "CustomerGroup" WHERE "tenantId" = $1`, groupMap);
@@ -291,7 +277,7 @@ async function migratePerData(tenantId = "tenant_1", branchId = null) {
                "updatedAt"
              )
              VALUES ${values.join(",")}
-             ON CONFLICT DO NOTHING`,
+               ON CONFLICT ("tenantId", "branchId", "perId") DO NOTHING`,
             params
           );
           await pg.query("COMMIT");

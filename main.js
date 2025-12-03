@@ -120,6 +120,7 @@ const migrateFixExpense = require("./migrateFixExpense");
 const migrateFaxStat = require("./migrateFaxStat");
 const migrateFax = require("./migrateFax");
 const migratePerData = require("./migratePerData");
+const migratePerPicture = require("./migratePerPicture");
 const migrateReportDummy = require("./migrateReportDummy");
 const migrateContact = require("./migrateContact");
 const migrateContactAgent = require("./migrateContactAgent");
@@ -353,6 +354,7 @@ async function ensureTenant(tenantId) {
     // #tblClndrTasks
     await runStep("ClndrWrk", () => migrateClndrWrk(tenantId, branchId)); // Verified
     await runStep("ClndrWrkFD", () => migrateClndrWrkFD(tenantId, branchId)); // Verified
+    await runStep("PerPicture", () => migratePerPicture(tenantId, branchId)); // Verified
 
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified

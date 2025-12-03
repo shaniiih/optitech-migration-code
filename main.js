@@ -81,7 +81,6 @@ const migrateContactLensExamination = require("./migrateContactLensExamination")
 const migrateClndrTasksPriority = require("./migrateClndrTasksPriority");
 const migrateCLnsChar = require("./migrateCLnsChar");
 const migrateCLnsType = require("./migrateCLnsType");
-const migrateClndrWrk = require("./migrateClndrWrk");
 const migrateProduct = require("./migrateProduct");
 const migrateBarcodeManagement = require("./migrateBarcodeManagement");
 const migrateBarCode = require("./migrateBarCode");
@@ -169,6 +168,7 @@ const migrateSolutionPrice = require("./migrateSolutionPrice");
 const migrateSpecial = require("./migrateSpecial");
 const migrateItemCount = require("./migrateItemCount");
 const migrateClndrSal = require("./migrateClndrSal");
+const migrateClndrWrk = require("./migrateClndrWrk");
 
 // ---- utils ---------------------------------------------------------------
 function now() { return new Date().toISOString(); }
@@ -346,7 +346,7 @@ async function ensureTenant(tenantId) {
     await runStep("ReportDummy", () => migrateReportDummy(tenantId, branchId)); // Verified
     await runStep("ItemCount", () => migrateItemCount(tenantId, branchId));  // Verified
     await runStep("ClndrSal", () => migrateClndrSal(tenantId, branchId)); // Verified
-
+    await runStep("ClndrWrk", () => migrateClndrWrk(tenantId, branchId)); // Verified
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
     await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified

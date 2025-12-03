@@ -344,8 +344,8 @@ async function ensureTenant(tenantId) {
     await runStep("Fax", () => migrateFax(tenantId, branchId)); // Verified
     await runStep("PerData", () => migratePerData(tenantId, branchId)); // Verified
     await runStep("ReportDummy", () => migrateReportDummy(tenantId, branchId)); // Verified
-    await runStep("ItemCount", () => migrateItemCount(tenantId, branchId)); 
-    await runStep("ClndrSal", () => migrateClndrSal(tenantId, branchId)); 
+    await runStep("ItemCount", () => migrateItemCount(tenantId, branchId));  // Verified
+    await runStep("ClndrSal", () => migrateClndrSal(tenantId, branchId)); // Verified
 
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified

@@ -34,7 +34,6 @@ async function migrateItemCount(tenantId = "tenant_1", branchId = null) {
   let total = 0;
 
   try {
-    // Build maps from legacy IDs to new UUIDs
     const itemMap = new Map();
     const yearMap = new Map();
 
@@ -99,20 +98,20 @@ async function migrateItemCount(tenantId = "tenant_1", branchId = null) {
           );
 
           params.push(
-            uuidv4(),          // id
-            tenantId,          // tenantId
-            branchId,          // branchId
-            itemCountId,       // itemCountId
-            legacyCountYear,   // legacyCountYear
-            legacyItemId,      // legacyItemId
-            countYear,         // countYear (UUID)
-            itemId,            // itemId (UUID)
-            calcQuantity,      // calcQuantity
-            countQuantity,     // countQuantity
-            calcValue,         // calcValue
-            buyPrice,          // buyPrice
-            now,               // createdAt
-            now                // updatedAt
+            uuidv4(),         
+            tenantId,          
+            branchId,         
+            itemCountId,      
+            legacyCountYear,   
+            legacyItemId,     
+            countYear,        
+            itemId,           
+            calcQuantity,     
+            countQuantity,     
+            calcValue,        
+            buyPrice,          
+            now,              
+            now                
           );
         }
 

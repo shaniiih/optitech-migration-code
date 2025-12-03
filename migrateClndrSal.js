@@ -1,6 +1,9 @@
 const { v4: uuidv4 } = require("uuid");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 
+const WINDOW_SIZE = 5000;
+const BATCH_SIZE = 1000;
+
 function normalizeInt(value) {
     if (value === null || value === undefined) return null;
     if (typeof value === "number") return Number.isFinite(value) ? Math.trunc(value) : null;
@@ -27,14 +30,18 @@ async function migrateClndrSal(tenantId = "tenant_1", branchId = null) {
     const mysql = await getMySQLConnection();
     const pg = await getPostgresConnection();
 
+    let offset = 0;
+    let total = 0;
+
     try {
-        // Map legacy UserID to new UUIDs
         const userMap = new Map();
         {
             const { rows } = await pg.query(
-                `SELECT id, "userId" FROM "User" WHERE "tenantId" = $1 AND "branchId" = $2`,
+                `SELECT id, "userId" FROM "User" 
+                 WHERE "tenantId" = $1 AND "branchId" = $2`,
                 [tenantId, branchId]
             );
+
             for (const row of rows) {
                 const legacyId = normalizeInt(row.userId);
                 if (legacyId !== null && !userMap.has(legacyId)) {
@@ -43,76 +50,90 @@ async function migrateClndrSal(tenantId = "tenant_1", branchId = null) {
             }
         }
 
-        // Fetch all old data
-        const [rows] = await mysql.query(
-            `SELECT UserID, Month, Salery FROM tblClndrSal ORDER BY UserID, Month`
-        );
-
-        if (!rows.length) {
-            console.log("No data found in tblClndrSal");
-            return;
-        }
-
-        const now = new Date();
-        const values = [];
-        const params = [];
-
-        for (const row of rows) {
-            const legacyUserId = normalizeInt(row.UserID);
-            const month = row.Month ? new Date(row.Month) : null;
-            const salery = cleanNumber(row.Salery);
-            const userId = userMap.get(legacyUserId) || null;
-
-            const base = params.length;
-            values.push(
-                `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9})`
-            );
-
-
-            params.push(
-                uuidv4(),       // id
-                tenantId,       // tenantId
-                branchId,       // branchId
-                legacyUserId,   // legacyUserID
-                month,          // Month
-                salery,         // salery
-                userId,         // FK to User
-                now,            // createdAt
-                now             // updatedAt
-            );
-
-        }
-
-        await pg.query("BEGIN");
-        try {
-            await pg.query(
+        while (true) {
+            const [rows] = await mysql.query(
                 `
-        INSERT INTO "ClndrSal" (
-          id,
-          "tenantId",
-          "branchId",
-          "legacyUserId",
-          "Month",
-          "salery",
-          "userId",
-          "createdAt",
-          "updatedAt"
-        )
-        VALUES ${values.join(",")}
-        ON CONFLICT ("tenantId", "branchId", "legacyUserId", "Month")
-        DO UPDATE SET
-          "salery" = EXCLUDED."salery",
-          "userId" = EXCLUDED."userId",
-          "updatedAt" = NOW();
-      `,
-                params
+                SELECT UserID, Month, Salery
+                FROM tblClndrSal
+                ORDER BY UserID, Month
+                LIMIT ? OFFSET ?
+                `,
+                [WINDOW_SIZE, offset]
             );
-            await pg.query("COMMIT");
-            console.log(`✅ ClndrSal migration completed. Total rows inserted/updated: ${rows.length}`);
-        } catch (err) {
-            await pg.query("ROLLBACK");
-            throw err;
+
+            if (!rows.length) break;
+
+            for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+                const chunk = rows.slice(i, i + BATCH_SIZE);
+
+                const now = new Date();
+                const values = [];
+                const params = [];
+
+                for (const row of chunk) {
+                    const legacyUserId = normalizeInt(row.UserID);
+                    const month = row.Month ? new Date(row.Month) : null;
+                    const salery = cleanNumber(row.Salery);
+                    const userId = userMap.get(legacyUserId) || null;
+
+                    const base = params.length;
+                    values.push(
+                        `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9})`
+                    );
+
+                    params.push(
+                        uuidv4(),
+                        tenantId,      
+                        branchId,      
+                        legacyUserId,   
+                        month,         
+                        salery,         
+                        userId,        
+                        now,            
+                        now             
+                    );
+                }
+
+                if (!values.length) continue;
+
+                await pg.query("BEGIN");
+                try {
+                    await pg.query(
+                        `
+                        INSERT INTO "ClndrSal" (
+                            id,
+                            "tenantId",
+                            "branchId",
+                            "legacyUserId",
+                            "month",
+                            "salery",
+                            "userId",
+                            "createdAt",
+                            "updatedAt"
+                        )
+                        VALUES ${values.join(",")}
+                        ON CONFLICT ("tenantId", "branchId", "legacyUserId", "month")
+                        DO UPDATE SET
+                            "salery" = EXCLUDED."salery",
+                            "userId" = EXCLUDED."userId",
+                            "updatedAt" = NOW();
+                        `,
+                        params
+                    );
+
+                    await pg.query("COMMIT");
+                    total += values.length;
+                } catch (err) {
+                    await pg.query("ROLLBACK");
+                    throw err;
+                }
+            }
+
+            offset += rows.length;
+            console.log(`ClndrSal migrated so far: ${total} (offset=${offset})`);
         }
+
+        console.log(`✅ ClndrSal migration completed. Total inserted/updated: ${total}`);
     } finally {
         await mysql.end();
         await pg.end();

@@ -120,6 +120,7 @@ const migrateFixExpense = require("./migrateFixExpense");
 const migrateFaxStat = require("./migrateFaxStat");
 const migrateFax = require("./migrateFax");
 const migratePerData = require("./migratePerData");
+const migratePerPicture = require("./migratePerPicture");
 const migrateReportDummy = require("./migrateReportDummy");
 const migrateContact = require("./migrateContact");
 const migrateContactAgent = require("./migrateContactAgent");
@@ -172,6 +173,7 @@ const migrateClndrSal = require("./migrateClndrSal");
 const migrateClndrWrk = require("./migrateClndrWrk");
 const migrateClndrWrkFD = require("./migrateClndrWrkFD");
 const migrateInventory = require("./migrateInventory");
+const migrateCrdBuys = require("./migrateCrdBuys");
 
 // ---- utils ---------------------------------------------------------------
 function now() { return new Date().toISOString(); }
@@ -354,8 +356,9 @@ async function ensureTenant(tenantId) {
     // #tblClndrTasks
     await runStep("ClndrWrk", () => migrateClndrWrk(tenantId, branchId)); // Verified
     await runStep("ClndrWrkFD", () => migrateClndrWrkFD(tenantId, branchId)); // Verified
-    // #tblCrdBuys
-    await runStep("Inventory", () => migrateInventory(tenantId, branchId)); 
+    await runStep("CrdBuys", () => migrateCrdBuys(tenantId, branchId)); // Verified
+    await runStep("Inventory", () => migrateInventory(tenantId, branchId)); // Verified
+    await runStep("PerPicture", () => migratePerPicture(tenantId, branchId)); // Verified
 
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified

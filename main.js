@@ -171,6 +171,7 @@ const migrateItemCount = require("./migrateItemCount");
 const migrateClndrSal = require("./migrateClndrSal");
 const migrateClndrWrk = require("./migrateClndrWrk");
 const migrateClndrWrkFD = require("./migrateClndrWrkFD");
+const migrateInventory = require("./migrateInventory");
 
 // ---- utils ---------------------------------------------------------------
 function now() { return new Date().toISOString(); }
@@ -353,6 +354,8 @@ async function ensureTenant(tenantId) {
     // #tblClndrTasks
     await runStep("ClndrWrk", () => migrateClndrWrk(tenantId, branchId)); // Verified
     await runStep("ClndrWrkFD", () => migrateClndrWrkFD(tenantId, branchId)); // Verified
+    // #tblCrdBuys
+    await runStep("Inventory", () => migrateInventory(tenantId, branchId)); 
 
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified

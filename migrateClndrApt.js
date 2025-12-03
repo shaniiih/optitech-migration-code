@@ -1,142 +1,88 @@
 const { v4: uuidv4 } = require("uuid");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
+const { ensureTenantId } = require("./tenantUtils");
 
 const WINDOW_SIZE = 5000;
 const BATCH_SIZE = 1000;
 
 function cleanText(value) {
   if (value === null || value === undefined) return null;
-  const trimmed = String(value).trim();
-  return trimmed.length ? trimmed : null;
+  const s = String(value).trim();
+  return s.length ? s : null;
 }
 
-function normalizeLegacyId(value) {
+function asInt(value) {
   if (value === null || value === undefined) return null;
-
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return String(Math.trunc(value));
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? Math.trunc(value) : null;
   }
-
-  if (typeof value === "bigint") {
-    return value.toString();
-  }
-
-  if (Buffer.isBuffer(value)) {
-    return normalizeLegacyId(value.toString("utf8"));
-  }
-
-  const trimmed = cleanText(value);
-  if (!trimmed) return null;
-
-  if (/^[+-]?\d+(?:\.0+)?$/.test(trimmed)) {
-    return String(parseInt(trimmed, 10));
-  }
-
-  return trimmed;
+  const s = String(value).trim();
+  if (!s) return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? Math.trunc(n) : null;
 }
 
-function legacyIdCandidates(value) {
-  const normalized = normalizeLegacyId(value);
-  if (!normalized) return [];
-  const variants = new Set([normalized]);
-  if (/\D/.test(normalized)) {
-    const digitsOnly = normalized.replace(/\D+/g, "");
-    if (digitsOnly) {
-      const numericCandidate = normalizeLegacyId(digitsOnly);
-      if (numericCandidate) {
-        variants.add(numericCandidate);
-      }
-    }
-  }
-  return Array.from(variants);
+function asBool(value) {
+  if (value === null || value === undefined) return false;
+  if (value === true || value === false) return value;
+  if (typeof value === "number") return value !== 0;
+  const s = String(value).trim().toLowerCase();
+  if (!s) return false;
+  return s === "1" || s === "true" || s === "yes";
 }
 
-function normalizeDateTime(value) {
+function asDate(value) {
   if (value === null || value === undefined) return null;
   if (value instanceof Date) {
     return Number.isNaN(value.getTime()) ? null : value;
   }
-  const trimmed = cleanText(value);
-  if (!trimmed) return null;
-  if (/^0{4}-0{2}-0{2}/.test(trimmed)) return null;
-  const parsed = new Date(trimmed);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
+  const s = cleanText(value);
+  if (!s) return null;
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? null : d;
 }
 
-function asNumber(value) {
-  if (value === null || value === undefined) return null;
-  if (typeof value === "number") {
-    return Number.isFinite(value) ? value : null;
+async function migrateClndrApt(tenantId = "tenant_1", branchId) {
+  tenantId = ensureTenantId(tenantId, "tenant_1");
+  if (!branchId) {
+    throw new Error("migrateClndrApt requires a non-null BRANCH_ID");
   }
-  if (typeof value === "bigint") {
-    return Number(value);
-  }
-  if (Buffer.isBuffer(value)) {
-    return asNumber(value.toString("utf8"));
-  }
-  const trimmed = cleanText(String(value).replace(/,/g, "."));
-  if (!trimmed) return null;
-  const parsed = Number(trimmed);
-  return Number.isFinite(parsed) ? parsed : null;
-}
 
-function asInteger(value) {
-  const num = asNumber(value);
-  return num === null ? null : Math.trunc(num);
-}
-
-function chooseTimestamp(primary, secondary) {
-  return primary || secondary || new Date();
-}
-
-async function migrateClndrApt(tenantId = "tenant_1", rawDefaultBranchId = null) {
   const mysql = await getMySQLConnection();
   const pg = await getPostgresConnection();
 
   let offset = 0;
   let total = 0;
-  let skippedInvalidAptNum = 0;
-  let skippedMissingUser = 0;
-  let skippedMissingDate = 0;
-
   try {
-    const defaultBranchId = cleanText(rawDefaultBranchId);
-
+    // Map legacy UserID -> User.id for this tenant+branch
     const { rows: userRows } = await pg.query(
-      `SELECT id, "branchId", "userId"
+      `SELECT id, "userId"
          FROM "User"
-       WHERE "tenantId" = $1 AND "branchId" = $2`,
-        [tenantId, branchId]
+        WHERE "tenantId" = $1 AND "branchId" = $2`,
+      [tenantId, branchId]
     );
-    const userIdMap = new Map();
-    for (const user of userRows) {
-      const candidates = legacyIdCandidates(user.userId);
-      if (!candidates.length) continue;
-      for (const key of candidates) {
-        if (!userIdMap.has(key) && user.id) {
-          userIdMap.set(key, {
-            id: user.id,
-            branchId: user.branchId || defaultBranchId || null,
-          });
-        }
+    const userMap = new Map(); // legacy userId (int) -> User.id
+    for (const row of userRows) {
+      const legacyUserId = asInt(row.userId);
+      if (legacyUserId === null) continue;
+      if (!userMap.has(legacyUserId)) {
+        userMap.set(legacyUserId, row.id);
       }
     }
 
+    // Map legacy PerID -> PerData.id for this tenant+branch
     const { rows: perDataRows } = await pg.query(
-      `SELECT id, "branchId", "perId"
+      `SELECT id, "perId"
          FROM "PerData"
-       WHERE "tenantId" = $1 AND "branchId" = $2`,
-        [tenantId, branchId]
+        WHERE "tenantId" = $1 AND "branchId" = $2`,
+      [tenantId, branchId]
     );
-    const perDataMap = new Map();
-    for (const per of perDataRows) {
-      if (per.perId == null) continue;
-      const key = String(per.perId);
-      if (!perDataMap.has(key) && per.id) {
-        perDataMap.set(key, {
-          id: per.id,
-          branchId: per.branchId || null,
-        });
+    const perDataMap = new Map(); // legacy PerID (int) -> PerData.id
+    for (const row of perDataRows) {
+      const legacyPerId = asInt(row.perId);
+      if (legacyPerId === null) continue;
+      if (!perDataMap.has(legacyPerId)) {
+        perDataMap.set(legacyPerId, row.id);
       }
     }
 
@@ -146,8 +92,7 @@ async function migrateClndrApt(tenantId = "tenant_1", rawDefaultBranchId = null)
            FROM tblClndrApt
           ORDER BY AptNum
           LIMIT ${WINDOW_SIZE}
-          OFFSET ?`,
-        [offset]
+          OFFSET ${offset}`
       );
 
       if (!rows.length) break;
@@ -157,88 +102,55 @@ async function migrateClndrApt(tenantId = "tenant_1", rawDefaultBranchId = null)
         const values = [];
         const params = [];
 
-        for (const row of chunk) {
-          const aptNumInt = asInteger(row.AptNum);
-          if (aptNumInt === null) {
-            skippedInvalidAptNum += 1;
-            continue;
+        for (const r of chunk) {
+          const aptNum = asInt(r.AptNum);
+          if (aptNum === null) {
+            throw new Error(`ClndrApt: invalid AptNum '${r.AptNum}' for tenant=${tenantId}, branch=${branchId}`);
           }
 
-          const aptDate = normalizeDateTime(row.AptDate);
+          const aptDate = asDate(r.AptDate);
           if (!aptDate) {
-            skippedMissingDate += 1;
-            continue;
+            throw new Error(`ClndrApt: missing or invalid AptDate for AptNum=${aptNum}, tenant=${tenantId}, branch=${branchId}`);
           }
 
-          const userLegacyId = asInteger(row.UserID);
-          let userInfo = null;
-          if (userLegacyId !== null) {
-            for (const candidate of legacyIdCandidates(userLegacyId)) {
-              const found = userIdMap.get(candidate);
-              if (found) {
-                userInfo = found;
-                break;
-              }
-            }
-          }
-          if (!userInfo || !userInfo.id) {
-            skippedMissingUser += 1;
-            continue;
-          }
+          const legacyUserId = asInt(r.UserID);
+          const userId = legacyUserId !== null ? userMap.get(legacyUserId) || null : null;
 
-          const legacyPerId = asInteger(row.PerID);
-          let perDataInfo = null;
-          let perDataId = null;
-          if (legacyPerId !== null) {
-            const perKey = String(legacyPerId);
-            perDataInfo = perDataMap.get(perKey) || null;
-            perDataId = perDataInfo ? perDataInfo.id : null;
-          }
+          const legacyPerId = asInt(r.PerID);
+          const perId = legacyPerId !== null ? perDataMap.get(legacyPerId) || null : null;
 
-          const startTime = normalizeDateTime(row.StarTime);
-          const endTime = normalizeDateTime(row.EndTime);
-          const tookPlace =
-            row.TookPlace === true ||
-            row.TookPlace === 1 ||
-            String(row.TookPlace).toLowerCase() === "true";
-          const reminder = asInteger(row.Reminder);
-          const smsSent =
-            row.SMSSent === true ||
-            row.SMSSent === 1 ||
-            String(row.SMSSent).toLowerCase() === "true";
+          const startTime = asDate(r.StarTime);
+          const endTime = asDate(r.EndTime);
+          const tookPlace = asBool(r.TookPlace);
+          const reminder = asInt(r.Reminder);
+          const smsSent = asBool(r.SMSSent);
 
-          const createdAt = chooseTimestamp(startTime, aptDate);
-          const updatedAt = chooseTimestamp(endTime, createdAt);
+          const createdAt = startTime || aptDate || new Date();
+          const updatedAt = endTime || createdAt;
 
-          const branchId =
-            userInfo.branchId ||
-            (perDataInfo && perDataInfo.branchId) ||
-            defaultBranchId ||
-            null;
-
-          const offset = params.length;
+          const base = params.length;
           values.push(
-            `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9}, $${offset + 10}, $${offset + 11}, $${offset + 12}, $${offset + 13}, $${offset + 14}, $${offset + 15}, $${offset + 16}, $${offset + 17})`
+            `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9}, $${base + 10}, $${base + 11}, $${base + 12}, $${base + 13}, $${base + 14}, $${base + 15}, $${base + 16}, $${base + 17})`
           );
 
           params.push(
-            uuidv4(), // id
-            tenantId,
-            branchId,
-            aptNumInt,
-            aptDate,
-            userLegacyId,
-            userInfo.id,
-            startTime,
-            endTime,
-            cleanText(row.AptDesc),
-            legacyPerId,
-            perDataId,
-            tookPlace,
-            reminder !== null ? reminder : null,
-            smsSent,
-            createdAt,
-            updatedAt
+            uuidv4(),                 // id
+            tenantId,                 // tenantId
+            branchId,                 // branchId
+            aptNum,                   // aptNum
+            aptDate,                  // aptDate
+            legacyUserId,             // legacyUserId
+            userId,                   // userId (nullable)
+            startTime,                // startTime
+            endTime,                  // endTime
+            cleanText(r.AptDesc),     // aptDesc
+            legacyPerId,              // legacyPerId
+            perId,                    // perId (nullable)
+            tookPlace,                // tookPlace
+            reminder,                 // reminder (nullable)
+            smsSent,                  // smsSent
+            createdAt,                // createdAt
+            updatedAt                 // updatedAt
           );
         }
 
@@ -270,27 +182,26 @@ async function migrateClndrApt(tenantId = "tenant_1", rawDefaultBranchId = null)
             VALUES ${values.join(",")}
             ON CONFLICT ("tenantId", "branchId", "aptNum")
             DO UPDATE SET
-              "branchId"   = EXCLUDED."branchId",
-              "aptDate"    = EXCLUDED."aptDate",
-              "legacyUserId" = EXCLUDED."legacyUserId",
-              "userId"     = EXCLUDED."userId",
-              "startTime"  = EXCLUDED."startTime",
-              "endTime"    = EXCLUDED."endTime",
-              "aptDesc"    = EXCLUDED."aptDesc",
-              "legacyPerId"= EXCLUDED."legacyPerId",
-              "perId"      = EXCLUDED."perId",
-              "tookPlace"  = EXCLUDED."tookPlace",
-              "reminder"   = EXCLUDED."reminder",
-              "smsSent"    = EXCLUDED."smsSent",
-              "updatedAt"  = EXCLUDED."updatedAt"
+              "aptDate"     = EXCLUDED."aptDate",
+              "legacyUserId"= EXCLUDED."legacyUserId",
+              "userId"      = EXCLUDED."userId",
+              "startTime"   = EXCLUDED."startTime",
+              "endTime"     = EXCLUDED."endTime",
+              "aptDesc"     = EXCLUDED."aptDesc",
+              "legacyPerId" = EXCLUDED."legacyPerId",
+              "perId"       = EXCLUDED."perId",
+              "tookPlace"   = EXCLUDED."tookPlace",
+              "reminder"    = EXCLUDED."reminder",
+              "smsSent"     = EXCLUDED."smsSent",
+              "updatedAt"   = EXCLUDED."updatedAt"
             `,
             params
           );
           await pg.query("COMMIT");
           total += values.length;
-        } catch (err) {
+        } catch (e) {
           await pg.query("ROLLBACK");
-          throw err;
+          throw e;
         }
       }
 
@@ -299,15 +210,6 @@ async function migrateClndrApt(tenantId = "tenant_1", rawDefaultBranchId = null)
     }
 
     console.log(`✅ ClndrApt migration completed. Total inserted/updated: ${total}`);
-    if (skippedInvalidAptNum) {
-      console.log(`⚠️ Skipped ${skippedInvalidAptNum} records due to invalid AptNum.`);
-    }
-    if (skippedMissingUser) {
-      console.log(`⚠️ Skipped ${skippedMissingUser} records because corresponding user could not be resolved.`);
-    }
-    if (skippedMissingDate) {
-      console.log(`⚠️ Skipped ${skippedMissingDate} records due to missing appointment date.`);
-    }
   } finally {
     await mysql.end();
     await pg.end();

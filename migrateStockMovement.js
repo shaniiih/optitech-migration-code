@@ -1,4 +1,4 @@
-const { v4: uuidv4 } = require("uuid");
+const { createId } = require("@paralleldrive/cuid2");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 
 const WINDOW_SIZE = 5000;
@@ -249,7 +249,7 @@ async function migrateStockMovement(tenantId = "tenant_1") {
           );
 
           params.push(
-            uuidv4(),
+            createId(),
             tenantId,
             productId,
             userId,

@@ -1,4 +1,4 @@
-const { v4: uuidv4 } = require("uuid");
+const { createId } = require("@paralleldrive/cuid2");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 
 const BATCH_SIZE = 1000;
@@ -34,7 +34,7 @@ async function migrateMovementType(tenantId = "tenant_1", branchId = "branch_1")
           values.push(`($${params.length + 1}, $${params.length + 2}, $${params.length + 3}, $${params.length + 4}, $${params.length + 5}, $${params.length + 6}, $${params.length + 7}, $${params.length + 8}, $${params.length + 9}, $${params.length + 10}, $${params.length + 11})`);
           const name = r.InvMoveTypeName || `Movement Type ${r.InvMoveTypeId}`;
           params.push(
-            uuidv4(),                       // id
+            createId(),                       // id
             tenantId,                       // tenantId
             Number(r.InvMoveTypeId),        // movementTypeId
             name,                           // name

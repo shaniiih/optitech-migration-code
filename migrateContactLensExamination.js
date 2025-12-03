@@ -1,4 +1,4 @@
-const { v4: uuidv4 } = require("uuid");
+const { createId } = require("@paralleldrive/cuid2");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 const { ensureTenantId } = require("./tenantUtils");
 
@@ -254,7 +254,7 @@ async function migrateContactLensExamination(tenantId = "tenant_1", branchId = n
           const updatedAt = checkDate;
 
           const rowValues = [
-            uuidv4(),                          // id
+            createId(),                          // id
             tenantId,                          // tenantId
             branchId,                          // branchId
             customerId,                        // customerId

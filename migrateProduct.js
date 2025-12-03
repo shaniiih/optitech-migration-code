@@ -1,4 +1,4 @@
-const { v4: uuidv4 } = require("uuid");
+const { createId } = require("@paralleldrive/cuid2");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 
 const WINDOW_SIZE = 5000;  // rows fetched from MySQL per window
@@ -47,7 +47,7 @@ async function migrateProduct(tenantId = "tenant_1") {
             `($${params.length + 1}, $${params.length + 2}, $${params.length + 3}, $${params.length + 4}, $${params.length + 5}, $${params.length + 6}, $${params.length + 7}, $${params.length + 8}, $${params.length + 9}, $${params.length + 10}, $${params.length + 11}, $${params.length + 12}, $${params.length + 13}, $${params.length + 14}, $${params.length + 15})`
           );
           params.push(
-            uuidv4(),                     // id
+            createId(),                     // id
             tenantId,                     // "tenantId"
             String(r.NewProdId),          // "productId" (source PK)
             r.NewProdName || "",          // name

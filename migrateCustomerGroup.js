@@ -1,4 +1,4 @@
-const { v4: uuidv4 } = require("uuid");
+const { createId } = require("@paralleldrive/cuid2");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 const { ensureTenantId } = require("./tenantUtils");
 
@@ -89,7 +89,7 @@ async function migrateCustomerGroup(tenantId = "tenant_1", branchId = null) {
           );
 
           params.push(
-            uuidv4(), // id
+            createId(), // id
             tenantId, // tenantId
             groupId, // groupCode
             groupName, // name

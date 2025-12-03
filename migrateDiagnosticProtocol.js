@@ -1,4 +1,4 @@
-const { v4: uuidv4 } = require("uuid");
+const { createId } = require("@paralleldrive/cuid2");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 
 const WINDOW_SIZE = 5000;
@@ -199,7 +199,7 @@ async function migrateDiagnosticProtocol(tenantId = "tenant_1") {
             `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}::jsonb, $${offset + 7}::jsonb, $${offset + 8}, $${offset + 9})`
           );
           params.push(
-            uuidv4(),
+            createId(),
             tenantId,
             finalName,
             categoryId,

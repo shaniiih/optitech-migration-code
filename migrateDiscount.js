@@ -1,4 +1,4 @@
-const { v4: uuidv4 } = require("uuid");
+const { createId } = require("@paralleldrive/cuid2");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 
 const BATCH_SIZE = 1000;
@@ -48,7 +48,7 @@ async function migrateDiscount(tenantId = "tenant_1", branchId = null) {
           const code = `${tenantId}:${legacyId}`;
 
           params.push(
-            uuidv4(),              // id
+            createId(),              // id
             tenantId,              // tenantId
             name,                  // name
             code,                  // code (globally unique)

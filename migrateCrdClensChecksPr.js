@@ -1,4 +1,4 @@
-const { v4: uuidv4 } = require("uuid");
+const { createId } = require("@paralleldrive/cuid2");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 
 const WINDOW_SIZE = 5000;
@@ -66,7 +66,7 @@ async function migrateCrdClensChecksPr(tenantId = "tenant_1", branchId = null) {
           );
 
           params.push(
-            uuidv4(),     // id
+            createId(),   // id
             tenantId,     // tenantId
             branchId,     // branchId
             prId,         // prId

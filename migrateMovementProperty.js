@@ -1,4 +1,4 @@
-const { v4: uuidv4 } = require("uuid");
+const { createId } = require("@paralleldrive/cuid2");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 
 const BATCH_SIZE = 1000;
@@ -35,7 +35,7 @@ async function migrateMovementProperty(tenantId = "tenant_1", branchId = null) {
             `($${params.length + 1}, $${params.length + 2}, $${params.length + 3}, $${params.length + 4}, $${params.length + 5}, $${params.length + 6}, $${params.length + 7})`
           );
           params.push(
-            uuidv4(),                // id
+            createId(),                // id
             tenantId,                // tenantId
             Number(r.InvMovePropId), // movementPropertyId
             r.InvMovePropName || `Movement Property ${r.InvMovePropId}`, // name

@@ -1,4 +1,4 @@
-const { v4: uuidv4 } = require("uuid");
+const { createId } = require("@paralleldrive/cuid2");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 const { ensureTenantId } = require("./tenantUtils");
 
@@ -105,7 +105,7 @@ async function migrateFax(tenantId = "tenant_1", branchId) {
             `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9}, $${base + 10}, $${base + 11}, $${base + 12})`
           );
           params.push(
-            uuidv4(),                         // id
+            createId(),                         // id
             tenantId,                         // tenantId
             branchId,                         // branchId
             faxId,                            // faxId

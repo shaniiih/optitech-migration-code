@@ -1,4 +1,4 @@
-const { v4: uuidv4 } = require("uuid");
+const { createId } = require("@paralleldrive/cuid2");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 
 const WINDOW_SIZE = 5000;
@@ -74,7 +74,7 @@ async function migrateFixExpense(tenantId = "tenant_1", branchId = null) {
             `($${params.length + 1}, $${params.length + 2}, $${params.length + 3}, $${params.length + 4}, $${params.length + 5}, $${params.length + 6}, $${params.length + 7}, $${params.length + 8}, $${params.length + 9}, $${params.length + 10}, $${params.length + 11}, $${params.length + 12})`
           );
           params.push(
-            uuidv4(),        // id
+            createId(),        // id
             tenantId,        // tenantId
             branchId,        // branchId
             fixExpenseId,    // fixExpenseId

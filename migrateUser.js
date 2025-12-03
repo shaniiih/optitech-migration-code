@@ -1,4 +1,4 @@
-const { v4: uuidv4 } = require("uuid");
+const { createId } = require("@paralleldrive/cuid2");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 const { ensureTenantId } = require("./tenantUtils");
 
@@ -131,7 +131,7 @@ async function migrateUser(tenantId = "tenant_1", branchId = null) {
             continue;
           }
 
-          const safeLegacyId = legacyId !== null ? legacyId : uuidv4();
+          const safeLegacyId = legacyId !== null ? legacyId : createId();
           const email =
             cleanText(r.Email)?.toLowerCase() ||
             `${tenantId}_${safeLegacyId}@optitech.com`.toLowerCase();
@@ -161,7 +161,7 @@ async function migrateUser(tenantId = "tenant_1", branchId = null) {
           );
 
           params.push(
-            uuidv4(), // id
+            createId(), // id
             tenantId, // tenantId
             email, // email
             password, // password

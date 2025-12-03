@@ -1,4 +1,4 @@
-const { v4: uuidv4 } = require("uuid");
+const { createId } = require("@paralleldrive/cuid2");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 
 const WINDOW_SIZE = 5000;
@@ -74,7 +74,7 @@ async function migrateLabel(tenantId = "tenant_1", branchId = null) {
           );
 
           params.push(
-            uuidv4(),                   // id
+            createId(),                   // id
             tenantId,                   // tenantId
             branchId,                   // branchId
             labelId,                    // labelId

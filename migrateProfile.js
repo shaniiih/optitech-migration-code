@@ -1,4 +1,4 @@
-const { v4: uuidv4 } = require("uuid");
+const { createId } = require("@paralleldrive/cuid2");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 const { ensureTenantId } = require("./tenantUtils");
 
@@ -61,7 +61,7 @@ async function migrateProfile(tenantId, branchId) {
           );
 
           params.push(
-            uuidv4(),          // id
+            createId(),          // id
             tenantId,          // tenantId
             branchId || null,  // branchId
             profileIdVal,      // profileId

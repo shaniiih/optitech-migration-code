@@ -1,4 +1,4 @@
-const { v4: uuidv4 } = require("uuid");
+const { createId } = require("@paralleldrive/cuid2");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 const { ensureTenantId } = require("./tenantUtils");
 
@@ -99,7 +99,7 @@ async function migrateCrdBuysWorkLabel(tenantId = "tenant_1", branchId = null) {
             `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9})`
           );
           params.push(
-            uuidv4(), // id
+            createId(), // id
             tenantId, // tenantId
             normalizedBranchId || null, // branchId
             labelId, // labelId

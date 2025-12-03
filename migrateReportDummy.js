@@ -1,4 +1,4 @@
-const { v4: uuidv4 } = require("uuid");
+const { createId } = require("@paralleldrive/cuid2");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 
 const WINDOW_SIZE = 2000;
@@ -72,7 +72,7 @@ async function migrateReportDummy(tenantId = "tenant_1", branchId = null) {
           values.push(`(${placeholders})`);
 
           params.push(
-            uuidv4(),                 // id
+            createId(),                 // id
             tenantId,                 // tenantId
             branchId,                 // branchId
             cleanText(r.Address),     // address

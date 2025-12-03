@@ -1,5 +1,5 @@
 const path = require("path");
-const { v4: uuidv4 } = require("uuid");
+const { createId } = require("@paralleldrive/cuid2");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 const { ensureTenantId } = require("./tenantUtils");
 
@@ -68,7 +68,7 @@ async function migrateCustomerPhoto(tenantId = "tenant_1", branchId = "branch_1"
           );
 
           params.push(
-            uuidv4(), // id
+            createId(), // id
             tenantId, // tenantId
             customerId, // customerId (FK to Customer.id)
             branchId, // branchId

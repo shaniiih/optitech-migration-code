@@ -1,4 +1,4 @@
-const { v4: uuidv4 } = require("uuid");
+const { createId } = require("@paralleldrive/cuid2");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 const { ensureTenantId } = require("./tenantUtils");
 
@@ -34,7 +34,7 @@ async function migrateUserSettings(tenantId, branchId) {
         const params = [];
 
         for (const r of chunk) {
-          const id = uuidv4();
+          const id = createId();
           const now = new Date();
 
           values.push(

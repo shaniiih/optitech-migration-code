@@ -170,6 +170,7 @@ const migrateSpecial = require("./migrateSpecial");
 const migrateItemCount = require("./migrateItemCount");
 const migrateClndrSal = require("./migrateClndrSal");
 const migrateClndrWrk = require("./migrateClndrWrk");
+const migrateClndrWrkFD = require("./migrateClndrWrkFD");
 
 // ---- utils ---------------------------------------------------------------
 function now() { return new Date().toISOString(); }
@@ -350,6 +351,8 @@ async function ensureTenant(tenantId) {
     await runStep("ClndrSal", () => migrateClndrSal(tenantId, branchId)); // Verified
     await runStep("ClndrWrk", () => migrateClndrWrk(tenantId, branchId)); // Verified
     await runStep("ClndrApt", () => migrateClndrApt(tenantId, branchId));
+    await runStep("ClndrWrkFD", () => migrateClndrWrkFD(tenantId, branchId)); 
+
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
     await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified

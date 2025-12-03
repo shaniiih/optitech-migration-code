@@ -349,9 +349,10 @@ async function ensureTenant(tenantId) {
     // #tblFrmModelColors
     await runStep("ItemCount", () => migrateItemCount(tenantId, branchId));  // Verified
     await runStep("ClndrSal", () => migrateClndrSal(tenantId, branchId)); // Verified
+    await runStep("ClndrApt", () => migrateClndrApt(tenantId, branchId)); // Verified
+    // #tblClndrTasks
     await runStep("ClndrWrk", () => migrateClndrWrk(tenantId, branchId)); // Verified
-    await runStep("ClndrApt", () => migrateClndrApt(tenantId, branchId));
-    await runStep("ClndrWrkFD", () => migrateClndrWrkFD(tenantId, branchId)); 
+    await runStep("ClndrWrkFD", () => migrateClndrWrkFD(tenantId, branchId)); // Verified
 
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified

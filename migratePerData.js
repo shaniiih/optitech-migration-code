@@ -75,8 +75,8 @@ async function migratePerData(tenantId = "tenant_1", branchId = null) {
     const refsSub2Map = new Map();
     const langMap = new Map();
 
-    const loadMap = async (query, map, keyName = "legacy", valueName = "id") => {
-      const res = await pg.query(query, [tenantId]);
+    const loadMap = async (query, map, params = [tenantId, branchId], keyName = "legacy", valueName = "id") => {
+      const res = await pg.query(query, params);
       for (const row of res.rows) {
         const key = row[keyName] !== null && row[keyName] !== undefined ? String(row[keyName]) : null;
         if (key) map.set(key, row[valueName]);
@@ -84,15 +84,51 @@ async function migratePerData(tenantId = "tenant_1", branchId = null) {
     };
 
     try {
-      // todo use branchId too
-      await loadMap(`SELECT "cityId" AS legacy, id FROM "City" WHERE "tenantId" = $1`, cityMap);
-      await loadMap(`SELECT "discountId" AS legacy, id FROM "Discount" WHERE "tenantId" = $1`, discountMap);
-      await loadMap(`SELECT "groupId" AS legacy, id FROM "CustomerGroup" WHERE "tenantId" = $1`, groupMap);
-      await loadMap(`SELECT "refId" AS legacy, id FROM "Ref" WHERE "tenantId" = $1`, refMap);
-      await loadMap(`SELECT "userId" AS legacy, id FROM "User" WHERE "tenantId" = $1`, userMap);
-      await loadMap(`SELECT "refsSub1Id" AS legacy, id FROM "RefsSub1" WHERE "tenantId" = $1`, refsSub1Map);
-      await loadMap(`SELECT "refsSub2Id" AS legacy, id FROM "RefsSub2" WHERE "tenantId" = $1`, refsSub2Map);
-      await loadMap(`SELECT "langId" AS legacy, id FROM "Lang" WHERE "tenantId" = $1`, langMap);
+      await loadMap(
+        `SELECT "cityId" AS legacy, id FROM "City" WHERE "tenantId" = $1 AND "branchId" = $2`,
+        cityMap
+      );
+      await loadMap(
+        `SELECT "discountId" AS legacy, id FROM "Discount" WHERE "tenantId" = $1 AND "branchId" = $2`,
+        discountMap
+      );
+      // Branch-aware group mapping with tenant-wide fallback to avoid empty maps when branchId mismatches.
+      await (async () => {
+        await loadMap(
+          `SELECT "groupId" AS legacy, id FROM "Group" WHERE "tenantId" = $1 AND "branchId" = $2`,
+          groupMap
+        );
+        if (branchId && groupMap.size === 0) {
+          console.warn(
+            `⚠️ PerData: no Group rows found for tenant=${tenantId} branchId=${branchId}; falling back to tenant-wide mapping`
+          );
+          await loadMap(
+            `SELECT "groupId" AS legacy, id FROM "Group" WHERE "tenantId" = $1`,
+            groupMap,
+            [tenantId]
+          );
+        }
+      })();
+      await loadMap(
+        `SELECT "refId" AS legacy, id FROM "Ref" WHERE "tenantId" = $1 AND "branchId" = $2`,
+        refMap
+      );
+      await loadMap(
+        `SELECT "userId" AS legacy, id FROM "User" WHERE "tenantId" = $1 AND "branchId" = $2`,
+        userMap
+      );
+      await loadMap(
+        `SELECT "refsSub1Id" AS legacy, id FROM "RefsSub1" WHERE "tenantId" = $1 AND "branchId" = $2`,
+        refsSub1Map
+      );
+      await loadMap(
+        `SELECT "refsSub2Id" AS legacy, id FROM "RefsSub2" WHERE "tenantId" = $1 AND "branchId" = $2`,
+        refsSub2Map
+      );
+      await loadMap(
+        `SELECT "langId" AS legacy, id FROM "Lang" WHERE "tenantId" = $1 AND "branchId" = $2`,
+        langMap
+      );
     } catch (err) {
       console.warn("⚠️ PerData: one or more mapping preloads failed; proceeding with null mappings.", err.message);
     }
@@ -277,7 +313,47 @@ async function migratePerData(tenantId = "tenant_1", branchId = null) {
                "updatedAt"
              )
              VALUES ${values.join(",")}
-               ON CONFLICT ("tenantId", "branchId", "perId") DO NOTHING`,
+              ON CONFLICT ("tenantId", "branchId", "perId") DO UPDATE SET
+                "legacyBranchId" = EXCLUDED."legacyBranchId",
+                "lastName" = EXCLUDED."lastName",
+                "firstName" = EXCLUDED."firstName",
+                "tzId" = EXCLUDED."tzId",
+                "birthDate" = EXCLUDED."birthDate",
+                "sex" = EXCLUDED."sex",
+                "homePhone" = EXCLUDED."homePhone",
+                "workPhone" = EXCLUDED."workPhone",
+                "cellPhone" = EXCLUDED."cellPhone",
+                "fax" = EXCLUDED."fax",
+                email = EXCLUDED.email,
+                address = EXCLUDED.address,
+                "cityId" = EXCLUDED."cityId",
+                "legacyCityId" = EXCLUDED."legacyCityId",
+                "zipCode" = EXCLUDED."zipCode",
+                "legacyDiscountId" = EXCLUDED."legacyDiscountId",
+                "discountId" = EXCLUDED."discountId",
+                "legacyGroupId" = EXCLUDED."legacyGroupId",
+                "groupId" = EXCLUDED."groupId",
+                "perType" = EXCLUDED."perType",
+                "legacyRefId" = EXCLUDED."legacyRefId",
+                "refId" = EXCLUDED."refId",
+                "legacyUserId" = EXCLUDED."legacyUserId",
+                "userId" = EXCLUDED."userId",
+                "comment" = EXCLUDED."comment",
+                "legacyRefsSub1Id" = EXCLUDED."legacyRefsSub1Id",
+                "refsSub1Id" = EXCLUDED."refsSub1Id",
+                "legacyRefsSub2Id" = EXCLUDED."legacyRefsSub2Id",
+                "refsSub2Id" = EXCLUDED."refsSub2Id",
+                "wantsLaser" = EXCLUDED."wantsLaser",
+                "laserDate" = EXCLUDED."laserDate",
+                "didOperation" = EXCLUDED."didOperation",
+                "legacyFamId" = EXCLUDED."legacyFamId",
+                "famId" = EXCLUDED."famId",
+                "mailList" = EXCLUDED."mailList",
+                "ocup" = EXCLUDED."ocup",
+                "hidCom" = EXCLUDED."hidCom",
+                "legacyLangId" = EXCLUDED."legacyLangId",
+                "langId" = EXCLUDED."langId",
+                "updatedAt" = EXCLUDED."updatedAt"`,
             params
           );
           await pg.query("COMMIT");

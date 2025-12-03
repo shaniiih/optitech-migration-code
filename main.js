@@ -343,9 +343,9 @@ async function ensureTenant(tenantId) {
     await runStep("Special", () => migrateSpecial(tenantId, branchId)); // Verified
     await runStep("InvoicePay", () => migrateInvoicePay(tenantId, branchId)); // Verified
     await runStep("ContactAgent", () => migrateContactAgent(tenantId, branchId)); // Verified
-    await runStep("ReportDummy", () => migrateReportDummy(tenantId, branchId)); // Verified
     await runStep("Fax", () => migrateFax(tenantId, branchId)); // Verified
     await runStep("PerData", () => migratePerData(tenantId, branchId)); // Verified
+    await runStep("ReportDummy", () => migrateReportDummy(tenantId, branchId)); // Verified
     // #tblFrmModelColors
     await runStep("ItemCount", () => migrateItemCount(tenantId, branchId));  // Verified
     await runStep("ClndrSal", () => migrateClndrSal(tenantId, branchId)); // Verified

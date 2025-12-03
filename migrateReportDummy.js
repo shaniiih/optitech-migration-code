@@ -42,6 +42,26 @@ async function migrateReportDummy(tenantId = "tenant_1", branchId = null) {
   let total = 0;
 
   try {
+    // Preload PerData mapping: legacy PerId -> PerData PK, branch-aware with null-branch fallback.
+    const perDataMap = new Map();
+    try {
+      const { rows } = await pg.query(
+        `SELECT id, "perId"
+           FROM "PerData"
+          WHERE "tenantId" = $1
+            AND ("branchId" = $2 OR "branchId" IS NULL)`,
+        [tenantId, branchId]
+      );
+      for (const row of rows) {
+        const legacyPerId = asInteger(row.perId);
+        if (legacyPerId !== null && !perDataMap.has(legacyPerId)) {
+          perDataMap.set(legacyPerId, row.id);
+        }
+      }
+    } catch (err) {
+      console.warn("⚠️ ReportDummy: failed to preload PerData mapping.", err.message);
+    }
+
     while (true) {
       const [rows] = await mysql.query(
         `SELECT * FROM tblReportDummy
@@ -64,6 +84,9 @@ async function migrateReportDummy(tenantId = "tenant_1", branchId = null) {
           const xId = asInteger(r.XId);
           if (xId === null || seen.has(xId)) continue;
           seen.add(xId);
+
+          const legacyPerId = asInteger(r.PerId);
+          const perId = legacyPerId !== null ? perDataMap.get(legacyPerId) || null : null;
 
           const base = params.length;
           const placeholders = Array.from({ length: 76 }, (_, idx) => `$${base + idx + 1}`).join(
@@ -133,8 +156,8 @@ async function migrateReportDummy(tenantId = "tenant_1", branchId = null) {
             cleanText(r.ClensSolDisinfectName), // clensSolDisinfectName
             cleanText(r.ClensSolRinseName),     // clensSolRinseName
             cleanText(r.Comments),    // comments
-            asInteger(r.PerId),       // legacyPerId
-            null,                     // perId
+            legacyPerId,              // legacyPerId
+            perId,                    // perId (FK -> PerData.id)
             cleanText(r.MaterR),      // materR
             cleanText(r.MaterL),      // materL
             cleanText(r.TintR),       // tintR
@@ -233,9 +256,12 @@ async function migrateReportDummy(tenantId = "tenant_1", branchId = null) {
                "xId",
                "createdAt",
                "updatedAt"
-             )
-             VALUES ${values.join(",")}
-             ON CONFLICT ("tenantId", "branchId", "xId") DO NOTHING`,
+           )
+            VALUES ${values.join(",")}
+             ON CONFLICT ("tenantId", "branchId", "xId") DO UPDATE SET
+               "perId" = EXCLUDED."perId",
+               "legacyPerId" = EXCLUDED."legacyPerId",
+               "updatedAt" = EXCLUDED."updatedAt"`,
             params
           );
           await pg.query("COMMIT");

@@ -174,6 +174,7 @@ const migrateClndrWrk = require("./migrateClndrWrk");
 const migrateClndrWrkFD = require("./migrateClndrWrkFD");
 const migrateInventory = require("./migrateInventory");
 const migrateCrdBuys = require("./migrateCrdBuys");
+const migrateItemLines = require("./migrateItemLines");
 
 // ---- utils ---------------------------------------------------------------
 function now() { return new Date().toISOString(); }
@@ -359,6 +360,8 @@ async function ensureTenant(tenantId) {
     await runStep("CrdBuys", () => migrateCrdBuys(tenantId, branchId)); // Verified
     await runStep("Inventory", () => migrateInventory(tenantId, branchId)); // Verified
     await runStep("PerPicture", () => migratePerPicture(tenantId, branchId)); // Verified
+    await runStep("ItemLine", () => migrateItemLines(tenantId, branchId)); // Verified
+
 
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified

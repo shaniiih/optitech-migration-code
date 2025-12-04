@@ -48,41 +48,57 @@ async function migrateCrdBuys(tenantId = "tenant_1", branchId = null) {
         const userMap = new Map();
         const branchMap = new Map();
         const perMap = new Map();
+        const groupMap = new Map();
 
         const { rows: userRows } = await pg.query(
-            `SELECT id, "userId" FROM "User"
+            `SELECT id, "userId"
+             FROM "User"
              WHERE "tenantId" = $1 AND "branchId" = $2`,
             [tenantId, branchId]
         );
         for (const row of userRows) {
-            const legacyId = normalizeInt(row.userId);
-            if (legacyId !== null) userMap.set(legacyId, row.id);
+            const legacy = normalizeInt(row.userId);
+            if (legacy !== null) userMap.set(legacy, row.id);
         }
 
         const { rows: branchRows } = await pg.query(
-            `SELECT id, "branchId" FROM "Branch"
+            `SELECT id, "branchId"
+             FROM "Branch"
              WHERE "tenantId" = $1`,
             [tenantId]
         );
         for (const row of branchRows) {
-            const legacyId = normalizeInt(row.branchId);
-            if (legacyId !== null) branchMap.set(legacyId, row.id);
+            const legacy = normalizeInt(row.branchId);
+            if (legacy !== null) branchMap.set(legacy, row.id);
         }
 
         const { rows: perRows } = await pg.query(
-            `SELECT id, "perId" FROM "PerData"
+            `SELECT id, "perId"
+             FROM "PerData"
              WHERE "tenantId" = $1 AND "branchId" = $2`,
             [tenantId, branchId]
         );
         for (const row of perRows) {
-            const legacyId = normalizeInt(row.perId);
-            if (legacyId !== null) perMap.set(legacyId, row.id);
+            const legacy = normalizeInt(row.perId);
+            if (legacy !== null) perMap.set(legacy, row.id);
+        }
+
+        const { rows: groupRows } = await pg.query(
+            `SELECT id, "groupId"
+             FROM "Group"
+             WHERE "tenantId" = $1 AND "branchId" = $2`,
+            [tenantId, branchId]
+        );
+        for (const row of groupRows) {
+            const legacy = normalizeInt(row.groupId);
+            if (legacy !== null) groupMap.set(legacy, row.id);
         }
 
         while (true) {
             const [rows] = await mysql.query(
                 `
-                SELECT BuyId, BuyDate, GroupId, PerId, UserId, PayedFor, BuyType, BuySrcId, BranchId, Canceled
+                SELECT BuyId, BuyDate, GroupId, PerId, UserId,
+                       PayedFor, BuyType, BuySrcId, BranchId, Canceled
                 FROM tblCrdBuys
                 ORDER BY BuyId
                 LIMIT ? OFFSET ?`,
@@ -102,10 +118,12 @@ async function migrateCrdBuys(tenantId = "tenant_1", branchId = null) {
                     const legacyUserId = normalizeInt(row.UserId);
                     const legacyBranchId = normalizeInt(row.BranchId);
                     const legacyPerId = normalizeInt(row.PerId);
+                    const legacyGroupId = normalizeInt(row.GroupId);
 
                     const userId = userMap.get(legacyUserId) || null;
                     const branchNewRefId = branchMap.get(legacyBranchId) || null;
                     const perId = perMap.get(legacyPerId) || null;
+                    const groupId = groupMap.get(legacyGroupId) || null;
 
                     const base = params.length;
 
@@ -115,23 +133,24 @@ async function migrateCrdBuys(tenantId = "tenant_1", branchId = null) {
                             $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8},
                             $${base + 9}, $${base + 10}, $${base + 11}, $${base + 12},
                             $${base + 13}, $${base + 14}, $${base + 15}, $${base + 16},
-                            $${base + 17}, $${base + 18}
+                            $${base + 17}, $${base + 18}, $${base + 19}
                         )`
                     );
 
                     params.push(
-                        createId(),
+                        createId(),        
                         tenantId,
                         branchId,
                         legacyBuyId,
-                        legacyUserId,
-                        userId,
                         row.BuyDate ? new Date(row.BuyDate) : null,
-                        cleanNumber(row.PayedFor),
-                        normalizeInt(row.BuyType),
-                        normalizeInt(row.GroupId),
+                        groupId,
+                        legacyGroupId,
                         perId,
                         legacyPerId,
+                        userId,
+                        legacyUserId,
+                        cleanNumber(row.PayedFor),
+                        normalizeInt(row.BuyType),
                         normalizeInt(row.BuySrcId),
                         legacyBranchId,
                         branchNewRefId,
@@ -147,23 +166,27 @@ async function migrateCrdBuys(tenantId = "tenant_1", branchId = null) {
                 try {
                     await pg.query(
                         `
-                        INSERT INTO "CrdBuys" (
-                            id, "tenantId", "branchId", "buyId", "legacyUserId", "userId",
-                            "buyDate", "payedFor", "buyType", "groupId", "perId", "legacyPerId",
-                            "buySrcId", "legacyBranchId", "legacyBranchNewRefId", "canceled",
-                            "createdAt", "updatedAt"
+                        INSERT INTO "CrdBuy" (
+                            id, "tenantId", "branchId", "buyId", "buyDate",
+                            "groupId", "legacyGroupId",
+                            "perId", "legacyPerId",
+                            "userId", "legacyUserId",
+                            "payedFor", "buyType", "buySrcId",
+                            "legacyBranchId", "legacyBranchNewRefId",
+                            "canceled", "createdAt", "updatedAt"
                         )
                         VALUES ${values.join(",")}
                         ON CONFLICT ("tenantId", "branchId", "buyId")
                         DO UPDATE SET
-                            "legacyUserId" = EXCLUDED."legacyUserId",
-                            "userId" = EXCLUDED."userId",
                             "buyDate" = EXCLUDED."buyDate",
-                            "payedFor" = EXCLUDED."payedFor",
-                            "buyType" = EXCLUDED."buyType",
                             "groupId" = EXCLUDED."groupId",
+                            "legacyGroupId" = EXCLUDED."legacyGroupId",
                             "perId" = EXCLUDED."perId",
                             "legacyPerId" = EXCLUDED."legacyPerId",
+                            "userId" = EXCLUDED."userId",
+                            "legacyUserId" = EXCLUDED."legacyUserId",
+                            "payedFor" = EXCLUDED."payedFor",
+                            "buyType" = EXCLUDED."buyType",
                             "buySrcId" = EXCLUDED."buySrcId",
                             "legacyBranchId" = EXCLUDED."legacyBranchId",
                             "legacyBranchNewRefId" = EXCLUDED."legacyBranchNewRefId",
@@ -172,6 +195,7 @@ async function migrateCrdBuys(tenantId = "tenant_1", branchId = null) {
                         `,
                         params
                     );
+
                     await pg.query("COMMIT");
                     total += values.length;
                 } catch (err) {

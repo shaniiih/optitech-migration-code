@@ -61,6 +61,7 @@ const migrateSapakDest = require("./migrateSapakDest");
 const migrateInvoice = require("./migrateInvoice");
 const migrateInvoicePay = require("./migrateInvoicePay");
 const migrateSMS = require("./migrateSMS");
+const migrateFrmModelColor = require("./migrateFrmModelColor");
 const migrateOpticalBase = require("./migrateOpticalBase");
 const migrateSapakSendStat = require("./migrateSapakSendStat");
 const migrateVAT = require("./migrateVAT");
@@ -175,6 +176,7 @@ const migrateClndrWrkFD = require("./migrateClndrWrkFD");
 const migrateInventory = require("./migrateInventory");
 const migrateCrdBuys = require("./migrateCrdBuys");
 const migrateItemLines = require("./migrateItemLines");
+const migrateInvoiceCheck = require("./migrateInvoiceCheck");
 
 // ---- utils ---------------------------------------------------------------
 function now() { return new Date().toISOString(); }
@@ -361,8 +363,13 @@ async function ensureTenant(tenantId) {
     await runStep("Inventory", () => migrateInventory(tenantId, branchId)); // Verified
     await runStep("PerPicture", () => migratePerPicture(tenantId, branchId)); // Verified
     await runStep("ItemLine", () => migrateItemLines(tenantId, branchId)); // Verified
+    //#tblSapakSends
+    //#tblInvoices
+    await runStep("InvoiceCheck", () => migrateInvoiceCheck(tenantId, branchId)); // Verified
 
+    await runStep("FrmModelColor", () => migrateFrmModelColor(tenantId, branchId));
 
+    
 
    /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
     await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified

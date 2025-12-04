@@ -35,19 +35,24 @@ async function migrateCrdBuysCatNum(tenantId = "tenant_1", branchId = null) {
 
     try {
         const buyMap = new Map();
+        const itemMap = new Map();
+
         const { rows: buyRows } = await pg.query(
-            `SELECT id, "buyId", "branchId" FROM "CrdBuy" WHERE "tenantId" = $1`,
-            [tenantId]
+            `SELECT id, "buyId", "branchId"
+             FROM "CrdBuy"
+             WHERE "tenantId" = $1 AND "branchId" = $2`,
+            [tenantId, branchId]
         );
         for (const row of buyRows) {
             const legacy = normalizeInt(row.buyId);
             if (legacy !== null) buyMap.set(`${row.branchId}_${legacy}`, row.id);
         }
 
-        const itemMap = new Map();
         const { rows: itemRows } = await pg.query(
-            `SELECT id, "itemId" FROM "Item" WHERE "tenantId" = $1`,
-            [tenantId]
+            `SELECT id, "itemId"
+             FROM "Item"
+             WHERE "tenantId" = $1 AND "branchId" = $2`,
+            [tenantId, branchId]
         );
         for (const row of itemRows) {
             const legacy = normalizeInt(row.itemId);
@@ -76,8 +81,10 @@ async function migrateCrdBuysCatNum(tenantId = "tenant_1", branchId = null) {
                     const legacyCatId = normalizeInt(row.CatId);
                     const legacyBuyId = normalizeInt(row.BuyId);
                     const legacyItemId = normalizeInt(row.ItemId);
+
                     const newBuyId = buyMap.get(`${branchId}_${legacyBuyId}`) || null;
                     const newItemId = itemMap.get(legacyItemId) || null;
+
                     const base = params.length;
 
                     values.push(

@@ -1,4 +1,4 @@
-const { createId } = require("@paralleldrive/cuid2");
+const { v4: uuidv4 } = require("uuid");
 const { getMySQLConnection, getPostgresConnection } = require("./dbConfig");
 
 const WINDOW_SIZE = 5000;
@@ -10,152 +10,187 @@ function cleanText(value) {
   return trimmed.length ? trimmed : null;
 }
 
-function asNumber(value) {
+function asInteger(value) {
   if (value === null || value === undefined) return null;
-  if (typeof value === "number") {
-    return Number.isFinite(value) ? value : null;
-  }
-  const trimmed = String(value).trim().replace(/,/g, ".");
+  if (typeof value === "number") return Number.isFinite(value) ? Math.trunc(value) : null;
+  const trimmed = cleanText(value);
   if (!trimmed) return null;
   const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? Math.trunc(parsed) : null;
+}
+
+function asNumber(value) {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  const trimmed = cleanText(value);
+  if (!trimmed) return null;
+  const parsed = Number(trimmed.replace(/,/g, "."));
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function normalizeDate(value) {
-  if (value === null || value === undefined) return null;
-
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    if (!trimmed) return null;
-    if (/^0{4}-0{2}-0{2}/.test(trimmed)) return null;
-    const parsed = new Date(trimmed);
-    return Number.isNaN(parsed.getTime()) ? null : parsed;
-  }
-
-  if (value instanceof Date) {
-    return Number.isNaN(value.getTime()) ? null : value;
-  }
-
-  if (typeof value === "number") {
-    const parsed = new Date(value);
-    return Number.isNaN(parsed.getTime()) ? null : parsed;
-  }
-
-  return null;
+function safeDate(value) {
+  if (!value) return null;
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+  const d = new Date(value);
+  return Number.isFinite(d.getTime()) ? d : null;
 }
 
-function normalizeLegacyId(value) {
-  if (value === null || value === undefined) return null;
-
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return String(value);
-  }
-
-  if (typeof value === "bigint") {
-    return value.toString();
-  }
-
-  if (Buffer.isBuffer(value)) {
-    return normalizeLegacyId(value.toString("utf8"));
-  }
-
-  const trimmed = String(value).trim();
-  if (!trimmed) return null;
-
-  if (/^[+-]?\d+(?:\.0+)?$/.test(trimmed)) {
-    return String(parseInt(trimmed, 10));
-  }
-
-  return trimmed.toLowerCase();
-}
-
-async function migrateInvoice(tenantId = "tenant_1") {
+async function migrateInvoice(tenantId = "tenant_1", branchId = null) {
   const mysql = await getMySQLConnection();
   const pg = await getPostgresConnection();
 
-  let lastId = 0;
+  let lastId = -1;
   let total = 0;
-  let skippedMissingSupplier = 0;
+
+  // preload mappings
+  const supplierMap = new Map(); // legacy SapakID -> Supplier.id (optional)
+  const sapakMap = new Map(); // legacy SapakID -> Sapak.id
+  const invoicePayMap = new Map(); // legacy InvoicePayId -> InvoicePay.id
+  const invoiceTypeMap = new Map(); // legacy InvoiceTypeId -> {id,name}
+  const missingSapak = new Set();
+  const missingType = new Set();
+  const sapakNameMap = new Map(); // legacy SapakID -> SapakName (from Sapak table)
 
   try {
-    const supplierMap = new Map();
-    const supplierCache = new Map();
-    const { rows: supplierRows } = await pg.query(
-      `SELECT id, "supplierId" FROM "Supplier" WHERE "tenantId" = $1`,
-      [tenantId]
-    );
-    for (const row of supplierRows) {
-      supplierMap.set(normalizeLegacyId(row.supplierId), row.id);
+    // Preload Sapak from "Sapak" table
+    try {
+      const { rows } = await pg.query(
+        `SELECT id, "SapakID", "SapakName"
+           FROM "Sapak"
+          WHERE "tenantId" = $1
+            AND "branchId" = $2`,
+        [tenantId, branchId]
+      );
+      for (const row of rows) {
+        const key = cleanText(row.SapakID);
+        if (!key) continue;
+        if (!sapakNameMap.has(key)) {
+          sapakNameMap.set(key, cleanText(row.SapakName) || `Sapak ${key}`);
+        }
+        if (!sapakMap.has(key)) sapakMap.set(key, row.id);
+        const asInt = asInteger(row.SapakID);
+        if (asInt !== null && !sapakMap.has(String(asInt))) sapakMap.set(String(asInt), row.id);
+      }
+    } catch (err) {
+      console.warn("⚠️ Invoice: failed to preload Sapak mapping.", err.message);
     }
 
-    const supplierNameMap = new Map();
-    const [sapakRows] = await mysql.query(
-      `SELECT SapakID, SapakName FROM tblSapaks`
-    );
-    for (const row of sapakRows) {
-      const key = normalizeLegacyId(row.SapakID);
-      if (key && !supplierNameMap.has(key)) {
-        supplierNameMap.set(key, cleanText(row.SapakName));
-      }
-    }
+    // Also pull Sapak IDs from CrdBuysWorkSapak and ensure Sapak table has them.
+    try {
+      const { rows } = await pg.query(
+        `SELECT "sapakID" AS "legacySapakId", "sapakName"
+           FROM "CrdBuysWorkSapak"
+          WHERE "tenantId" = $1
+            AND "branchId" = $2`,
+        [tenantId, branchId]
+      );
 
-    const [workSapakRows] = await mysql.query(
-      `SELECT SapakID, SapakName FROM tblCrdBuysWorkSapaks`
-    );
-    for (const row of workSapakRows) {
-      const key = normalizeLegacyId(row.SapakID);
-      if (key && !supplierNameMap.has(key)) {
-        supplierNameMap.set(key, cleanText(row.SapakName));
+      const insertValues = [];
+      const insertParams = [];
+      for (const row of rows) {
+        const key = cleanText(row.legacySapakId);
+        if (!key) continue;
+        if (!sapakNameMap.has(key)) {
+          sapakNameMap.set(key, cleanText(row.sapakName) || `Sapak ${key}`);
+        }
+        if (!sapakMap.has(key)) {
+          const base = insertParams.length;
+          insertValues.push(
+            `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7})`
+          );
+          insertParams.push(uuidv4(), tenantId, branchId, key, sapakNameMap.get(key), new Date(), new Date());
+        }
       }
-    }
 
-    async function ensureSupplier(legacyId) {
-      const key = normalizeLegacyId(legacyId);
-      if (!key) return null;
-      if (supplierMap.has(key)) {
-        return supplierMap.get(key);
+      if (insertValues.length) {
+        try {
+          await pg.query(
+            `INSERT INTO "Sapak" (
+               id, "tenantId", "branchId", "SapakID", "SapakName", "createdAt", "updatedAt"
+             )
+             VALUES ${insertValues.join(",")}
+             ON CONFLICT ("tenantId", "branchId", "SapakID") DO NOTHING`,
+            insertParams
+          );
+        } catch (err) {
+          console.warn("⚠️ Invoice: failed to insert missing Sapak rows from CrdBuysWorkSapak.", err.message);
+        }
       }
 
-      if (!supplierCache.has(key)) {
-        supplierCache.set(
-          key,
-          (async () => {
-            const supplierRecordId = `${tenantId}-supplier-${key}`;
-            const name = supplierNameMap.get(key) || `Legacy Supplier ${key}`;
-            const timestamp = new Date();
-            const { rows } = await pg.query(
-              `
-              INSERT INTO "Supplier" (id, "tenantId", "supplierId", name, "createdAt", "updatedAt")
-              VALUES ($1, $2, $3, $4, $5, $5)
-              ON CONFLICT ("supplierId")
-              DO UPDATE SET
-              "tenantId" = EXCLUDED."tenantId",
-                "supplierId" = EXCLUDED."supplierId",
-                name = EXCLUDED.name,
-                "updatedAt" = EXCLUDED."updatedAt"
-              RETURNING id
-              `,
-              [supplierRecordId, tenantId, key, name, timestamp]
-            );
-            const dbId = rows[0].id;
-            supplierMap.set(key, dbId);
-            return dbId;
-          })()
+      // Reload Sapak mapping after potential inserts
+      try {
+        const { rows: sapakRows } = await pg.query(
+          `SELECT id, "SapakID", "SapakName"
+             FROM "Sapak"
+            WHERE "tenantId" = $1
+              AND "branchId" = $2`,
+          [tenantId, branchId]
         );
+        for (const row of sapakRows) {
+          const key = cleanText(row.SapakID);
+          if (!key) continue;
+          sapakMap.set(key, row.id);
+          const asInt = asInteger(row.SapakID);
+          if (asInt !== null) sapakMap.set(String(asInt), row.id);
+          if (!sapakNameMap.has(key)) {
+            sapakNameMap.set(key, cleanText(row.SapakName) || `Sapak ${key}`);
+          }
+        }
+      } catch (err) {
+        console.warn("⚠️ Invoice: failed to refresh Sapak mapping after inserts.", err.message);
       }
-
-      return supplierCache.get(key);
+    } catch (err) {
+      console.warn("⚠️ Invoice: failed to process CrdBuysWorkSapak for Sapak mapping.", err.message);
     }
 
-    const invoiceTypeMap = new Map();
-    const [invoiceTypeRows] = await mysql.query(
-      `SELECT InvoiceTypeId, InvoiceTypeName FROM tblInvoiceTypes`
-    );
-    for (const row of invoiceTypeRows) {
-      const key = normalizeLegacyId(row.InvoiceTypeId);
-      if (key) {
-        invoiceTypeMap.set(key, cleanText(row.InvoiceTypeName) || `TYPE-${row.InvoiceTypeId}`);
+    // Optional Supplier mapping (if Supplier table populated)
+    try {
+      const { rows } = await pg.query(
+        `SELECT id, "supplierId" FROM "Supplier" WHERE "tenantId" = $1`,
+        [tenantId]
+      );
+      for (const row of rows) {
+        const key = cleanText(row.supplierId);
+        if (key && !supplierMap.has(key)) supplierMap.set(key, row.id);
+        const asInt = asInteger(row.supplierId);
+        if (asInt !== null && !supplierMap.has(String(asInt))) supplierMap.set(String(asInt), row.id);
       }
+    } catch (err) {
+      console.warn("⚠️ Invoice: failed to preload Supplier mapping (optional).", err.message);
+    }
+
+    try {
+      const { rows } = await pg.query(
+        `SELECT id, "invoicePayId" FROM "InvoicePay" WHERE "tenantId" = $1 AND "branchId" = $2`,
+        [tenantId, branchId]
+      );
+      for (const row of rows) {
+        const key = cleanText(row.invoicePayId);
+        if (key && !invoicePayMap.has(key)) invoicePayMap.set(key, row.id);
+        const asInt = asInteger(row.invoicePayId);
+        if (asInt !== null && !invoicePayMap.has(String(asInt))) invoicePayMap.set(String(asInt), row.id);
+      }
+    } catch (err) {
+      console.warn("⚠️ Invoice: failed to preload InvoicePay mapping.", err.message);
+    }
+
+    try {
+      const { rows } = await pg.query(
+        `SELECT id, "invoiceTypeId", "invoiceTypeName" FROM "InvoiceType" WHERE "tenantId" = $1 AND "branchId" = $2`,
+        [tenantId, branchId]
+      );
+      for (const row of rows) {
+        const key = cleanText(row.invoiceTypeId);
+        if (key && !invoiceTypeMap.has(key)) {
+          invoiceTypeMap.set(key, { id: row.id, name: cleanText(row.invoiceTypeName) });
+        }
+        const asInt = asInteger(row.invoiceTypeId);
+        if (asInt !== null && !invoiceTypeMap.has(String(asInt))) {
+          invoiceTypeMap.set(String(asInt), { id: row.id, name: cleanText(row.invoiceTypeName) });
+        }
+      }
+    } catch (err) {
+      console.warn("⚠️ Invoice: failed to preload InvoiceType mapping.", err.message);
     }
 
     while (true) {
@@ -174,43 +209,106 @@ async function migrateInvoice(tenantId = "tenant_1") {
         const chunk = rows.slice(i, i + BATCH_SIZE);
         const values = [];
         const params = [];
+        const now = new Date();
+        const seen = new Set();
 
-        for (const r of chunk) {
-          const supplierId = await ensureSupplier(r.SapakID);
-          if (!supplierId) {
-            skippedMissingSupplier += 1;
-            continue;
+        for (const row of chunk) {
+          const legacyInvoiceId = asInteger(row.InvoiceId);
+          if (legacyInvoiceId === null || seen.has(legacyInvoiceId)) continue;
+          seen.add(legacyInvoiceId);
+
+          const legacySapakIdRaw = cleanText(row.SapakID);
+          const legacyInvoicePayIdRaw = cleanText(row.InvoicePayId);
+          const legacyInvoiceTypeIdRaw = cleanText(row.InvoiceTypeId);
+
+          let resolvedSapakId =
+            legacySapakIdRaw !== null && legacySapakIdRaw !== undefined
+              ? sapakMap.get(legacySapakIdRaw) || sapakMap.get(String(asInteger(legacySapakIdRaw))) || null
+              : null;
+          const resolvedSupplierId =
+            legacySapakIdRaw !== null && legacySapakIdRaw !== undefined
+              ? supplierMap.get(legacySapakIdRaw) || supplierMap.get(String(asInteger(legacySapakIdRaw))) || null
+              : null;
+          const invoicePayId =
+            legacyInvoicePayIdRaw !== null && legacyInvoicePayIdRaw !== undefined
+              ? invoicePayMap.get(legacyInvoicePayIdRaw) ||
+                invoicePayMap.get(String(asInteger(legacyInvoicePayIdRaw))) ||
+                null
+              : null;
+          const invoiceType =
+            legacyInvoiceTypeIdRaw !== null && legacyInvoiceTypeIdRaw !== undefined
+              ? invoiceTypeMap.get(legacyInvoiceTypeIdRaw) ||
+                invoiceTypeMap.get(String(asInteger(legacyInvoiceTypeIdRaw))) ||
+                null
+              : null;
+
+          if (!resolvedSapakId && legacySapakIdRaw) {
+            // Create a placeholder Sapak entry to satisfy FK and continue migration.
+            try {
+              const placeholderId = uuidv4();
+              const name = sapakNameMap.get(legacySapakIdRaw) || `Sapak ${legacySapakIdRaw}`;
+              await pg.query(
+                `INSERT INTO "Sapak" (
+                   id, "tenantId", "branchId", "SapakID", "SapakName", "createdAt", "updatedAt"
+                 )
+                 VALUES ($1, $2, $3, $4, $5, $6, $6)
+                 ON CONFLICT ("tenantId", "branchId", "SapakID") DO NOTHING`,
+                [placeholderId, tenantId, branchId, legacySapakIdRaw, name, now]
+              );
+              sapakMap.set(legacySapakIdRaw, placeholderId);
+              const asIntKey = asInteger(legacySapakIdRaw);
+              if (asIntKey !== null) sapakMap.set(String(asIntKey), placeholderId);
+              resolvedSapakId = placeholderId;
+            } catch (e) {
+              console.warn(
+                `⚠️ Invoice: failed to create placeholder Sapak for legacySapakId=${legacySapakIdRaw}`,
+                e.message
+              );
+            }
+          }
+          if (!resolvedSapakId) {
+            if (legacySapakIdRaw) missingSapak.add(legacySapakIdRaw);
+            continue; // still cannot insert without valid sapakId (FK)
+          }
+          if (!invoiceType && legacyInvoiceTypeIdRaw) {
+            missingType.add(legacyInvoiceTypeIdRaw);
           }
 
-          const invoiceNumber = cleanText(r.InvId) || String(r.InvoiceId);
-          const invoiceDate = normalizeDate(r.InvDate) || new Date();
-          const amount = asNumber(r.InvSum) ?? 0;
-          const invoiceType = invoiceTypeMap.get(normalizeLegacyId(r.InvoiceTypeId)) || "UNKNOWN";
-          const comment = cleanText(r.Com);
-          const status = amount > 0 ? "PENDING" : "PAID";
+          const invoiceNumber = cleanText(row.InvId) || String(legacyInvoiceId);
+          const invoiceDate = safeDate(row.InvDate) || now;
+          const totalAmount = asNumber(row.InvSum) ?? 0;
+          const comment = cleanText(row.Com);
 
-          const paramsBase = params.length;
+          const base = params.length;
           values.push(
-            `($${paramsBase + 1}, $${paramsBase + 2}, $${paramsBase + 3}, $${paramsBase + 4}, $${paramsBase + 5},
-               $${paramsBase + 6}, $${paramsBase + 7}, $${paramsBase + 8}, $${paramsBase + 9}, $${paramsBase + 10},
-               $${paramsBase + 11}, $${paramsBase + 12}, $${paramsBase + 13}, $${paramsBase + 14})`
+            `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9}, $${base + 10}, $${base + 11}, $${base + 12}, $${base + 13}, $${base + 14}, $${base + 15}, $${base + 16}, $${base + 17}, $${base + 18}, $${base + 19}, $${base + 20}, $${base + 21}, $${base + 22}, $${base + 23}, $${base + 24})`
           );
 
           params.push(
-            createId(),
-            tenantId,
-            String(r.InvoiceId),
-            invoiceNumber,
-            supplierId,
-            invoiceDate,
-            null,
-            amount,
-            0,
-            invoiceType,
-            comment,
-            status,
-            invoiceDate,
-            invoiceDate
+            uuidv4(),                            // id
+            tenantId,                            // tenantId
+            branchId,                            // branchId
+            String(legacyInvoiceId),             // invoiceId
+            invoiceNumber,                       // invoiceNumber
+            resolvedSupplierId || null,         // supplierId (nullable if missing)
+            invoiceDate,                         // invoiceDate
+            invoiceDate,                       // dueDate
+            totalAmount,                         // totalAmount
+            0,                                   // paidAmount
+            invoiceType?.name || (legacyInvoiceTypeIdRaw ? legacyInvoiceTypeIdRaw : "UNKNOWN"), // invoiceType
+            comment,                             // comment
+            "PENDING",                           // status
+            now,                                 // createdAt
+            now,                                 // updatedAt
+            invoiceDate,                         // InvDate
+            totalAmount,                         // InvSum
+            comment,                             // com
+            invoicePayId,                        // invoicePayId (FK)
+            invoiceType?.id || null,             // invoiceTypeId (FK)
+            legacyInvoicePayIdRaw ? asInteger(legacyInvoicePayIdRaw) : null, // legacyInvoicePayId
+            legacyInvoiceTypeIdRaw ? asInteger(legacyInvoiceTypeIdRaw) : null, // legacyInvoiceTypeId
+            legacySapakIdRaw ? asInteger(legacySapakIdRaw) : null, // legacySapakId
+            resolvedSapakId                      // sapakId (FK, nullable)
           );
         }
 
@@ -219,44 +317,82 @@ async function migrateInvoice(tenantId = "tenant_1") {
         await pg.query("BEGIN");
         try {
           await pg.query(
-            `
-            INSERT INTO "Invoice" (
-              id, "tenantId", "invoiceId", "invoiceNumber", "supplierId", "invoiceDate", "dueDate",
-              "totalAmount", "paidAmount", "invoiceType", comment, status, "createdAt", "updatedAt"
-            )
-            VALUES ${values.join(",")}
-            ON CONFLICT ("invoiceId")
-            DO UPDATE SET
-              "tenantId" = EXCLUDED."tenantId",
-              "invoiceNumber" = EXCLUDED."invoiceNumber",
-              "supplierId" = EXCLUDED."supplierId",
-              "invoiceDate" = EXCLUDED."invoiceDate",
-              "dueDate" = EXCLUDED."dueDate",
-              "totalAmount" = EXCLUDED."totalAmount",
-              "paidAmount" = EXCLUDED."paidAmount",
-              "invoiceType" = EXCLUDED."invoiceType",
-              comment = EXCLUDED.comment,
-              status = EXCLUDED.status,
-              "updatedAt" = EXCLUDED."updatedAt"
-            `,
+            `INSERT INTO "Invoice" (
+               id,
+               "tenantId",
+               "branchId",
+               "invoiceId",
+               "invoiceNumber",
+               "supplierId",
+               "invoiceDate",
+               "dueDate",
+               "totalAmount",
+               "paidAmount",
+               "invoiceType",
+               comment,
+               status,
+               "createdAt",
+               "updatedAt",
+               "InvDate",
+               "InvSum",
+               com,
+               "invoicePayId",
+               "invoiceTypeId",
+               "legacyInvoicePayId",
+               "legacyInvoiceTypeId",
+               "legacySapakId",
+               "sapakId"
+             )
+             VALUES ${values.join(",")}
+             ON CONFLICT ("tenantId", "branchId", "invoiceId") DO UPDATE SET
+               "invoiceNumber" = EXCLUDED."invoiceNumber",
+               "supplierId" = EXCLUDED."supplierId",
+               "invoiceDate" = EXCLUDED."invoiceDate",
+               "dueDate" = EXCLUDED."dueDate",
+               "totalAmount" = EXCLUDED."totalAmount",
+               "paidAmount" = EXCLUDED."paidAmount",
+               "invoiceType" = EXCLUDED."invoiceType",
+               comment = EXCLUDED.comment,
+               status = EXCLUDED.status,
+               "updatedAt" = EXCLUDED."updatedAt",
+               "InvDate" = EXCLUDED."InvDate",
+               "InvSum" = EXCLUDED."InvSum",
+               com = EXCLUDED.com,
+               "invoicePayId" = EXCLUDED."invoicePayId",
+               "invoiceTypeId" = EXCLUDED."invoiceTypeId",
+               "legacyInvoicePayId" = EXCLUDED."legacyInvoicePayId",
+               "legacyInvoiceTypeId" = EXCLUDED."legacyInvoiceTypeId",
+               "legacySapakId" = EXCLUDED."legacySapakId",
+               "sapakId" = EXCLUDED."sapakId"`,
             params
           );
           await pg.query("COMMIT");
-        } catch (err) {
+          total += values.length;
+        } catch (error) {
           await pg.query("ROLLBACK");
-          throw err;
+          throw error;
         }
-
-        total += values.length;
       }
 
-      lastId = rows[rows.length - 1].InvoiceId;
-      console.log(`Invoices migrated: ${total} (lastId=${lastId})`);
+      const latest = asInteger(rows[rows.length - 1]?.InvoiceId);
+      if (latest !== null) {
+        lastId = latest;
+      }
+      console.log(`Invoice migrated so far: ${total} (lastInvoiceId=${lastId})`);
     }
 
     console.log(`✅ Invoice migration completed. Total inserted/updated: ${total}`);
-    if (skippedMissingSupplier) {
-      console.warn(`⚠️ Skipped ${skippedMissingSupplier} invoices because related suppliers were not found`);
+    if (missingSapak.size) {
+      const sample = Array.from(missingSapak).slice(0, 10);
+      console.warn(
+        `⚠️ Invoice: missing Sapak mapping for ${missingSapak.size} legacy SapakIDs. Sample: ${sample.join(", ")}`
+      );
+    }
+    if (missingType.size) {
+      const sample = Array.from(missingType).slice(0, 10);
+      console.warn(
+        `⚠️ Invoice: missing InvoiceType mapping for ${missingType.size} legacy InvoiceTypeIds. Sample: ${sample.join(", ")}`
+      );
     }
   } finally {
     await mysql.end();

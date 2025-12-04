@@ -377,6 +377,7 @@ async function ensureTenant(tenantId) {
 
     
     await runStep("FrmModelColor", () => migrateFrmModelColor(tenantId, branchId));
+    await runStep("Invoice", () => migrateInvoice(tenantId, branchId)); // Verified
 
     
 

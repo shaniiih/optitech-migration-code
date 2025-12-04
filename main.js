@@ -180,6 +180,7 @@ const migrateInvoiceCheck = require("./migrateInvoiceCheck");
 const migrateCrdBuysCatNum = require("./migrateCrdBuysCatNum");
 const migrateCrdBuysPay = require("./migrateCrdBuysPay");
 const migrateSapakSendsLensPlan = require("./migrateSapakSendsLensPlan");
+const migrateCrdClinicCheck = require("./migrateCrdClinicCheck");
 
 // ---- utils ---------------------------------------------------------------
 function now() { return new Date().toISOString(); }
@@ -372,6 +373,9 @@ async function ensureTenant(tenantId) {
     await runStep("CrdBuysCatNum", () => migrateCrdBuysCatNum(tenantId, branchId)); // Verified
     await runStep("CrdBuysPay", () => migrateCrdBuysPay(tenantId, branchId)); 
     await runStep("SapakSendsLensPlan", () => migrateSapakSendsLensPlan(tenantId, branchId)); 
+    await runStep("CrdClinicCheck", () => migrateCrdClinicCheck(tenantId, branchId)); 
+
+    
     await runStep("FrmModelColor", () => migrateFrmModelColor(tenantId, branchId));
 
     

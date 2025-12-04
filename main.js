@@ -177,6 +177,7 @@ const migrateInventory = require("./migrateInventory");
 const migrateCrdBuys = require("./migrateCrdBuys");
 const migrateItemLines = require("./migrateItemLines");
 const migrateInvoiceCheck = require("./migrateInvoiceCheck");
+const migrateCrdBuysCatNum = require("./migrateCrdBuysCatNum");
 
 // ---- utils ---------------------------------------------------------------
 function now() { return new Date().toISOString(); }
@@ -366,6 +367,7 @@ async function ensureTenant(tenantId) {
     //#tblSapakSends
     //#tblInvoices
     await runStep("InvoiceCheck", () => migrateInvoiceCheck(tenantId, branchId)); // Verified
+    await runStep("CrdBuysCatNum", () => migrateCrdBuysCatNum(tenantId, branchId)); // Verified
 
     await runStep("FrmModelColor", () => migrateFrmModelColor(tenantId, branchId));
 

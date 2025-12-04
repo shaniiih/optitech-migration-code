@@ -74,23 +74,12 @@ async function migrateCrdBuysPay(tenantId = "tenant_1", branchId = null) {
       if (v !== null) creditTypeMap.set(v, r.id);
     }
 
-    const invMap = new Map();
-    const { rows: invRows } = await pg.query(
-      `SELECT id, "invId" FROM "Inventory" WHERE "tenantId" = $1`,
-      [tenantId]
-    );
-    for (const r of invRows) {
-      const v = normalizeInt(r.invId);
-      if (v !== null) invMap.set(v, r.id);
-    }
-
     while (true) {
       const [rows] = await mysql.query(
         `
         SELECT 
           BuyPayId,
           BuyId,
-          InvId,
           PayTypeId,
           PayDate,
           PaySum,
@@ -115,13 +104,11 @@ async function migrateCrdBuysPay(tenantId = "tenant_1", branchId = null) {
         for (const row of chunk) {
           const legacyBuyPayId = normalizeInt(row.BuyPayId);
           const legacyBuyId = normalizeInt(row.BuyId);
-          const legacyInvId = normalizeInt(row.InvId);
           const legacyPayTypeId = normalizeInt(row.PayTypeId);
           const legacyCreditCardId = normalizeInt(row.CreditCardId);
           const legacyCreditTypeId = normalizeInt(row.CreditTypeId);
 
           const newBuyId = buyMap.get(`${branchId}_${legacyBuyId}`) || null;
-          const newInvId = invMap.get(legacyInvId) || null;
           const newPayTypeId = payTypeMap.get(legacyPayTypeId) || null;
           const newCreditCardId = creditCardMap.get(legacyCreditCardId) || null;
           const newCreditTypeId = creditTypeMap.get(legacyCreditTypeId) || null;
@@ -130,38 +117,39 @@ async function migrateCrdBuysPay(tenantId = "tenant_1", branchId = null) {
 
           values.push(
             `(
-              $${base + 1}, $${base + 2}, $${base + 3},
-              $${base + 4}, $${base + 5}, $${base + 6},
-              $${base + 7}, $${base + 8}, $${base + 9},
+              $${base + 1},  $${base + 2},  $${base + 3},
+              $${base + 4},  $${base + 5},  $${base + 6},
+              $${base + 7},  $${base + 8},  $${base + 9},
               $${base + 10}, $${base + 11}, $${base + 12},
               $${base + 13}, $${base + 14}, $${base + 15},
               $${base + 16}, $${base + 17}, $${base + 18},
-              $${base + 19}, $${base + 20}
+              $${base + 19}
             )`
           );
 
+
           params.push(
-            createId(),
-            tenantId,
-            branchId,
-            legacyBuyPayId,
-            legacyBuyId,
-            newBuyId,
-            legacyPayTypeId,
-            newPayTypeId,
-            legacyCreditCardId,
-            newCreditCardId,
-            legacyCreditTypeId,
-            newCreditTypeId,
-            legacyInvId,
-            newInvId,
-            row.PayDate ? new Date(row.PayDate) : null,
-            cleanNumber(row.PaySum),
-            row.CreditId || null,
-            normalizeInt(row.CreditPayNum),
+            createId(),               
+            tenantId,                
+            branchId,                 
+            legacyBuyPayId,           
+            legacyBuyId,               
+            newBuyId,                 
+            legacyPayTypeId,          
+            newPayTypeId,             
+            legacyCreditCardId,        
+            newCreditCardId,          
+            legacyCreditTypeId,        
+            newCreditTypeId,           
+            row.invId || null,        
+            row.PayDate ? new Date(row.PayDate) : null, 
+            cleanNumber(row.PaySum),   
+            row.CreditId || null,     
+            normalizeInt(row.CreditPayNum), 
             now,
-            now
+            now                        
           );
+
         }
 
         await pg.query("BEGIN");
@@ -174,7 +162,7 @@ async function migrateCrdBuysPay(tenantId = "tenant_1", branchId = null) {
               "legacyPayTypeId", "payTypeId",
               "legacyCreditCardId", "creditCardId",
               "legacyCreditTypeId", "creditTypeId",
-              "legacyInvId", "invId",
+              "invId",
               "payDate", "paySum",
               "creditId", "creditPayNum",
               "createdAt", "updatedAt"
@@ -190,7 +178,6 @@ async function migrateCrdBuysPay(tenantId = "tenant_1", branchId = null) {
               "creditCardId" = EXCLUDED."creditCardId",
               "legacyCreditTypeId" = EXCLUDED."legacyCreditTypeId",
               "creditTypeId" = EXCLUDED."creditTypeId",
-              "legacyInvId" = EXCLUDED."legacyInvId",
               "invId" = EXCLUDED."invId",
               "payDate" = EXCLUDED."payDate",
               "paySum" = EXCLUDED."paySum",

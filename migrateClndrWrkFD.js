@@ -110,10 +110,8 @@ async function migrateClndrWrkFD(tenantId = "tenant_1", branchId = null) {
                         VALUES ${values.join(",")}
                         ON CONFLICT ("tenantId", "branchId", "wrkFDId")
                         DO UPDATE SET
-                            "legacyUserId" = EXCLUDED."legacyUserId",
                             "wrkDate" = EXCLUDED."wrkDate",
                             "fdTypeId" = EXCLUDED."fdTypeId",
-                            "userId" = EXCLUDED."userId",
                             "updatedAt" = NOW();
                         `,
                         params

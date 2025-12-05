@@ -78,7 +78,7 @@ async function migrateInvoice(tenantId = "tenant_1", branchId = null) {
     // Also pull Sapak IDs from CrdBuysWorkSapak and ensure Sapak table has them.
     try {
       const { rows } = await pg.query(
-        `SELECT "sapakID" AS "legacySapakId", "sapakName"
+        `SELECT "sapakId" AS "legacySapakId", "sapakName"
            FROM "CrdBuysWorkSapak"
           WHERE "tenantId" = $1
             AND "branchId" = $2`,

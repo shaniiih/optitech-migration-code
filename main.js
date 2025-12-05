@@ -184,6 +184,7 @@ const migrateSapakSendsLensPlan = require("./migrateSapakSendsLensPlan");
 const migrateCrdClinicCheck = require("./migrateCrdClinicCheck");
 const migrateCrdDiag = require("./migrateCrdDiag");
 const migrateInvoicesInv = require("./migrateInvoicesInv");
+const migrateCrdClensCheck = require("./migrateCrdClensCheck");
 
 // ---- utils ---------------------------------------------------------------
 function now() { return new Date().toISOString(); }
@@ -370,7 +371,6 @@ async function ensureTenant(tenantId) {
     await runStep("PerPicture", () => migratePerPicture(tenantId, branchId)); // Verified
     await runStep("ItemLine", () => migrateItemLines(tenantId, branchId)); // Verified
     //#tblSapakSends
-    //#tblInvoices
     await runStep("InvoiceCheck", () => migrateInvoiceCheck(tenantId, branchId)); // Verified
     await runStep("CrdBuysCatNum", () => migrateCrdBuysCatNum(tenantId, branchId)); // Verified
     await runStep("CrdBuysPay", () => migrateCrdBuysPay(tenantId, branchId)); // Verifies
@@ -379,6 +379,7 @@ async function ensureTenant(tenantId) {
     await runStep("CrdDiag", () => migrateCrdDiag(tenantId, branchId)); // Verified
     await runStep("ClndrTasks", () => migrateClndrTasks(tenantId, branchId)); // Verified
     await runStep("InvoicesInv", () => migrateInvoicesInv(tenantId, branchId)); // Verified
+    await runStep("CrdClensCheck", () => migrateCrdClensCheck(tenantId, branchId)); // Verified
 
 
     await runStep("FrmModelColor", () => migrateFrmModelColor(tenantId, branchId));

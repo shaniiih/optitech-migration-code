@@ -185,6 +185,7 @@ const migrateCrdClinicCheck = require("./migrateCrdClinicCheck");
 const migrateCrdDiag = require("./migrateCrdDiag");
 const migrateInvoicesInv = require("./migrateInvoicesInv");
 const migrateCrdClensCheck = require("./migrateCrdClensCheck");
+const migrateCrdDisDiag = require("./migrateCrdDisDiag");
 
 // ---- utils ---------------------------------------------------------------
 function now() { return new Date().toISOString(); }
@@ -380,6 +381,7 @@ async function ensureTenant(tenantId) {
     await runStep("ClndrTasks", () => migrateClndrTasks(tenantId, branchId)); // Verified
     await runStep("InvoicesInv", () => migrateInvoicesInv(tenantId, branchId)); // Verified
     await runStep("CrdClensCheck", () => migrateCrdClensCheck(tenantId, branchId)); // Verified
+    await runStep("CrdDisDiag", () => migrateCrdDisDiag(tenantId, branchId)); // Verified
 
 
     await runStep("FrmModelColor", () => migrateFrmModelColor(tenantId, branchId));

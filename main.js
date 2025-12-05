@@ -173,6 +173,7 @@ const migrateItemCount = require("./migrateItemCount");
 const migrateClndrSal = require("./migrateClndrSal");
 const migrateClndrWrk = require("./migrateClndrWrk");
 const migrateClndrWrkFD = require("./migrateClndrWrkFD");
+const migrateClndrTasks = require("./migrateClndrTasks");
 const migrateInventory = require("./migrateInventory");
 const migrateCrdBuys = require("./migrateCrdBuys");
 const migrateItemLines = require("./migrateItemLines");
@@ -362,7 +363,6 @@ async function ensureTenant(tenantId) {
     await runStep("ItemCount", () => migrateItemCount(tenantId, branchId));  // Verified
     await runStep("ClndrSal", () => migrateClndrSal(tenantId, branchId)); // Verified
     await runStep("ClndrApt", () => migrateClndrApt(tenantId, branchId)); // Verified
-    // #tblClndrTasks
     await runStep("ClndrWrk", () => migrateClndrWrk(tenantId, branchId)); // Verified
     await runStep("ClndrWrkFD", () => migrateClndrWrkFD(tenantId, branchId)); // Verified
     await runStep("CrdBuys", () => migrateCrdBuys(tenantId, branchId)); // Verified
@@ -377,13 +377,13 @@ async function ensureTenant(tenantId) {
     await runStep("SapakSendsLensPlan", () => migrateSapakSendsLensPlan(tenantId, branchId)); // Verified
     await runStep("CrdClinicCheck", () => migrateCrdClinicCheck(tenantId, branchId)); //Verified
     await runStep("CrdDiag", () => migrateCrdDiag(tenantId, branchId)); // Verified
+    await runStep("ClndrTasks", () => migrateClndrTasks(tenantId, branchId)); // Verified
     await runStep("InvoicesInv", () => migrateInvoicesInv(tenantId, branchId)); // Verified
 
 
     await runStep("FrmModelColor", () => migrateFrmModelColor(tenantId, branchId));
     await runStep("Invoice", () => migrateInvoice(tenantId, branchId)); // Verified
-
-
+      
 
     /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
      await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified

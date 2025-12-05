@@ -383,7 +383,7 @@ async function ensureTenant(tenantId) {
 
     await runStep("FrmModelColor", () => migrateFrmModelColor(tenantId, branchId));
     await runStep("Invoice", () => migrateInvoice(tenantId, branchId)); // Verified
-      
+
 
     /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
      await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified

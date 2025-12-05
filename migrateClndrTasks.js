@@ -172,9 +172,6 @@ async function migrateClndrTasks(tenantId = "tenant_1", branchId) {
             VALUES ${values.join(",")}
             ON CONFLICT ("tenantId", "branchId", "legacyUserId", "legacyTaskId")
             DO UPDATE SET
-              "userId"           = EXCLUDED."userId",
-              "legacyPriorityId" = EXCLUDED."legacyPriorityId",
-              "priorityId"       = EXCLUDED."priorityId",
               "taskDesc"         = EXCLUDED."taskDesc",
               "done"             = EXCLUDED."done",
               "taskDate"         = EXCLUDED."taskDate",

@@ -102,8 +102,8 @@ async function migratePrescription(tenantId = "tenant_1") {
           }
 
           const prescriptionDate = normalizeDate(r.CheckDate) || now;
-          const createdAt = prescriptionDate;
-          const updatedAt = prescriptionDate;
+          const createdAt = new Date();
+          const updatedAt = createdAt;
 
           const recommendationsParts = [];
           const rec1 = cleanText(r.RetCom1);

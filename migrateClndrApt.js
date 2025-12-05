@@ -125,8 +125,8 @@ async function migrateClndrApt(tenantId = "tenant_1", branchId) {
           const reminder = asInt(r.Reminder);
           const smsSent = asBool(r.SMSSent);
 
-          const createdAt = startTime || aptDate || new Date();
-          const updatedAt = endTime || createdAt;
+          const createdAt = new Date();
+          const updatedAt = createdAt;
 
           const base = params.length;
           values.push(

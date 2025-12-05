@@ -184,8 +184,8 @@ async function migrateAppointment(tenantId = "tenant_1") {
           const smsSent = asBool(row.SMSSent);
           const tookPlace = asBool(row.TookPlace);
           const status = tookPlace ? "COMPLETED" : "SCHEDULED";
-          const createdAt = startTime;
-          const updatedAt = startTime;
+          const createdAt = new Date();
+          const updatedAt = createdAt;
 
           const offset = params.length;
           values.push(
@@ -284,4 +284,3 @@ async function migrateAppointment(tenantId = "tenant_1") {
 }
 
 module.exports = migrateAppointment;
-

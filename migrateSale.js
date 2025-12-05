@@ -293,8 +293,8 @@ async function migrateSale(tenantId = "tenant_1") {
           }
           const notes = notesParts.length ? notesParts.join("\n") : null;
 
-          const createdAt = saleDate;
-          const updatedAt = saleDate;
+          const createdAt = new Date();
+          const updatedAt = createdAt;
           const deletedAt = asBool(r.Canceled) ? saleDate : null;
 
           values.push(

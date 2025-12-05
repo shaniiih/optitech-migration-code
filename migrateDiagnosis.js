@@ -196,8 +196,8 @@ async function migrateDiagnosis(tenantId = "tenant_1") {
           const doctorReferral = cleanText(row.DocRef);
           const summary = cleanText(row.Summary);
 
-          const createdAt = diagnosisDate || now;
-          const updatedAt = diagnosisDate || now;
+          const createdAt = new Date();
+          const updatedAt = createdAt;
 
           const offset = params.length;
           values.push(
@@ -293,4 +293,3 @@ async function migrateDiagnosis(tenantId = "tenant_1") {
 }
 
 module.exports = migrateDiagnosis;
-

@@ -96,7 +96,7 @@ const COLUMNS = [
   "hidCom",
   "amslerR", "amslerL",
   "npcr", "npal", "npar",
-  "glassCid",
+  "glassCId",
   "createdAt", "updatedAt",
 ];
 
@@ -235,7 +235,7 @@ async function migrateCrdGlassCheck(tenantId = "tenant_1", branchId = null) {
             cleanText(row.AmslerR), cleanText(row.AmslerL),
             cleanText(row.NPCR),
             normalizeDecimal(row.NPAL), normalizeDecimal(row.NPAR),
-            normalizeInt(row.GlassCID),
+            normalizeInt(row.GlassCId),
             now, now
           ];
 

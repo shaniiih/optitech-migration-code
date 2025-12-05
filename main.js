@@ -368,7 +368,6 @@ async function ensureTenant(tenantId) {
     await runStep("ClndrApt", () => migrateClndrApt(tenantId, branchId)); // Verified
     await runStep("ClndrWrk", () => migrateClndrWrk(tenantId, branchId)); // Verified
     await runStep("ClndrWrkFD", () => migrateClndrWrkFD(tenantId, branchId)); // Verified
-    await runStep("CrdBuys", () => migrateCrdBuys(tenantId, branchId)); // Verified
     await runStep("Inventory", () => migrateInventory(tenantId, branchId)); // Verified
     await runStep("PerPicture", () => migratePerPicture(tenantId, branchId)); // Verified
     await runStep("ItemLine", () => migrateItemLines(tenantId, branchId)); // Verified
@@ -386,6 +385,7 @@ async function ensureTenant(tenantId) {
     await runStep("CrdClensCheck", () => migrateCrdClensCheck(tenantId, branchId)); // Verified
     await runStep("CrdDisDiag", () => migrateCrdDisDiag(tenantId, branchId)); // Verified
     await runStep("CrdGlassCheck", () => migrateCrdGlassCheck(tenantId, branchId)); // Verified
+    await runStep("CrdBuys", () => migrateCrdBuys(tenantId, branchId)); // Verified
 
 
 

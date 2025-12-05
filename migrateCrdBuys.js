@@ -49,6 +49,7 @@ async function migrateCrdBuys(tenantId = "tenant_1", branchId = null) {
         const branchMap = new Map();
         const perMap = new Map();
         const groupMap = new Map();
+        const glassMap = new Map();
 
         const { rows: userRows } = await pg.query(
             `SELECT id, "userId"
@@ -93,6 +94,16 @@ async function migrateCrdBuys(tenantId = "tenant_1", branchId = null) {
             const legacy = normalizeInt(row.groupId);
             if (legacy !== null) groupMap.set(legacy, row.id);
         }
+        const { rows: glassRows } = await pg.query(
+            `SELECT id, "glassCId"
+            FROM "CrdGlassCheck"
+            WHERE "tenantId" = $1 AND "branchId" = $2`,
+            [tenantId, branchId]
+        );
+        for (const row of glassRows) {
+            const legacy = normalizeInt(row.glassCId);
+            if (legacy !== null) glassMap.set(legacy, row.id);
+        }
 
         while (true) {
             const [rows] = await mysql.query(
@@ -124,7 +135,8 @@ async function migrateCrdBuys(tenantId = "tenant_1", branchId = null) {
                     const branchNewRefId = branchMap.get(legacyBranchId) || null;
                     const perId = perMap.get(legacyPerId) || null;
                     const groupId = groupMap.get(legacyGroupId) || null;
-
+                    const legacyBuySrcId = normalizeInt(row.BuySrcId);
+                    const buySrcId = glassMap.get(legacyBuySrcId) || null;
                     const base = params.length;
 
                     values.push(
@@ -133,12 +145,12 @@ async function migrateCrdBuys(tenantId = "tenant_1", branchId = null) {
                             $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8},
                             $${base + 9}, $${base + 10}, $${base + 11}, $${base + 12},
                             $${base + 13}, $${base + 14}, $${base + 15}, $${base + 16},
-                            $${base + 17}, $${base + 18}, $${base + 19}
+                            $${base + 17}, $${base + 18}, $${base + 19}, $${base + 20}
                         )`
                     );
 
                     params.push(
-                        createId(),        
+                        createId(),
                         tenantId,
                         branchId,
                         legacyBuyId,
@@ -151,7 +163,8 @@ async function migrateCrdBuys(tenantId = "tenant_1", branchId = null) {
                         legacyUserId,
                         cleanNumber(row.PayedFor),
                         normalizeInt(row.BuyType),
-                        normalizeInt(row.BuySrcId),
+                        buySrcId,
+                        legacyBuySrcId,
                         legacyBranchId,
                         branchNewRefId,
                         toBoolean(row.Canceled),
@@ -171,7 +184,7 @@ async function migrateCrdBuys(tenantId = "tenant_1", branchId = null) {
                             "groupId", "legacyGroupId",
                             "perId", "legacyPerId",
                             "userId", "legacyUserId",
-                            "payedFor", "buyType", "buySrcId",
+                            "payedFor", "buyType", "buySrcId","legacyBuySrcId",
                             "legacyBranchId", "legacyBranchNewRefId",
                             "canceled", "createdAt", "updatedAt"
                         )
@@ -188,6 +201,7 @@ async function migrateCrdBuys(tenantId = "tenant_1", branchId = null) {
                             "payedFor" = EXCLUDED."payedFor",
                             "buyType" = EXCLUDED."buyType",
                             "buySrcId" = EXCLUDED."buySrcId",
+                            "legacyBuySrcId" = EXCLUDED."legacyBuySrcId",
                             "legacyBranchId" = EXCLUDED."legacyBranchId",
                             "legacyBranchNewRefId" = EXCLUDED."legacyBranchNewRefId",
                             "canceled" = EXCLUDED."canceled",

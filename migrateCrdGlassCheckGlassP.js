@@ -31,7 +31,6 @@ function toBoolean(value) {
 const WINDOW_SIZE = 5000;
 const BATCH_SIZE = 500;
 
-// MUST match model order
 const COLUMNS = [
     "id", "tenantId", "branchId",
     "glassPId",
@@ -42,7 +41,9 @@ const COLUMNS = [
     "legacyLensMaterId", "lensMaterId",
     "legacyLensCharId", "lensCharId",
     "legacyTreatCharId", "treatCharId",
-    "treatCharId1", "treatCharId2", "treatCharId3",
+    "legacyTreatCharId1", "treatCharId1",
+    "legacyTreatCharId2", "treatCharId2",
+    "legacyTreatCharId3", "treatCharId3",
     "legacyEyeId", "eyeId",
     "diam", "com",
     "saleAdd",
@@ -57,6 +58,7 @@ async function migrateCrdGlassCheckGlassP(tenantId = "tenant_1", branchId = null
     let total = 0;
 
     try {
+    
         const buildMap = async (table, legacyField) => {
             const map = new Map();
             const { rows } = await pg.query(
@@ -70,14 +72,15 @@ async function migrateCrdGlassCheckGlassP(tenantId = "tenant_1", branchId = null
             return map;
         };
 
-        const useMap = await buildMap("CrdGlassUse", "glassUseId");
-        const sapakMap = await buildMap("Sapak", "SapakID");
-        const lensTypeMap = await buildMap("LnsType", "lensTypeId");
-        const lensMaterMap = await buildMap("LnsMaterial", "lensMaterId");
-        const lensCharMap = await buildMap("LnsChar", "lensCharId");
-        const treatCharMap = await buildMap("LnsTreatChar", "treatCharId");
-        const eyeMap = await buildMap("Eye", "eyeId");
+        const useMap        = await buildMap("CrdGlassUse", "glassUseId");
+        const sapakMap      = await buildMap("Sapak", "SapakID");
+        const lensTypeMap   = await buildMap("LnsType", "lensTypeId");
+        const lensMaterMap  = await buildMap("LnsMaterial", "lensMaterId");
+        const lensCharMap   = await buildMap("LnsChar", "lensCharId");
+        const treatCharMap  = await buildMap("LnsTreatChar", "treatCharId");
+        const eyeMap        = await buildMap("Eye", "eyeId");
 
+  
         const perCheckMap = new Map();
         const { rows: crdRows } = await pg.query(
             `SELECT id, "perId", "checkDate", "legacyPerId"
@@ -98,6 +101,7 @@ async function migrateCrdGlassCheckGlassP(tenantId = "tenant_1", branchId = null
             }
         }
 
+       
         while (true) {
             const [rows] = await mysql.query(
                 `SELECT * FROM tblCrdGlassChecksGlassesP
@@ -120,7 +124,6 @@ async function migrateCrdGlassCheckGlassP(tenantId = "tenant_1", branchId = null
                     const legacyPerId = normalizeInt(row.PerId);
                     const cd = row.CheckDate ? new Date(row.CheckDate) : null;
                     const cdKey = `${legacyPerId}-${cd.toISOString().split("T")[0]}`;
-
                     const perCheck = perCheckMap.get(cdKey) || {};
 
                     const rowValues = [
@@ -154,8 +157,13 @@ async function migrateCrdGlassCheckGlassP(tenantId = "tenant_1", branchId = null
                         treatCharMap.get(normalizeInt(row.TreatCharId)) || null,
 
                         normalizeInt(row.TreatCharId1),
+                        treatCharMap.get(normalizeInt(row.TreatCharId1)) || null,
+
                         normalizeInt(row.TreatCharId2),
+                        treatCharMap.get(normalizeInt(row.TreatCharId2)) || null,
+
                         normalizeInt(row.TreatCharId3),
+                        treatCharMap.get(normalizeInt(row.TreatCharId3)) || null,
 
                         normalizeInt(row.EyeId),
                         eyeMap.get(normalizeInt(row.EyeId)) || null,

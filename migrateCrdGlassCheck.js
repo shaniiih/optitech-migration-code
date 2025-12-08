@@ -125,7 +125,7 @@ async function migrateCrdGlassCheck(tenantId = "tenant_1", branchId = null) {
     const perMap = await buildMap("PerData", "perId");
     const userMap = await buildMap("User", "userId");
     const iopInstMap = await buildMap("CrdGlassIOPInst", "iOPInstId");
-    const baseMap = await buildMap("Base", "baseId");
+    const baseMap = await buildMap("OpticalBase", "baseId");
 
     while (true) {
       const [rows] = await mysql.query(

@@ -377,17 +377,21 @@ async function ensureTenant(tenantId) {
     await runStep("FrmModelColor", () => migrateFrmModelColor(tenantId, branchId));
     await runStep("CrdBuysCatNum", () => migrateCrdBuysCatNum(tenantId, branchId)); // Verified
     await runStep("CrdBuysPay", () => migrateCrdBuysPay(tenantId, branchId)); // Verifies
-    await runStep("SapakSendsLensPlan", () => migrateSapakSendsLensPlan(tenantId, branchId)); // Verified
     await runStep("CrdClinicCheck", () => migrateCrdClinicCheck(tenantId, branchId)); //Verified
-    await runStep("CrdDiag", () => migrateCrdDiag(tenantId, branchId)); // Verified
-    await runStep("ClndrTasks", () => migrateClndrTasks(tenantId, branchId)); // Verified
     await runStep("InvoicesInv", () => migrateInvoicesInv(tenantId, branchId)); // Verified
     await runStep("CrdClensCheck", () => migrateCrdClensCheck(tenantId, branchId)); // Verified
+    await runStep("CrdDiag", () => migrateCrdDiag(tenantId, branchId)); // Verified
+    await runStep("ClndrTasks", () => migrateClndrTasks(tenantId, branchId)); // Verified
     await runStep("CrdDisDiag", () => migrateCrdDisDiag(tenantId, branchId)); // Verified
     await runStep("CrdGlassCheck", () => migrateCrdGlassCheck(tenantId, branchId)); // Verified
     await runStep("CrdBuys", () => migrateCrdBuys(tenantId, branchId)); // Verified
+    // #tblCrdBuysWorks
+    // #tblCrdGlassChecksGlassesP
+    // #tblCrdGlassChecksGlassesP
+    // #tblSapakSends
+     await runStep("SapakSendsLensPlan", () => migrateSapakSendsLensPlan(tenantId, branchId)); // Verified
 
-
+      
 
     /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
      await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified

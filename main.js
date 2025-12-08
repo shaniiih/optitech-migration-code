@@ -377,7 +377,6 @@ async function ensureTenant(tenantId) {
     await runStep("Inventory", () => migrateInventory(tenantId, branchId)); // Verified
     await runStep("PerPicture", () => migratePerPicture(tenantId, branchId)); // Verified
     await runStep("ItemLine", () => migrateItemLines(tenantId, branchId)); // Verified
-    //#tblSapakSends
     await runStep("Invoice", () => migrateInvoice(tenantId, branchId)); // Verified
     await runStep("InvoiceCheck", () => migrateInvoiceCheck(tenantId, branchId)); // Verified
     await runStep("FrmModelColor", () => migrateFrmModelColor(tenantId, branchId));
@@ -391,18 +390,18 @@ async function ensureTenant(tenantId) {
     await runStep("CrdDisDiag", () => migrateCrdDisDiag(tenantId, branchId)); // Verified
     await runStep("CrdGlassCheck", () => migrateCrdGlassCheck(tenantId, branchId)); // Verified
     await runStep("CrdBuys", () => migrateCrdBuys(tenantId, branchId)); // Verified
-    // #tblCrdBuysWorks
     await runStep("CrdGlassCheckGlassP", () => migrateCrdGlassCheckGlassP(tenantId, branchId)); // Verified
+    // #tblCrdGlassChecksGlasses
+    // #tblCrdBuysWorks
     // #tblSapakSends
     await runStep("SapakSendsLensPlan", () => migrateSapakSendsLensPlan(tenantId, branchId)); // Verified
+    // #tblInvoiceCredits
+    // #tblCrdFrps
     await runStep("CrdOverView", () => migrateCrdOverView(tenantId, branchId)); // Verified
     await runStep("LettersFollowup", () => migrateLettersFollowup(tenantId, branchId)); // Verified
     await runStep("PerLast", () => migratePerLast(tenantId, branchId)); // Verified
     await runStep("CrdBuysCheck", () => migrateCrdBuysCheck(tenantId, branchId)); // Verified
     await runStep("ItemLineBuy", () => migrateItemLineBuy(tenantId, branchId)); // Verified
-
-
-
 
 
 

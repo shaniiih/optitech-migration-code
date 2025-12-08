@@ -187,6 +187,12 @@ const migrateInvoicesInv = require("./migrateInvoicesInv");
 const migrateCrdClensCheck = require("./migrateCrdClensCheck");
 const migrateCrdDisDiag = require("./migrateCrdDisDiag");
 const migrateCrdGlassCheck = require("./migrateCrdGlassCheck");
+const migrateCrdGlassCheckGlassP = require("./migrateCrdGlassCheckGlassP");
+const { migrateCrdOverView } = require("./migrateCrdOverView");
+const migrateLettersFollowup = require("./migrateLettersFollowup");
+const migratePerLast = require("./migratePerLast");
+const migrateCrdBuysCheck = require("./migrateCrdBuysCheck");
+const migrateItemLineBuy = require("./migrateItemLineBuy");
 
 // ---- utils ---------------------------------------------------------------
 function now() { return new Date().toISOString(); }
@@ -386,12 +392,19 @@ async function ensureTenant(tenantId) {
     await runStep("CrdGlassCheck", () => migrateCrdGlassCheck(tenantId, branchId)); // Verified
     await runStep("CrdBuys", () => migrateCrdBuys(tenantId, branchId)); // Verified
     // #tblCrdBuysWorks
-    // #tblCrdGlassChecksGlassesP
-    // #tblCrdGlassChecksGlassesP
+    await runStep("CrdGlassCheckGlassP", () => migrateCrdGlassCheckGlassP(tenantId, branchId)); // Verified
     // #tblSapakSends
-     await runStep("SapakSendsLensPlan", () => migrateSapakSendsLensPlan(tenantId, branchId)); // Verified
+    await runStep("SapakSendsLensPlan", () => migrateSapakSendsLensPlan(tenantId, branchId)); // Verified
+    await runStep("CrdOverView", () => migrateCrdOverView(tenantId, branchId)); // Verified
+    await runStep("LettersFollowup", () => migrateLettersFollowup(tenantId, branchId)); // Verified
+    await runStep("PerLast", () => migratePerLast(tenantId, branchId)); // Verified
+    await runStep("CrdBuysCheck", () => migrateCrdBuysCheck(tenantId, branchId)); // Verified
+    await runStep("ItemLineBuy", () => migrateItemLineBuy(tenantId, branchId)); // Verified
 
-      
+
+
+
+
 
     /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified
      await runStep("ZipCode", () => migrateZipCode(tenantId)); // Verified

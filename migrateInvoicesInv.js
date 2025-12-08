@@ -29,7 +29,7 @@ async function migrateInvoicesInv(tenantId = "tenant_1", branchId = null) {
     const { rows: invoiceRows } = await pg.query(
       `SELECT id, "invoiceId"
        FROM "Invoice"
-       WHERE "tenantId" = $1 AND "branchId" IS NOT DISTINCT FROM $2`,
+       WHERE "tenantId" = $1 AND "branchId" = $2`,
       [tenantId, branchId]
     );
     for (const row of invoiceRows) {
@@ -41,7 +41,7 @@ async function migrateInvoicesInv(tenantId = "tenant_1", branchId = null) {
     const { rows: invRows } = await pg.query(
       `SELECT id, "invId"
        FROM "Inventory"
-       WHERE "tenantId" = $1 AND "branchId" IS NOT DISTINCT FROM $2`,
+       WHERE "tenantId" = $1 AND "branchId" = $2`,
       [tenantId, branchId]
     );
     for (const row of invRows) {

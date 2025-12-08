@@ -28,7 +28,7 @@ async function migrateFrmModelColor(tenantId = "tenant_1", branchId = null) {
   const mysql = await getMySQLConnection();
   const pg = await getPostgresConnection();
 
-  let lastId = -1;
+  let offset = 0;
   let total = 0;
   const missingLabels = new Set();
   const missingModels = new Set();
@@ -101,10 +101,9 @@ async function migrateFrmModelColor(tenantId = "tenant_1", branchId = null) {
       const [rows] = await mysql.query(
         `SELECT LabelId, ModelId, FrameColorId, FramePic
            FROM tblFrmModelColors
-          WHERE LabelId > ?
           ORDER BY LabelId, ModelId, FrameColorId
-          LIMIT ${WINDOW_SIZE}`,
-        [lastId]
+          LIMIT ? OFFSET ?`,
+        [WINDOW_SIZE, offset]
       );
 
       if (!rows.length) break;
@@ -193,11 +192,8 @@ async function migrateFrmModelColor(tenantId = "tenant_1", branchId = null) {
         }
       }
 
-      const latestLabel = asInteger(rows[rows.length - 1]?.LabelId);
-      if (latestLabel !== null) {
-        lastId = latestLabel;
-      }
-      console.log(`FrmModelColor migrated so far: ${total} (lastLabelId=${lastId})`);
+      offset += rows.length;
+      console.log(`FrmModelColor migrated so far: ${total} (offset=${offset})`);
     }
 
     if (missingLabels.size) {

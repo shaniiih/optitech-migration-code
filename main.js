@@ -199,6 +199,7 @@ const migrateCrdFrp = require("./migrateCrdFrp");
 const migrateCrdFrpLine = require("./migrateCrdFrpLine");
 const migrateCrdGlassCheckPrev = require("./migrateCrdGlassCheckPrev");
 const migrateCrdLVCheck = require("./migrateCrdLVCheck");
+const migrateFaxLine = require("./migrateFaxLine");
 
 
 // ---- utils ---------------------------------------------------------------
@@ -299,7 +300,6 @@ async function ensureTenant(tenantId) {
     await runStep("Discount", () => migrateDiscount(tenantId, branchId)); // Verified
     await runStep("Dummy", () => migrateDummy(tenantId, branchId)); // Verified
     await runStep("Eye", () => migrateEye(tenantId, branchId)); // Verified
-    // #tblFaxLines
     await runStep("FixExpense", () => migrateFixExpense(tenantId, branchId)); // Verified
     await runStep("FrmLabelType", () => migrateFrmLabelTypes(tenantId, branchId)); // Verified
     await runStep("FrmModelType", () => migrateFrmModelTypes(tenantId, branchId)); // Verified
@@ -403,7 +403,8 @@ async function ensureTenant(tenantId) {
     // #tblCrdBuysWorks
     // #tblSapakSends
     await runStep("SapakSendsLensPlan", () => migrateSapakSendsLensPlan(tenantId, branchId)); // Verified
-    // await runStep("InvoiceCredits", () => migrateInvoiceCredits(tenantId, branchId));
+    await runStep("FaxLine", () => migrateFaxLine(tenantId, branchId)); // Verified
+    await runStep("InvoiceCredits", () => migrateInvoiceCredits(tenantId, branchId)); // Verified
     await runStep("CrdFrp", () => migrateCrdFrp(tenantId, branchId)); // Verified
     await runStep("CrdOverView", () => migrateCrdOverView(tenantId, branchId)); // Verified
     await runStep("LettersFollowup", () => migrateLettersFollowup(tenantId, branchId)); // Verified
@@ -414,7 +415,6 @@ async function ensureTenant(tenantId) {
     await runStep("CrdFrpLine", () => migrateCrdFrpLine(tenantId, branchId)); // Verified
     await runStep("CrdGlassCheckPrev", () => migrateCrdGlassCheckPrev(tenantId, branchId)); // Verified
     await runStep("CrdLVCheck", () => migrateCrdLVCheck(tenantId, branchId)); // Verified
-
 
 
     /* // await runStep("WorkLab", () => migrateWorkLab(tenantId)); // Verified

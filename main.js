@@ -197,6 +197,8 @@ const migrateItemLineBuy = require("./migrateItemLineBuy");
 const migrateCrdClensFit = require("./migrateCrdClensFit");
 const migrateCrdFrp = require("./migrateCrdFrp");
 const migrateCrdFrpLine = require("./migrateCrdFrpLine");
+const migrateCrdGlassCheckPrev = require("./migrateCrdGlassCheckPrev");
+const migrateCrdLVCheck = require("./migrateCrdLVCheck");
 
 
 // ---- utils ---------------------------------------------------------------
@@ -401,7 +403,7 @@ async function ensureTenant(tenantId) {
     // #tblCrdBuysWorks
     // #tblSapakSends
     await runStep("SapakSendsLensPlan", () => migrateSapakSendsLensPlan(tenantId, branchId)); // Verified
-    await runStep("InvoiceCredits", () => migrateInvoiceCredits(tenantId, branchId));
+    // await runStep("InvoiceCredits", () => migrateInvoiceCredits(tenantId, branchId));
     await runStep("CrdFrp", () => migrateCrdFrp(tenantId, branchId)); // Verified
     await runStep("CrdOverView", () => migrateCrdOverView(tenantId, branchId)); // Verified
     await runStep("LettersFollowup", () => migrateLettersFollowup(tenantId, branchId)); // Verified
@@ -410,7 +412,8 @@ async function ensureTenant(tenantId) {
     await runStep("ItemLineBuy", () => migrateItemLineBuy(tenantId, branchId)); // Verified
     await runStep("CrdClensFit", () => migrateCrdClensFit(tenantId, branchId)); // Verified
     await runStep("CrdFrpLine", () => migrateCrdFrpLine(tenantId, branchId)); // Verified
-
+    await runStep("CrdGlassCheckPrev", () => migrateCrdGlassCheckPrev(tenantId, branchId)); // Verified
+    await runStep("CrdLVCheck", () => migrateCrdLVCheck(tenantId, branchId)); // Verified
 
 
 

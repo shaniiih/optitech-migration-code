@@ -60,6 +60,7 @@ const migrateSapakComment = require("./migrateSapakComment");
 const migrateSapakDest = require("./migrateSapakDest");
 const migrateInvoice = require("./migrateInvoice");
 const migrateInvoicePay = require("./migrateInvoicePay");
+const migrateInvoiceCredits = require("./migrateInvoiceCredits");
 const migrateSMS = require("./migrateSMS");
 const migrateFrmModelColor = require("./migrateFrmModelColor");
 const migrateOpticalBase = require("./migrateOpticalBase");
@@ -400,7 +401,7 @@ async function ensureTenant(tenantId) {
     // #tblCrdBuysWorks
     // #tblSapakSends
     await runStep("SapakSendsLensPlan", () => migrateSapakSendsLensPlan(tenantId, branchId)); // Verified
-    // #tblInvoiceCredits
+    await runStep("InvoiceCredits", () => migrateInvoiceCredits(tenantId, branchId));
     await runStep("CrdFrp", () => migrateCrdFrp(tenantId, branchId)); // Verified
     await runStep("CrdOverView", () => migrateCrdOverView(tenantId, branchId)); // Verified
     await runStep("LettersFollowup", () => migrateLettersFollowup(tenantId, branchId)); // Verified

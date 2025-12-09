@@ -53,7 +53,7 @@ function normalizeDate(value) {
  * - Preserves legacy InvoiceCreditId and InvoicePayId
  * - Resolves new InvoicePay.id (string) into InvoiceCredit.invoicePayId
  */
-async function migrateInvoiceCredits(tenantId, branchId) {
+async function migrateInvoiceCredit(tenantId, branchId) {
   const mysql = await getMySQLConnection();
   const pg = await getPostgresConnection();
 
@@ -168,14 +168,15 @@ async function migrateInvoiceCredits(tenantId, branchId) {
       }
 
       offset += rows.length;
-      console.log(`InvoiceCredits migrated: ${total} (offset=${offset})`);
+      console.log(`InvoiceCredit migrated: ${total} (offset=${offset})`);
     }
 
-    console.log(`✅ InvoiceCredits migration completed. Total: ${total}`);
+    console.log(`✅ InvoiceCredit migration completed. Total: ${total}`);
   } finally {
     await mysql.end();
     await pg.end();
   }
 }
 
-module.exports = migrateInvoiceCredits;
+module.exports = migrateInvoiceCredit;
+

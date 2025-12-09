@@ -328,6 +328,7 @@ async function ensureTenant(tenantId) {
     // #tblReportDummy
     await runStep("SapakSendStat", () => migrateSapakSendStat(tenantId, branchId)); // Verified
     // #tblSearchOrder
+    await runStep("SearchOrder", () => migrateSearchOrder(tenantId, branchId)); // Verified
     await runStep("ServiceType", () => migrateServiceType(tenantId, branchId)); // Verified
     await runStep("ShortCut", () => migrateShortCut(tenantId, branchId));  // Verified
     await runStep("SMS", () => migrateSMS(tenantId, branchId)); // Verified
@@ -472,7 +473,6 @@ async function ensureTenant(tenantId) {
      await runStep("Diagnosis", () => migrateDiagnosis(tenantId)); // Verified
      await runStep("OrthokeratologyTreatment", () => migrateOrthokeratologyTreatment(tenantId)); // Verified
      await runStep("SysLevel", () => migrateSysLevel(tenantId, branchId)); // Verified
-     await runStep("SearchOrder", () => migrateSearchOrder(tenantId, branchId)); // Verified
      await runStep("CustomerPhoto", () => migrateCustomerPhoto(tenantId, branchId)); // Verified
      */
     console.log(`[${now()}] 🎉 All migrations completed successfully!`);

@@ -31,33 +31,17 @@ async function migrateSearchOrder(tenantId = "tenant_1", branchId = null) {
   const mysql = await getMySQLConnection();
   const pg = await getPostgresConnection();
 
-  let lastItemData = -1;
+  let offset = 0;
   let total = 0;
 
   try {
-    // Unique index creation moved to Prisma schema/migrations. Leaving disabled to avoid conflicts.
-    // await pg.query(`
-    //   DO $$
-    //   BEGIN
-    //     IF NOT EXISTS (
-    //       SELECT 1
-    //       FROM pg_indexes
-    //       WHERE indexname = 'search_order_tenant_item_list_ux'
-    //     ) THEN
-    //       CREATE UNIQUE INDEX search_order_tenant_item_list_ux
-    //       ON "SearchOrder" ("tenantId", "itemData", "listIndex");
-    //     END IF;
-    //   END$$;
-    // `);
-
     while (true) {
       const [rows] = await mysql.query(
         `SELECT ItemData, ListIndex, \`Desc\`, Deaf
            FROM tblSearchOrder
-          WHERE ItemData > ?
           ORDER BY ItemData
-          LIMIT ${WINDOW_SIZE}`,
-        [lastItemData]
+          LIMIT ? OFFSET ?`,
+        [WINDOW_SIZE, offset]
       );
 
       if (!rows.length) break;
@@ -110,9 +94,8 @@ async function migrateSearchOrder(tenantId = "tenant_1", branchId = null) {
               "updatedAt"
             )
             VALUES ${values.join(",")}
-            ON CONFLICT ("tenantId", "itemData", "listIndex")
+            ON CONFLICT ("tenantId", "branchId", "itemData")
             DO UPDATE SET
-              "branchId" = EXCLUDED."branchId",
               "desc" = EXCLUDED."desc",
               "deaf" = EXCLUDED."deaf",
               "updatedAt" = EXCLUDED."updatedAt"
@@ -127,9 +110,9 @@ async function migrateSearchOrder(tenantId = "tenant_1", branchId = null) {
         }
       }
 
-      lastItemData = rows[rows.length - 1].ItemData ?? lastItemData;
+      offset += rows.length;
       console.log(
-        `SearchOrder migrated so far: ${total} (lastItemData=${lastItemData})`
+        `SearchOrder migrated so far: ${total} (offset=${offset})`
       );
     }
 

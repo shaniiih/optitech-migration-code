@@ -12,73 +12,72 @@ function normalizeInt(value) {
     return Number.isFinite(parsed) ? Math.trunc(parsed) : null;
 }
 
-function cleanText(value) {
-    if (value === null || value === undefined) return null;
-    const t = String(value).trim();
-    return t.length ? t : null;
-}
-
 const WINDOW_SIZE = 5000;
-const BATCH_SIZE = 500;
+const BATCH_SIZE = 1000;
 
-async function migrateCrdOverView(tenantId = "tenant_1", branchId = null) {
+const COLUMNS = [
+    "id", "tenantId", "branchId",
+    "frpLineId",
+    "legacyFrpId", "frpId",
+    "lineDate",
+    "quantity",
+    "createdAt", "updatedAt"
+];
+
+async function migrateCrdFrpLine(tenantId = "tenant_1", branchId = null) {
     const mysql = await getMySQLConnection();
     const pg = await getPostgresConnection();
+
     let offset = 0;
     let total = 0;
 
     try {
-        const buildMap = async (table, legacyField) => {
+    
+        const buildFrpMap = async () => {
             const map = new Map();
             const { rows } = await pg.query(
-                `SELECT id, "${legacyField}" FROM "${table}" WHERE "tenantId" = $1 AND "branchId" = $2`,
+                `SELECT id, "frpId" FROM "CrdFrp" WHERE "tenantId" = $1 AND "branchId" = $2`,
                 [tenantId, branchId]
             );
             for (const r of rows) {
-                const legacy = normalizeInt(r[legacyField]);
+                const legacy = normalizeInt(r.frpId);
                 if (legacy !== null) map.set(legacy, r.id);
             }
             return map;
         };
-        const perMap = await buildMap("PerData", "perId");
-        const userMap = await buildMap("User", "userId");
+
+        const frpMap = await buildFrpMap();
 
         while (true) {
             const [rows] = await mysql.query(
-                `SELECT * FROM tblCrdOverViews ORDER BY PerId, CheckDate LIMIT ? OFFSET ?`,
+                `SELECT * FROM tblCrdFrpsLines ORDER BY FrpLineId LIMIT ? OFFSET ?`,
                 [WINDOW_SIZE, offset]
             );
             if (!rows.length) break;
 
             for (let i = 0; i < rows.length; i += BATCH_SIZE) {
                 const chunk = rows.slice(i, i + BATCH_SIZE);
+
                 const now = new Date();
                 const values = [];
                 const params = [];
                 let p = 1;
 
                 for (const row of chunk) {
-                    const legacyPerId = normalizeInt(row.PerId);
-                    const perId = perMap.get(legacyPerId) || null;
-
-                    const legacyUserId = normalizeInt(row.UserId);
-                    const userId = userMap.get(legacyUserId) || null;
+                    const frpLineId = normalizeInt(row.FrpLineId);
+                    const legacyFrpId = normalizeInt(row.FrpId);
+                    const frpId = frpMap.get(legacyFrpId) || null;
 
                     const rowValues = [
-                        createId(),
-                        tenantId,
-                        branchId,
-                        perId,
-                        legacyPerId,
-                        row.CheckDate ? new Date(row.CheckDate) : null,
-                        cleanText(row.Comments),
-                        cleanText(row.VAR),
-                        cleanText(row.VAL),
-                        userId,
-                        legacyUserId,
-                        cleanText(row.Pic),
-                        now,
-                        now
+                        createId(),         
+                        tenantId,           
+                        branchId,          
+                        frpLineId,          
+                        legacyFrpId,        
+                        frpId,              
+                        row.LineDate ? new Date(row.LineDate) : null, 
+                        normalizeInt(row.Quantity),                  
+                        now, now            
                     ];
 
                     const placeholders = rowValues.map(() => `$${p++}`);
@@ -92,21 +91,21 @@ async function migrateCrdOverView(tenantId = "tenant_1", branchId = null) {
                 try {
                     await pg.query(
                         `
-                    INSERT INTO "CrdOverView"
-                    ("id","tenantId","branchId","perId","legacyPerId","checkDate","comments","var","val","userId","legacyUserId","pic","createdAt","updatedAt")
-                    VALUES ${values.join(",")}
-                    ON CONFLICT ("tenantId","branchId","legacyPerId","checkDate")
-                    DO UPDATE SET
-                    "perId" = EXCLUDED."perId",
-                    "comments" = EXCLUDED."comments",
-                    "var" = EXCLUDED."var",
-                    "val" = EXCLUDED."val",
-                    "userId" = EXCLUDED."userId",
-                    "pic" = EXCLUDED."pic",
-                    "updatedAt" = EXCLUDED."updatedAt"
-                    `,
+                        INSERT INTO "CrdFrpLine"
+                        (${COLUMNS.map(c => `"${c}"`).join(",")})
+                        VALUES ${values.join(",")}
+                        ON CONFLICT ("tenantId","branchId","frpLineId")
+                        DO UPDATE SET
+                        ${COLUMNS
+                            .filter(c =>
+                                !["id", "tenantId", "branchId", "frpLineId", "createdAt"].includes(c)
+                            )
+                            .map(c => `"${c}" = EXCLUDED."${c}"`)
+                            .join(",")}
+                        `,
                         params
                     );
+
                     await pg.query("COMMIT");
                     total += values.length;
                 } catch (err) {
@@ -115,15 +114,14 @@ async function migrateCrdOverView(tenantId = "tenant_1", branchId = null) {
                 }
             }
 
-
             offset += rows.length;
         }
-
-    }
-    finally {
+    } finally {
         await mysql.end();
         await pg.end();
     }
+
+    console.log("CrdFrpLine migration completed:", total);
 }
 
-module.exports={migrateCrdOverView}
+module.exports = migrateCrdFrpLine;

@@ -12,6 +12,17 @@ function normalizeInt(value) {
     return Number.isFinite(parsed) ? Math.trunc(parsed) : null;
 }
 
+function toBoolean(value) {
+    if (value === null || value === undefined) return null;
+    if (typeof value === "boolean") return value;
+    if (typeof value === "number") return Number.isFinite(value) ? value !== 0 : null;
+    const trimmed = String(value).trim().toLowerCase();
+    if (!trimmed) return null;
+    if (["1", "true", "t", "yes", "y"].includes(trimmed)) return true;
+    if (["0", "false", "f", "no", "n"].includes(trimmed)) return false;
+    return null;
+}
+
 function cleanText(value) {
     if (value === null || value === undefined) return null;
     const t = String(value).trim();
@@ -19,11 +30,27 @@ function cleanText(value) {
 }
 
 const WINDOW_SIZE = 5000;
-const BATCH_SIZE = 500;
+const BATCH_SIZE = 1000;
 
-async function migrateCrdOverView(tenantId = "tenant_1", branchId = null) {
+const COLUMNS = [
+    "id", "tenantId", "branchId",
+    "frpId",
+    "legacyPerId", "perId",
+    "frpDate",
+    "totalFrp",
+    "exchangeNum",
+    "dayInterval",
+    "supply",
+    "comments",
+    "saleAdd",
+    "legacyClensBrandId", "clensBrandId",
+    "createdAt", "updatedAt"
+];
+
+async function migrateCrdFrp(tenantId = "tenant_1", branchId = null) {
     const mysql = await getMySQLConnection();
     const pg = await getPostgresConnection();
+
     let offset = 0;
     let total = 0;
 
@@ -40,45 +67,50 @@ async function migrateCrdOverView(tenantId = "tenant_1", branchId = null) {
             }
             return map;
         };
+
         const perMap = await buildMap("PerData", "perId");
-        const userMap = await buildMap("User", "userId");
+        const brandMap = await buildMap("CrdClensBrand", "clensBrandId");
 
         while (true) {
             const [rows] = await mysql.query(
-                `SELECT * FROM tblCrdOverViews ORDER BY PerId, CheckDate LIMIT ? OFFSET ?`,
+                `SELECT * FROM tblCrdFrps ORDER BY FrpId LIMIT ? OFFSET ?`,
                 [WINDOW_SIZE, offset]
             );
             if (!rows.length) break;
 
             for (let i = 0; i < rows.length; i += BATCH_SIZE) {
                 const chunk = rows.slice(i, i + BATCH_SIZE);
+
                 const now = new Date();
                 const values = [];
                 const params = [];
                 let p = 1;
 
                 for (const row of chunk) {
+                    const frpId = normalizeInt(row.FrpId);
                     const legacyPerId = normalizeInt(row.PerId);
                     const perId = perMap.get(legacyPerId) || null;
 
-                    const legacyUserId = normalizeInt(row.UserId);
-                    const userId = userMap.get(legacyUserId) || null;
+                    const legacyClensBrandId = normalizeInt(row.ClensBrandId);
+                    const clensBrandId = brandMap.get(legacyClensBrandId) || null;
 
                     const rowValues = [
-                        createId(),
+                        createId(),        
                         tenantId,
                         branchId,
-                        perId,
+                        frpId,       
                         legacyPerId,
-                        row.CheckDate ? new Date(row.CheckDate) : null,
+                        perId,
+                        row.FrpDate ? new Date(row.FrpDate) : null,
+                        normalizeInt(row.TotalFrp),
+                        normalizeInt(row.ExchangeNum),
+                        normalizeInt(row.DayInterval),
+                        toBoolean(row.Supply),
                         cleanText(row.Comments),
-                        cleanText(row.VAR),
-                        cleanText(row.VAL),
-                        userId,
-                        legacyUserId,
-                        cleanText(row.Pic),
-                        now,
-                        now
+                        toBoolean(row.SaleAdd),
+                        legacyClensBrandId,
+                        clensBrandId,
+                        now, now
                     ];
 
                     const placeholders = rowValues.map(() => `$${p++}`);
@@ -92,21 +124,21 @@ async function migrateCrdOverView(tenantId = "tenant_1", branchId = null) {
                 try {
                     await pg.query(
                         `
-                    INSERT INTO "CrdOverView"
-                    ("id","tenantId","branchId","perId","legacyPerId","checkDate","comments","var","val","userId","legacyUserId","pic","createdAt","updatedAt")
+                    INSERT INTO "CrdFrp"
+                    (${COLUMNS.map(c => `"${c}"`).join(",")})
                     VALUES ${values.join(",")}
-                    ON CONFLICT ("tenantId","branchId","legacyPerId","checkDate")
+                    ON CONFLICT ("tenantId","branchId","frpId")
                     DO UPDATE SET
-                    "perId" = EXCLUDED."perId",
-                    "comments" = EXCLUDED."comments",
-                    "var" = EXCLUDED."var",
-                    "val" = EXCLUDED."val",
-                    "userId" = EXCLUDED."userId",
-                    "pic" = EXCLUDED."pic",
-                    "updatedAt" = EXCLUDED."updatedAt"
+                    ${COLUMNS
+                        .filter(c =>
+                            !["id", "tenantId", "branchId", "frpId", "createdAt"].includes(c)
+                        )
+                        .map(c => `"${c}" = EXCLUDED."${c}"`)
+                        .join(",")}
                     `,
                         params
                     );
+
                     await pg.query("COMMIT");
                     total += values.length;
                 } catch (err) {
@@ -115,15 +147,14 @@ async function migrateCrdOverView(tenantId = "tenant_1", branchId = null) {
                 }
             }
 
-
             offset += rows.length;
         }
-
-    }
-    finally {
+    } finally {
         await mysql.end();
         await pg.end();
     }
+
+    console.log("CrdFrp migration completed:", total);
 }
 
-module.exports={migrateCrdOverView}
+module.exports = migrateCrdFrp;

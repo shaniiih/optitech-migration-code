@@ -41,6 +41,54 @@ if ! "$PYTHON_BIN" -c 'import sys; sys.exit(0 if sys.version_info[0] >= 3 else 1
   exit 1
 fi
 
+patch_glass_ids() {
+  local target="$1"
+  [ -f "$target" ] || return 0
+  "$PYTHON_BIN" - "$target" <<'PY'
+import re
+import sys
+
+path = sys.argv[1]
+with open(path, "r", encoding="utf-8") as fh:
+    text = fh.read()
+
+orig = text
+
+# We only want to touch the GlassId / GlassPId definitions
+# inside tblCrdGlassChecksGlasses / tblCrdGlassChecksGlassesP.
+def patch_table(text, table_name, col_name):
+    # Regex to match the whole CREATE TABLE block.
+    # Non-greedy to stop at the first closing parenthesis+semicolon.
+    tbl_re = re.compile(
+        rf"(CREATE TABLE\s+`{re.escape(table_name)}`\s*\(\s*)(.*?)(\)\s*;)",
+        re.IGNORECASE | re.DOTALL,
+    )
+
+    def repl(match):
+        prefix, body, suffix = match.groups()
+        col_re = re.compile(
+            rf"(`{col_name}`\s+int)\s+not\s+null\s+auto_increment\s+unique",
+            re.IGNORECASE,
+        )
+        new_body, n = col_re.subn(r"\1 not null", body)
+        if n:
+            sys.stderr.write(
+                f"    ~ normalized {col_name} definition in table {table_name} ({path})\n"
+            )
+        return prefix + new_body + suffix
+
+    return tbl_re.sub(repl, text)
+
+# Apply to the two specific tables only
+text = patch_table(text, "tblCrdGlassChecksGlasses", "GlassId")
+text = patch_table(text, "tblCrdGlassChecksGlassesP", "GlassPId")
+
+if text != orig:
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(text)
+PY
+}
+
 normalize_dates_sql() {
   local target="$1"
   [ -f "$target" ] || return 0
@@ -283,6 +331,9 @@ awk '
 
 # Replace schema with cleaned version
 mv "$CLEAN_SCHEMA_FILE" "$SCHEMA_FILE"
+
+# Normalize specific GlassId / GlassPId definitions that should not be AUTO_INCREMENT UNIQUE
+patch_glass_ids "$SCHEMA_FILE"
 
 # 3) Export data as INSERT statements per table
 COMBINED_DATA_FILE="$OUT_DIR/data.sql"

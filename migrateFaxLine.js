@@ -59,6 +59,24 @@ async function migrateFaxLine(tenantId, branchId) {
         }
       }
     }
+    const sapakSendMap = new Map();
+    {
+      const { rows } = await pg.query(
+        `
+        SELECT id, "sapakSendId"
+        FROM "SapakSend"
+        WHERE "tenantId" = $1 AND "branchId" = $2
+        `,
+        [tenantId, branchId]
+      );
+
+      for (const row of rows) {
+        const legacy = asInteger(row.sapakSendId);
+        if (legacy !== null && !sapakSendMap.has(legacy)) {
+          sapakSendMap.set(legacy, row.id);
+        }
+      }
+    }
 
     while (true) {
       const [rows] = await mysql.query(
@@ -84,6 +102,7 @@ async function migrateFaxLine(tenantId, branchId) {
           const legacyFLdId = asInteger(row.FldId);
           const faxId =
             legacyFaxId !== null ? faxMap.get(legacyFaxId) || null : null;
+          const fldId = legacyFLdId !== null ? sapakSendMap.get(legacyFLdId) || null : null;
 
           const base = params.length;
           values.push(
@@ -97,7 +116,7 @@ async function migrateFaxLine(tenantId, branchId) {
             legacyFaxId,             // legacyFaxId
             faxId,                   // faxId (FK to Fax.id)
             legacyFLdId,             // legacyFLdId
-            null,                    // fldId (FK to SapakSend.id; future)
+            fldId,                    // fldId (FK to SapakSend.id; future)
             now,                     // createdAt
             now                      // updatedAt
           );

@@ -34,8 +34,11 @@ const COLUMNS = [
   "legacyRetTypeId1","retTypeId1","legacyRetDistId1","retDistId1","retCom1",
   "refSphR2","refSphL2","refCylR2","refCylL2","refAxR2","refAxL2",
   "legacyRetTypeId2","retTypeId2","legacyRetDistId2","retDistId2","retCom2",
-  "sphR1","sphL1","cylR1","cylL1","axR1","axL1","prisR1","prisL1","baseR1","baseL1",
-  "var1","val1","va1","phr1","phl1","extPrisR1","extPrisL1","extBaseR1","extBaseL1",
+  "sphR1","sphL1","cylR1","cylL1","axR1","axL1","prisR1","prisL1",
+  "legacyBaseR1","baseR1","legacyBaseL1","baseL1",
+  "var1","val1","va1","phr1","phl1",
+  "extPrisR1","extPrisL1",
+  "legacyExtBaseR1","extBaseR1","legacyExtBaseL1","extBaseL1",
   "comments1","pdDistR1","pdDistL1","pdDistA1","addR1","addL1",
   "createdAt","updatedAt"
 ];
@@ -78,6 +81,7 @@ async function migrateCrdGlassCheckPrev(tenantId = "tenant_1", branchId = null) 
   try {
     const retTypeMap = await buildMap(pg, "CrdGlassRetType", "retTypeId", tenantId, branchId);
     const retDistMap = await buildMap(pg, "CrdGlassRetDist", "retDistId", tenantId, branchId);
+    const baseMap = await buildMap(pg, "OpticalBase", "baseId", tenantId, branchId);
     const glassCheckMap = await buildGlassCheckMap(pg, tenantId, branchId);
 
     while (true) {
@@ -111,6 +115,16 @@ async function migrateCrdGlassCheckPrev(tenantId = "tenant_1", branchId = null) 
           const retTypeId2 = retTypeMap.get(legacyRetTypeId2) || null;
           const retDistId1 = retDistMap.get(legacyRetDistId1) || null;
           const retDistId2 = retDistMap.get(legacyRetDistId2) || null;
+
+          const legacyBaseR1 = normalizeInt(row.BaseR1);
+          const legacyBaseL1 = normalizeInt(row.BaseL1);
+          const legacyExtBaseR1 = normalizeInt(row.ExtBaseR1);
+          const legacyExtBaseL1 = normalizeInt(row.ExtBaseL1);
+
+          const baseR1 = baseMap.get(legacyBaseR1) || null;
+          const baseL1 = baseMap.get(legacyBaseL1) || null;
+          const extBaseR1 = baseMap.get(legacyExtBaseR1) || null;
+          const extBaseL1 = baseMap.get(legacyExtBaseL1) || null;
 
           const rowValues = [
             createId(),
@@ -151,8 +165,10 @@ async function migrateCrdGlassCheckPrev(tenantId = "tenant_1", branchId = null) 
             normalizeInt(row.AxL1),
             normalizeDecimal(row.PrisR1),
             normalizeDecimal(row.PrisL1),
-            normalizeInt(row.BaseR1),
-            normalizeInt(row.BaseL1),
+            legacyBaseR1,
+            baseR1,
+            legacyBaseL1,
+            baseL1,
             cleanText(row.VAR1),
             cleanText(row.VAL1),
             cleanText(row.VA1),
@@ -160,8 +176,10 @@ async function migrateCrdGlassCheckPrev(tenantId = "tenant_1", branchId = null) 
             cleanText(row.PHL1),
             normalizeDecimal(row.ExtPrisR1),
             normalizeDecimal(row.ExtPrisL1),
-            normalizeInt(row.ExtBaseR1),
-            normalizeInt(row.ExtBaseL1),
+            legacyExtBaseR1,
+            extBaseR1,
+            legacyExtBaseL1,
+            extBaseL1,
             cleanText(row.Comments1),
             normalizeDecimal(row.PDDistR1),
             normalizeDecimal(row.PDDistL1),

@@ -404,7 +404,7 @@ async function ensureTenant(tenantId) {
     await runStep("CrdGlassCheck", () => migrateCrdGlassCheck(tenantId, branchId)); // Verified
     await runStep("CrdBuys", () => migrateCrdBuys(tenantId, branchId)); // Verified
     await runStep("CrdGlassCheckGlassP", () => migrateCrdGlassCheckGlassP(tenantId, branchId)); // Verified
-    await runStep("CrdGlassChecksGlass", () => migrateCrdGlassChecksGlass(tenantId, branchId));
+    await runStep("CrdGlassChecksGlass", () => migrateCrdGlassChecksGlass(tenantId, branchId)); // Verified
     await runStep("CrdBuyWork", () => migrateCrdBuyWork(tenantId, branchId)); // Verified
     await runStep("SapakSend", () => migrateSapakSend(tenantId, branchId)); // Verified
     await runStep("SapakSendsLensPlan", () => migrateSapakSendsLensPlan(tenantId, branchId)); // Verified

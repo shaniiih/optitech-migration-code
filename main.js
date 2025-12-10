@@ -184,6 +184,7 @@ const migrateCrdBuysPay = require("./migrateCrdBuysPay");
 const migrateSapakSendsLensPlan = require("./migrateSapakSendsLensPlan");
 const migrateCrdClinicCheck = require("./migrateCrdClinicCheck");
 const migrateCrdDiag = require("./migrateCrdDiag");
+const migrateCrdOrthok = require("./migrateCrdOrthok");
 const migrateInvoicesInv = require("./migrateInvoicesInv");
 const migrateCrdClensCheck = require("./migrateCrdClensCheck");
 const migrateCrdDisDiag = require("./migrateCrdDisDiag");
@@ -297,7 +298,7 @@ async function ensureTenant(tenantId) {
     await runStep("CrdGlassUse", () => migrateCrdGlassUse(tenantId, branchId)); // Verified
     await runStep("CrdLVManuf", () => migrateCrdLVManuf(tenantId, branchId)); // Verified
     await runStep("CrdOrder", () => migrateCrdOrder(tenantId, branchId)); // Verified
-    // #tblCrdOrthoks
+    await runStep("CrdOrthok", () => migrateCrdOrthok(tenantId, branchId));
     await runStep("CreditType", () => migrateCreditType(tenantId, branchId)); // Verified
     await runStep("Discount", () => migrateDiscount(tenantId, branchId)); // Verified
     await runStep("Dummy", () => migrateDummy(tenantId, branchId)); // Verified

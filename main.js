@@ -139,6 +139,7 @@ const migrateLnsPrice = require("./migrateLnsPrice");
 const migratePropsPrice = require("./migratePropsPrice");
 const migrateFrmPrice = require("./migrateFrmPrice");
 const migrateLnsTreatmen = require("./migrateLnsTreatmen");
+const migrateLnsTreatRule = require("./migrateLnsTreatRule");
 const migrateLabel = require("./migrateLabel");
 const migrateLnsChar = require("./migrateLnsChar");
 const migrateLnsTreatChar = require("./migrateLnsTreatChar");
@@ -316,8 +317,8 @@ async function ensureTenant(tenantId) {
     await runStep("LnsChar", () => migrateLnsChar(tenantId, branchId)); // Verified
     await runStep("LnsMaterial", () => migrateLnsMaterial(tenantId, branchId)); // Verified
     await runStep("LnsTreatChar", () => migrateLnsTreatChar(tenantId, branchId)); // Verified
-    // #tblLnsTreatRules
     await runStep("LnsTreatType", () => migrateLnsTreatType(tenantId, branchId));
+    await runStep("LnsTreatRule", () => migrateLnsTreatRule(tenantId, branchId));
     // #tblLnsTreatTypesConnect
     await runStep("LnsType", () => migrateLnsType(tenantId, branchId)); // Verified
     await runStep("NewProd", () => migrateNewProd(tenantId, branchId)); // Verified

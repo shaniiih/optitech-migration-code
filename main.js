@@ -189,6 +189,7 @@ const migrateCrdClensCheck = require("./migrateCrdClensCheck");
 const migrateCrdDisDiag = require("./migrateCrdDisDiag");
 const migrateCrdGlassCheck = require("./migrateCrdGlassCheck");
 const migrateCrdGlassCheckGlassP = require("./migrateCrdGlassCheckGlassP");
+const migrateCrdGlassChecksGlass = require("./migrateCrdGlassChecksGlass");
 const { migrateCrdOverView } = require("./migrateCrdOverView");
 const migrateLettersFollowup = require("./migrateLettersFollowup");
 const migratePerLast = require("./migratePerLast");
@@ -400,7 +401,7 @@ async function ensureTenant(tenantId) {
     await runStep("CrdGlassCheck", () => migrateCrdGlassCheck(tenantId, branchId)); // Verified
     await runStep("CrdBuys", () => migrateCrdBuys(tenantId, branchId)); // Verified
     await runStep("CrdGlassCheckGlassP", () => migrateCrdGlassCheckGlassP(tenantId, branchId)); // Verified
-    // #tblCrdGlassChecksGlasses
+    await runStep("CrdGlassChecksGlass", () => migrateCrdGlassChecksGlass(tenantId, branchId));
     await runStep("CrdBuyWork", () => migrateCrdBuyWork(tenantId, branchId)); // Verified
     // #tblSapakSends
     await runStep("SapakSendsLensPlan", () => migrateSapakSendsLensPlan(tenantId, branchId)); // Verified

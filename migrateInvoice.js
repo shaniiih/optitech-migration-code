@@ -39,126 +39,37 @@ async function migrateInvoice(tenantId = "tenant_1", branchId = null) {
   const mysql = await getMySQLConnection();
   const pg = await getPostgresConnection();
 
-  let lastId = -1;
+  let offset = 0;
   let total = 0;
 
   // preload mappings
-  const supplierMap = new Map(); // legacy SapakID -> Supplier.id (optional)
-  const sapakMap = new Map(); // legacy SapakID -> Sapak.id
+  const sapakMap = new Map(); // legacy SapakID -> CrdBuysWorkSapak.id
   const invoicePayMap = new Map(); // legacy InvoicePayId -> InvoicePay.id
-  const invoiceTypeMap = new Map(); // legacy InvoiceTypeId -> {id,name}
+  const invoiceTypeMap = new Map(); // legacy InvoiceTypeId -> { id, name }
   const missingSapak = new Set();
   const missingType = new Set();
-  const sapakNameMap = new Map(); // legacy SapakID -> SapakName (from Sapak table)
 
   try {
-    // Preload Sapak from "Sapak" table
+    // Preload Sapak IDs directly from CrdBuysWorkSapak (legacy FK target).
     try {
       const { rows } = await pg.query(
-        `SELECT id, "SapakID", "SapakName"
-           FROM "Sapak"
-          WHERE "tenantId" = $1
-            AND "branchId" = $2`,
-        [tenantId, branchId]
-      );
-      for (const row of rows) {
-        const key = cleanText(row.SapakID);
-        if (!key) continue;
-        if (!sapakNameMap.has(key)) {
-          sapakNameMap.set(key, cleanText(row.SapakName) || `Sapak ${key}`);
-        }
-        if (!sapakMap.has(key)) sapakMap.set(key, row.id);
-        const asInt = asInteger(row.SapakID);
-        if (asInt !== null && !sapakMap.has(String(asInt))) sapakMap.set(String(asInt), row.id);
-      }
-    } catch (err) {
-      console.warn("⚠️ Invoice: failed to preload Sapak mapping.", err.message);
-    }
-
-    // Also pull Sapak IDs from CrdBuysWorkSapak and ensure Sapak table has them.
-    try {
-      const { rows } = await pg.query(
-        `SELECT "sapakId" AS "legacySapakId", "sapakName"
+        `SELECT id, "sapakId" AS "legacySapakId"
            FROM "CrdBuysWorkSapak"
           WHERE "tenantId" = $1
             AND "branchId" = $2`,
         [tenantId, branchId]
       );
 
-      const insertValues = [];
-      const insertParams = [];
       for (const row of rows) {
         const key = cleanText(row.legacySapakId);
         if (!key) continue;
-        if (!sapakNameMap.has(key)) {
-          sapakNameMap.set(key, cleanText(row.sapakName) || `Sapak ${key}`);
-        }
-        if (!sapakMap.has(key)) {
-          const base = insertParams.length;
-          insertValues.push(
-            `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7})`
-          );
-          insertParams.push(uuidv4(), tenantId, branchId, key, sapakNameMap.get(key), new Date(), new Date());
-        }
-      }
-
-      if (insertValues.length) {
-        try {
-          await pg.query(
-            `INSERT INTO "Sapak" (
-               id, "tenantId", "branchId", "SapakID", "SapakName", "createdAt", "updatedAt"
-             )
-             VALUES ${insertValues.join(",")}
-             ON CONFLICT ("tenantId", "branchId", "SapakID") DO NOTHING`,
-            insertParams
-          );
-        } catch (err) {
-          console.warn("⚠️ Invoice: failed to insert missing Sapak rows from CrdBuysWorkSapak.", err.message);
-        }
-      }
-
-      // Reload Sapak mapping after potential inserts
-      try {
-        const { rows: sapakRows } = await pg.query(
-          `SELECT id, "SapakID", "SapakName"
-             FROM "Sapak"
-            WHERE "tenantId" = $1
-              AND "branchId" = $2`,
-          [tenantId, branchId]
-        );
-        for (const row of sapakRows) {
-          const key = cleanText(row.SapakID);
-          if (!key) continue;
-          sapakMap.set(key, row.id);
-          const asInt = asInteger(row.SapakID);
-          if (asInt !== null) sapakMap.set(String(asInt), row.id);
-          if (!sapakNameMap.has(key)) {
-            sapakNameMap.set(key, cleanText(row.SapakName) || `Sapak ${key}`);
-          }
-        }
-      } catch (err) {
-        console.warn("⚠️ Invoice: failed to refresh Sapak mapping after inserts.", err.message);
+        sapakMap.set(key, row.id);
+        const asInt = asInteger(row.legacySapakId);
+        if (asInt !== null) sapakMap.set(String(asInt), row.id);
       }
     } catch (err) {
-      console.warn("⚠️ Invoice: failed to process CrdBuysWorkSapak for Sapak mapping.", err.message);
+      console.warn("⚠️ Invoice: failed to preload CrdBuysWorkSapak mapping.", err.message);
     }
-
-    // Optional Supplier mapping (if Supplier table populated)
-    try {
-      const { rows } = await pg.query(
-        `SELECT id, "supplierId" FROM "Supplier" WHERE "tenantId" = $1`,
-        [tenantId]
-      );
-      for (const row of rows) {
-        const key = cleanText(row.supplierId);
-        if (key && !supplierMap.has(key)) supplierMap.set(key, row.id);
-        const asInt = asInteger(row.supplierId);
-        if (asInt !== null && !supplierMap.has(String(asInt))) supplierMap.set(String(asInt), row.id);
-      }
-    } catch (err) {
-      console.warn("⚠️ Invoice: failed to preload Supplier mapping (optional).", err.message);
-    }
-
     try {
       const { rows } = await pg.query(
         `SELECT id, "invoicePayId" FROM "InvoicePay" WHERE "tenantId" = $1 AND "branchId" = $2`,
@@ -197,10 +108,9 @@ async function migrateInvoice(tenantId = "tenant_1", branchId = null) {
       const [rows] = await mysql.query(
         `SELECT InvoiceId, SapakID, InvoicePayId, InvoiceTypeId, InvId, InvDate, InvSum, Com
            FROM tblInvoices
-          WHERE InvoiceId > ?
           ORDER BY InvoiceId
-          LIMIT ${WINDOW_SIZE}`,
-        [lastId]
+          LIMIT ? OFFSET ?`,
+        [WINDOW_SIZE, offset]
       );
 
       if (!rows.length) break;
@@ -221,54 +131,26 @@ async function migrateInvoice(tenantId = "tenant_1", branchId = null) {
           const legacyInvoicePayIdRaw = cleanText(row.InvoicePayId);
           const legacyInvoiceTypeIdRaw = cleanText(row.InvoiceTypeId);
 
-          let resolvedSapakId =
-            legacySapakIdRaw !== null && legacySapakIdRaw !== undefined
-              ? sapakMap.get(legacySapakIdRaw) || sapakMap.get(String(asInteger(legacySapakIdRaw))) || null
-              : null;
-          const resolvedSupplierId =
-            legacySapakIdRaw !== null && legacySapakIdRaw !== undefined
-              ? supplierMap.get(legacySapakIdRaw) || supplierMap.get(String(asInteger(legacySapakIdRaw))) || null
+          const resolvedSapakId =
+            legacySapakIdRaw != null
+              ? sapakMap.get(legacySapakIdRaw) ||
+                sapakMap.get(String(asInteger(legacySapakIdRaw))) ||
+                null
               : null;
           const invoicePayId =
-            legacyInvoicePayIdRaw !== null && legacyInvoicePayIdRaw !== undefined
+            legacyInvoicePayIdRaw != null
               ? invoicePayMap.get(legacyInvoicePayIdRaw) ||
                 invoicePayMap.get(String(asInteger(legacyInvoicePayIdRaw))) ||
                 null
               : null;
           const invoiceType =
-            legacyInvoiceTypeIdRaw !== null && legacyInvoiceTypeIdRaw !== undefined
+            legacyInvoiceTypeIdRaw != null
               ? invoiceTypeMap.get(legacyInvoiceTypeIdRaw) ||
                 invoiceTypeMap.get(String(asInteger(legacyInvoiceTypeIdRaw))) ||
                 null
               : null;
-
           if (!resolvedSapakId && legacySapakIdRaw) {
-            // Create a placeholder Sapak entry to satisfy FK and continue migration.
-            try {
-              const placeholderId = uuidv4();
-              const name = sapakNameMap.get(legacySapakIdRaw) || `Sapak ${legacySapakIdRaw}`;
-              await pg.query(
-                `INSERT INTO "Sapak" (
-                   id, "tenantId", "branchId", "SapakID", "SapakName", "createdAt", "updatedAt"
-                 )
-                 VALUES ($1, $2, $3, $4, $5, $6, $6)
-                 ON CONFLICT ("tenantId", "branchId", "SapakID") DO NOTHING`,
-                [placeholderId, tenantId, branchId, legacySapakIdRaw, name, now]
-              );
-              sapakMap.set(legacySapakIdRaw, placeholderId);
-              const asIntKey = asInteger(legacySapakIdRaw);
-              if (asIntKey !== null) sapakMap.set(String(asIntKey), placeholderId);
-              resolvedSapakId = placeholderId;
-            } catch (e) {
-              console.warn(
-                `⚠️ Invoice: failed to create placeholder Sapak for legacySapakId=${legacySapakIdRaw}`,
-                e.message
-              );
-            }
-          }
-          if (!resolvedSapakId) {
-            if (legacySapakIdRaw) missingSapak.add(legacySapakIdRaw);
-            continue; // still cannot insert without valid sapakId (FK)
+            missingSapak.add(legacySapakIdRaw);
           }
           if (!invoiceType && legacyInvoiceTypeIdRaw) {
             missingType.add(legacyInvoiceTypeIdRaw);
@@ -290,7 +172,7 @@ async function migrateInvoice(tenantId = "tenant_1", branchId = null) {
             branchId,                            // branchId
             String(legacyInvoiceId),             // invoiceId
             invoiceNumber,                       // invoiceNumber
-            resolvedSupplierId || null,         // supplierId (nullable if missing)
+            null,                                // supplierId (not mapped from SapakID)
             invoiceDate,                         // invoiceDate
             invoiceDate,                       // dueDate
             totalAmount,                         // totalAmount
@@ -374,20 +256,11 @@ async function migrateInvoice(tenantId = "tenant_1", branchId = null) {
         }
       }
 
-      const latest = asInteger(rows[rows.length - 1]?.InvoiceId);
-      if (latest !== null) {
-        lastId = latest;
-      }
-      console.log(`Invoice migrated so far: ${total} (lastInvoiceId=${lastId})`);
+      offset += rows.length;
+      console.log(`Invoice migrated so far: ${total} (offset=${offset})`);
     }
 
     console.log(`✅ Invoice migration completed. Total inserted/updated: ${total}`);
-    if (missingSapak.size) {
-      const sample = Array.from(missingSapak).slice(0, 10);
-      console.warn(
-        `⚠️ Invoice: missing Sapak mapping for ${missingSapak.size} legacy SapakIDs. Sample: ${sample.join(", ")}`
-      );
-    }
     if (missingType.size) {
       const sample = Array.from(missingType).slice(0, 10);
       console.warn(

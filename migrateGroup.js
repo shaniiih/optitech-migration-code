@@ -42,14 +42,14 @@ async function migrateGroup(tenantId = "tenant_1", branchId = null) {
 
   try {
     const { rows: cityRows } = await pg.query(
-      `SELECT id, "cityId" FROM "City" WHERE "tenantId" = $1`,
-      [tenantId]
+      `SELECT id, "cityId" FROM "City" WHERE "tenantId" = $1 AND "branchId" = $2`,
+      [tenantId, normalizedBranchId]
     );
     const cityMap = new Map(cityRows.map((row) => [String(row.cityId), row.id]));
 
     const { rows: discountRows } = await pg.query(
-      `SELECT id, "discountId" FROM "Discount" WHERE "tenantId" = $1`,
-      [tenantId]
+      `SELECT id, "discountId" FROM "Discount" WHERE "tenantId" = $1 AND "branchId" = $2`,
+      [tenantId, normalizedBranchId]
     );
     const discountMap = new Map(discountRows.map((row) => [String(row.discountId), row.id]));
 

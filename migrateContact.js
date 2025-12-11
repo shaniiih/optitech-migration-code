@@ -69,8 +69,8 @@ async function migrateContact(tenantId, branchId) {
     const { rows: cityRows } = await pg.query(
       `SELECT id, "cityId"
          FROM "City"
-        WHERE "tenantId" = $1`,
-      [tenantId]
+        WHERE "tenantId" = $1 AND "branchId" = $2`,
+      [tenantId, normalizedBranchId]
     );
     const cityMap = new Map(cityRows.map((row) => [String(row.cityId), row.id]));
 
@@ -79,8 +79,8 @@ async function migrateContact(tenantId, branchId) {
       const { rows: sapakRows } = await pg.query(
         `SELECT id, "sapakId", "branchId"
            FROM "CrdBuysWorkSapak"
-          WHERE "tenantId" = $1`,
-        [tenantId]
+          WHERE "tenantId" = $1 AND "branchId" = $2`,
+        [tenantId, normalizedBranchId]
       );
       for (const row of sapakRows) {
         const key = String(row.sapakId);

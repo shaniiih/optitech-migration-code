@@ -39,8 +39,8 @@ async function migrateCrdBuysWorkLabel(tenantId = "tenant_1", branchId = null) {
     const { rows: sapakRows } = await pg.query(
       `SELECT id, "sapakId", "branchId"
          FROM "CrdBuysWorkSapak"
-        WHERE "tenantId" = $1`,
-      [tenantId]
+        WHERE "tenantId" = $1 AND "branchId" = $2`,
+      [tenantId, normalizedBranchId]
     );
     const sapakMap = new Map();
     for (const row of sapakRows) {

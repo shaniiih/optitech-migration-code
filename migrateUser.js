@@ -88,8 +88,8 @@ async function migrateUser(tenantId = "tenant_1", branchId = null) {
     const { rows: sysLevelRows } = await pg.query(
       `SELECT id, "levelId"
          FROM "SysLevel"
-        WHERE "tenantId" = $1`,
-      [tenantId]
+        WHERE "tenantId" = $1 AND "branchId" = $2`,
+      [tenantId, normalizedBranchId]
     );
     const sysLevelMap = new Map(
       sysLevelRows
@@ -100,8 +100,8 @@ async function migrateUser(tenantId = "tenant_1", branchId = null) {
     const { rows: cityRows } = await pg.query(
       `SELECT id, "cityId"
          FROM "City"
-        WHERE "tenantId" = $1`,
-      [tenantId]
+        WHERE "tenantId" = $1 AND "branchId" = $2`,
+      [tenantId, normalizedBranchId]
     );
     const cityMap = new Map(cityRows.map((row) => [String(row.cityId), row.id]));
 

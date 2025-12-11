@@ -36,8 +36,8 @@ async function migrateCrdBuysPay(tenantId = "tenant_1", branchId = null) {
   try {
     const buyMap = new Map();
     const { rows: buyRows } = await pg.query(
-      `SELECT id, "buyId", "branchId" FROM "CrdBuy" WHERE "tenantId" = $1`,
-      [tenantId]
+      `SELECT id, "buyId", "branchId" FROM "CrdBuy" WHERE "tenantId" = $1 AND "branchId" = $2`,
+      [tenantId, branchId]
     );
     for (const r of buyRows) {
       const v = normalizeInt(r.buyId);
@@ -46,8 +46,8 @@ async function migrateCrdBuysPay(tenantId = "tenant_1", branchId = null) {
 
     const payTypeMap = new Map();
     const { rows: payTypeRows } = await pg.query(
-      `SELECT id, "payTypeId" FROM "PayType" WHERE "tenantId" = $1`,
-      [tenantId]
+      `SELECT id, "payTypeId" FROM "PayType" WHERE "tenantId" = $1 AND "branchId" = $2`,
+      [tenantId, branchId]
     );
     for (const r of payTypeRows) {
       const v = normalizeInt(r.payTypeId);
@@ -56,8 +56,8 @@ async function migrateCrdBuysPay(tenantId = "tenant_1", branchId = null) {
 
     const creditCardMap = new Map();
     const { rows: cardRows } = await pg.query(
-      `SELECT id, "creditCardId" FROM "CreditCard" WHERE "tenantId" = $1`,
-      [tenantId]
+      `SELECT id, "creditCardId" FROM "CreditCard" WHERE "tenantId" = $1 AND "branchId" = $2`,
+      [tenantId, branchId]
     );
     for (const r of cardRows) {
       const v = normalizeInt(r.creditCardId);
@@ -66,8 +66,8 @@ async function migrateCrdBuysPay(tenantId = "tenant_1", branchId = null) {
 
     const creditTypeMap = new Map();
     const { rows: creditTypeRows } = await pg.query(
-      `SELECT id, "creditTypeId" FROM "CreditType" WHERE "tenantId" = $1`,
-      [tenantId]
+      `SELECT id, "creditTypeId" FROM "CreditType" WHERE "tenantId" = $1 AND "branchId" = $2`,
+      [tenantId, branchId]
     );
     for (const r of creditTypeRows) {
       const v = normalizeInt(r.creditTypeId);

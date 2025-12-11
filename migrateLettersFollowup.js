@@ -28,8 +28,7 @@ async function migrateLettersFollowup(tenantId = "tenant_1", branchId = null) {
             const { rows } = await pg.query(
                 `SELECT id, "${legacyColumn}" 
                  FROM "${table}" 
-                 WHERE "tenantId" = $1 
-                 AND ("branchId" = $2 OR $2 IS NULL)`,
+                 WHERE "tenantId" = $1 AND "branchId" = $2`,
                 [tenantId, branchId]
             );
             for (const r of rows) {
